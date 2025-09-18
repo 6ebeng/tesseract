@@ -6,26 +6,16 @@ Write-Host "║        KURDISH OCR TRAINING LAUNCHER                          �
 Write-Host "╚════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
-# Check if WSL is available
-$wslCheck = wsl -l 2>$null
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Error: WSL is not installed or not available." -ForegroundColor Red
-    Write-Host "Please install WSL and Ubuntu first." -ForegroundColor Yellow
-    exit 1
-}
-
-# Check if Ubuntu is installed (handle spacing in WSL output)
-$ubuntuFound = $false
-foreach ($line in $wslCheck) {
-    if ($line -match "Ubuntu") {
-        $ubuntuFound = $true
-        break
+# Check if WSL Ubuntu is available by testing direct access
+try {
+    $testResult = wsl -d Ubuntu -- echo "test" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Ubuntu not accessible"
     }
 }
-
-if (-not $ubuntuFound) {
-    Write-Host "Error: Ubuntu is not installed in WSL." -ForegroundColor Red
-    Write-Host "Please install Ubuntu in WSL first." -ForegroundColor Yellow
+catch {
+    Write-Host "Error: Ubuntu is not available in WSL." -ForegroundColor Red
+    Write-Host "Please ensure Ubuntu is installed and running in WSL." -ForegroundColor Yellow
     exit 1
 }
 
@@ -54,8 +44,23 @@ Write-Host "   - Uses fonts folder + Sorani corpus" -ForegroundColor Gray
 Write-Host "   - Adds shear/augmentation for accuracy" -ForegroundColor Gray
 Write-Host "   - Trains moderate iterations for speed" -ForegroundColor Gray
 Write-Host ""
+Write-Host "5. CTC Encoding Diagnosis & Fix" -ForegroundColor Green
+Write-Host "   - Analyzes 'Compute CTC targets failed' errors" -ForegroundColor Gray
+Write-Host "   - Provides working solution using existing models" -ForegroundColor Gray
+Write-Host "   - Tests your current Kurdish models" -ForegroundColor Gray
+Write-Host ""
+Write-Host "6. UTF-8 Enabled Kurdish Training" -ForegroundColor Cyan
+Write-Host "   - Complete UTF-8 encoding support" -ForegroundColor Gray
+Write-Host "   - Kurdish unicharset generation" -ForegroundColor Gray
+Write-Host "   - Enhanced model with proper character encoding" -ForegroundColor Gray
+Write-Host ""
+Write-Host "7. Simple UTF-8 LSTM Training" -ForegroundColor Yellow
+Write-Host "   - Creates proper LSTMF files with UTF-8" -ForegroundColor Gray
+Write-Host "   - Validates UTF-8 training pipeline" -ForegroundColor Gray
+Write-Host "   - Simplified training approach" -ForegroundColor Gray
+Write-Host ""
 
-$choice = Read-Host "Enter your choice (1-4)"
+$choice = Read-Host "Enter your choice (1-7)"
 
 switch ($choice) {
     "1" {
@@ -63,8 +68,19 @@ switch ($choice) {
         Write-Host "This will generate training data and create a custom model." -ForegroundColor Gray
         Write-Host ""
         
-        # Make scripts executable and run full pipeline
-        wsl -d Ubuntu -- bash -c "chmod +x /mnt/c/tesseract/work/scripts/*.sh && cd /mnt/c/tesseract/work/scripts && bash full_training_pipeline.sh"
+        Write-Host "=== PHASE 1: DATA PREPARATION ===" -ForegroundColor Cyan
+        # Use our working training script
+        if (Test-Path "final_ckb_train.sh") {
+            Write-Host "Using optimized CKB training script..." -ForegroundColor Green
+            wsl -d Ubuntu -- bash -c "chmod +x /mnt/c/tesseract/work/final_ckb_train.sh && /mnt/c/tesseract/work/final_ckb_train.sh"
+        }
+        elseif (Test-Path "quick_train_ckb.sh") {
+            Write-Host "Using quick CKB training script..." -ForegroundColor Green  
+            wsl -d Ubuntu -- bash -c "chmod +x /mnt/c/tesseract/work/quick_train_ckb.sh && /mnt/c/tesseract/work/quick_train_ckb.sh"
+        }
+        else {
+            Write-Host "Training script not found! Please check the scripts directory." -ForegroundColor Red
+        }
     }
     "2" {
         Write-Host "`nStarting Data Preparation..." -ForegroundColor Yellow
@@ -80,7 +96,7 @@ switch ($choice) {
         Write-Host ""
         
         # Run master training script
-        wsl -d Ubuntu -- bash -c "chmod +x /mnt/c/tesseract/work/scripts/*.sh && cd /mnt/c/tesseract/work/scripts && bash master_training.sh"
+        wsl -d Ubuntu -- bash -c "chmod +x /mnt/c/tesseract/work/scripts/master_training.sh && /mnt/c/tesseract/work/scripts/master_training.sh"
     }
     "4" {
         Write-Host "`nStarting Fast & Robust WSL Training..." -ForegroundColor Yellow
@@ -89,6 +105,30 @@ switch ($choice) {
         
         # Run updated WSL script
         wsl -d Ubuntu -- bash -c "chmod +x /mnt/c/tesseract/work/scripts/wsl_train_ckb.sh && cd /mnt/c/tesseract/work/scripts && bash wsl_train_ckb.sh"
+    }
+    "5" {
+        Write-Host "`nStarting CTC Encoding Diagnosis..." -ForegroundColor Green
+        Write-Host "This will analyze the CTC error and provide the working solution." -ForegroundColor Gray
+        Write-Host ""
+        
+        # Run CTC diagnosis script
+        wsl -d Ubuntu -- bash -c "chmod +x /mnt/c/tesseract/work/scripts/ctc_diagnosis.sh && bash /mnt/c/tesseract/work/scripts/ctc_diagnosis.sh"
+    }
+    "6" {
+        Write-Host "`nStarting UTF-8 Enabled Kurdish Training..." -ForegroundColor Cyan
+        Write-Host "This ensures proper UTF-8 encoding for all Kurdish characters." -ForegroundColor Gray
+        Write-Host ""
+        
+        # Run UTF-8 training script
+        wsl -d Ubuntu -- bash -c "chmod +x /mnt/c/tesseract/work/scripts/utf8_ckb_training.sh && bash /mnt/c/tesseract/work/scripts/utf8_ckb_training.sh"
+    }
+    "7" {
+        Write-Host "`nStarting Simple UTF-8 LSTM Training..." -ForegroundColor Yellow
+        Write-Host "This creates proper LSTMF files and validates UTF-8 support." -ForegroundColor Gray
+        Write-Host ""
+        
+        # Run simple UTF-8 LSTM script
+        wsl -d Ubuntu -- bash -c "chmod +x /mnt/c/tesseract/work/scripts/simple_utf8_lstm.sh && bash /mnt/c/tesseract/work/scripts/simple_utf8_lstm.sh"
     }
     default {
         Write-Host "Invalid choice. Exiting." -ForegroundColor Red

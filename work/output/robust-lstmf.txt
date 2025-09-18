@@ -1,3 +1,0 @@
-/mnt/c/tesseract/work/ground-truth-robust/ckb.00_Sarchia_ABC.v0.lstmf
-/mnt/c/tesseract/work/ground-truth-robust/ckb.01_Sarchia_Abdulkareem.v0.lstmf
-/mnt/c/tesseract/work/ground-truth-robust/ckb.02_Sarchia_Abdullah.v0.lstmf
