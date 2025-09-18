@@ -1,0 +1,243 @@
+# Tesseract Kurdish OCR Training - .gitignore
+# Generated on September 18, 2025
+
+# ===========================================
+# TESSERACT TRAINING FILES
+# ===========================================
+
+# Training output files
+work/output/*.tif
+work/output/*.box
+work/output/*.lstmf
+work/output/*.lstm
+work/output/*.traineddata
+work/output/*.checkpoint
+work/output/*.txt
+work/output/*.dawg
+work/output/*.unicharset
+work/output/*.recoder
+work/output/*.version
+work/output/*.punc-dawg
+work/output/*.word-dawg
+work/output/*.number-dawg
+
+# Keep only essential output files
+!work/output/ckb.unicharset
+!work/output/training_files.txt
+
+# Temporary training files
+work/output/*temp*
+work/output/*tmp*
+work/output/*test*
+work/output/*exp*
+work/output/*backup*
+
+# ===========================================
+# CORPUS AND DATA FILES
+# ===========================================
+
+# Temporary corpus files
+work/corpus/*temp*
+work/corpus/*test*
+work/corpus/*backup*
+work/corpus/*.tmp
+
+# Keep main corpus
+!work/corpus/ckb.training_text
+
+# ===========================================
+# SCRIPT FILES
+# ===========================================
+
+# Backup and temporary scripts
+work/scripts/*backup*
+work/scripts/*temp*
+work/scripts/*test*
+work/scripts/*old*
+work/scripts/*.tmp
+
+# Log files from scripts
+work/scripts/*.log
+
+# ===========================================
+# GROUND TRUTH DIRECTORIES
+# ===========================================
+
+# All ground truth experimental data
+work/ground-truth/
+work/ground-truth-*/
+work/ground-truth*.old.*/
+
+# ===========================================
+# FONT TEST DIRECTORIES
+# ===========================================
+
+# Font testing data
+work/font-test/
+work/font-install-test/
+
+# ===========================================
+# OCR TEST FILES
+# ===========================================
+
+# OCR test outputs
+work/ocr-test/
+work/test-images/
+work/syntax-test/
+
+# ===========================================
+# SYSTEM AND TEMPORARY FILES
+# ===========================================
+
+# Windows temporary files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS temporary files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux temporary files
+*~
+.nfs*
+
+# ===========================================
+# EDITOR AND IDE FILES
+# ===========================================
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===========================================
+# LOG FILES
+# ===========================================
+
+# Training logs
+*.log
+work/*.log
+work/logs/
+training.log
+error.log
+debug.log
+
+# ===========================================
+# BACKUP FILES
+# ===========================================
+
+# Backup files
+*.bak
+*.backup
+*.old
+*_backup
+*_old
+*.orig
+
+# ===========================================
+# COMPRESSED FILES
+# ===========================================
+
+# Archives (usually temporary downloads)
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Keep specific archives if needed
+!fonts.zip
+!models.zip
+
+# ===========================================
+# LARGE BINARY FILES
+# ===========================================
+
+# Large training models (keep in tessdata only)
+*.traineddata
+!tessdata/*.traineddata
+
+# Large LSTM files
+*.lstm
+!work/output/ckb_base.lstm
+
+# ===========================================
+# TESSERACT SPECIFIC
+# ===========================================
+
+# Tesseract cache and temp
+tesseract_opencl_profile_devices.dat
+
+# Font cache
+.fontconfig/
+
+# ===========================================
+# BUILD AND COMPILE FILES
+# ===========================================
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Make
+*.o
+*.a
+*.so
+*.dll
+*.exe
+
+# ===========================================
+# DOCUMENTATION TEMP FILES
+# ===========================================
+
+# Markdown temporary files
+*.md.backup
+*.md.tmp
+
+# ===========================================
+# CUSTOM IGNORES FOR THIS PROJECT
+# ===========================================
+
+# Old tessdata backups
+tessdata_tmp*/
+tessdata*.old.*/
+
+# Work directory backups
+work*.old.*/
+
+# Result files
+result*.txt
+test_output*.txt
+recognition_result*.txt
