@@ -6,6 +6,14 @@
 # ===========================================
 
 # Training output files
+work/training_output/**
+work/tmp/**
+work/tmp/verify_unicharset/**
+work/ground-truth*/**
+work/ground_truth*/**
+# Catch odd/duplicate training_output dirs (with stray characters)
+work/training_output*/**
+
 work/output/*.tif
 work/output/*.box
 work/output/*.lstmf
@@ -24,6 +32,14 @@ work/output/*.number-dawg
 # Keep only essential output files
 !work/output/ckb.unicharset
 !work/output/training_files.txt
+
+# Keep helper scripts/configs under work/output but ignore other artifacts
+work/output/**
+!work/output/
+!work/output/*.sh
+!work/output/*.py
+!work/output/*.conf
+!work/output/*.md
 
 # Temporary training files
 work/output/*temp*
@@ -148,6 +164,8 @@ tramp
 *.log
 work/*.log
 work/logs/
+work/training_output/model/train_*.log
+work/training_output/model/lstmf_build.log
 training.log
 error.log
 debug.log
@@ -183,9 +201,10 @@ debug.log
 # LARGE BINARY FILES
 # ===========================================
 
-# Large training models (keep in tessdata only)
+# Large training models (keep only those curated in repo data dirs)
 *.traineddata
 !tessdata/*.traineddata
+!tessdata_best/*.traineddata
 
 # Large LSTM files
 *.lstm
@@ -200,6 +219,7 @@ tesseract_opencl_profile_devices.dat
 
 # Font cache
 .fontconfig/
+.cache/fontconfig/**
 
 # ===========================================
 # BUILD AND COMPILE FILES

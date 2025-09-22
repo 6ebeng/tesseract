@@ -1,0 +1,34 @@
+# Normalize line endings and mark binary assets
+
+# Scripts (used in WSL) should be LF
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.conf text eol=lf
+*.txt text eol=lf
+
+# PowerShell on Windows prefers CRLF
+*.ps1 text eol=crlf
+
+# Fonts and trained models are binary
+*.ttf binary
+*.otf binary
+*.traineddata binary
+*.lstm binary
+*.lstmf binary
+*.tif binary
+*.box text eol=lf
+
+# Word docs and archives as binary
+*.docx binary
+*.zip binary
+*.7z binary
+*.rar binary
+*.tar.gz binary
+
+# Prevent automatic line ending conversions for these files
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary

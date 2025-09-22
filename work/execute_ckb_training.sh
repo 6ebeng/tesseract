@@ -11,6 +11,11 @@ TMP_DIR="$WORK_DIR/training_output/tmp"
 OUT_DIR="$WORK_DIR/training_output/model"
 LANG="ckb"
 
+# Training tunables (can be overridden via environment)
+MAX_ITERS="${MAX_ITERS:-1500}"
+DEBUG_INTERVAL="${DEBUG_INTERVAL:-0}"
+TRAINING_EXTRA_ARGS="${TRAINING_EXTRA_ARGS:-}"
+
 mkdir -p "$TMP_DIR" "$OUT_DIR"
 # Resolve ground truth directory with fallbacks if default is missing
 if [ ! -d "$GT_DIR" ]; then
@@ -51,15 +56,32 @@ for tool in tesseract lstmtraining combine_tessdata unicharset_extractor combine
   if ! command -v "$tool" >/dev/null 2>&1; then echo "❌ Missing tool: $tool"; exit 1; fi
 done
 
-# Locate lstm.train config
-CONFIG_LSTM=""
-for c in \
-  "/usr/share/tesseract-ocr/5/tessdata/configs/lstm.train" \
-  "/usr/local/share/tessdata/configs/lstm.train" \
-  "/usr/share/tesseract-ocr/4.00/tessdata/configs/lstm.train"; do
-  if [ -f "$c" ]; then CONFIG_LSTM="$c"; break; fi
-done
-if [ -z "$CONFIG_LSTM" ]; then echo "❌ Could not find lstm.train config"; exit 1; fi
+# Locate lstm.train config (allow override via LSTM_TRAIN_CONFIG env)
+CONFIG_LSTM="${LSTM_TRAIN_CONFIG:-}"
+if [ -z "$CONFIG_LSTM" ]; then
+  for c in \
+    "/usr/share/tesseract-ocr/5/tessdata/configs/lstm.train" \
+    "/usr/local/share/tessdata/configs/lstm.train" \
+    "/usr/share/tesseract-ocr/4.00/tessdata/configs/lstm.train" \
+    "$WORK_DIR/../tessdata/configs/lstm.train" \
+    "$WORK_DIR/tessdata/configs/lstm.train" \
+    "/mnt/c/tesseract/tessdata/configs/lstm.train"; do
+    if [ -f "$c" ]; then CONFIG_LSTM="$c"; break; fi
+  done
+fi
+if [ -z "$CONFIG_LSTM" ]; then
+  echo "❌ Could not find lstm.train config in system tessdata nor repo's tessdata/configs"
+  echo "   Checked:"
+  echo "     - /usr/share/tesseract-ocr/5/tessdata/configs/lstm.train"
+  echo "     - /usr/local/share/tessdata/configs/lstm.train"
+  echo "     - /usr/share/tesseract-ocr/4.00/tessdata/configs/lstm.train"
+  echo "     - $WORK_DIR/../tessdata/configs/lstm.train"
+  echo "     - $WORK_DIR/tessdata/configs/lstm.train"
+  echo "     - /mnt/c/tesseract/tessdata/configs/lstm.train"
+  echo "   You can set LSTM_TRAIN_CONFIG to an explicit path and retry."
+  exit 1
+fi
+echo "Using lstm.train config: $CONFIG_LSTM"
 
 # Script assets dir (Arabic/Latin/Common.unicharset + radical-stroke.txt)
 SCRIPT_DIR="$WORK_DIR/training_output/tmp/script"
@@ -133,6 +155,10 @@ if [ ${#BASE_LANGS[@]} -eq 0 ]; then echo "❌ No base models (fas/ara) found"; 
 echo "Found bases: ${BASE_LANGS[*]}"
 
 echo "🧩 Generating .lstmf files (hybrid seg: ${BASE_LANGS[*]})..."
+LSTMF_LOG="$OUT_DIR/lstmf_build.log"; : > "$LSTMF_LOG"
+# Allow OEM/PSM overrides via env (defaults align with earlier behavior)
+OEM="${OEM:-1}"
+PSM="${PSM:-6}"
 cd "$GT_DIR"
 # Normalize ground-truth text filenames: prefer .gt.txt; if only .txt exists, create .gt.txt copies
 while IFS= read -r -d '' tif_norm; do
@@ -152,12 +178,16 @@ while IFS= read -r -d '' tif; do
     # Ensure matching GT for suffixed output base
     cp -f "$gt_txt" "$GT_DIR/$base-$B.gt.txt"
     echo "Creating LSTMF: $base (seg=$B)"
-    tesseract --tessdata-dir "$MODEL_DIR" "$tif" "$base-$B" -l "$B" --oem 1 --psm 6 "$CONFIG_LSTM" >/dev/null 2>&1 || true
+    {
+      echo "---- $(date -Iseconds) : $base (seg=$B) ----"
+      echo "CMD: tesseract --tessdata-dir '$MODEL_DIR' '$tif' '$base-$B' -l '$B' --oem $OEM --psm $PSM '$CONFIG_LSTM'"
+      tesseract --tessdata-dir "$MODEL_DIR" "$tif" "$base-$B" -l "$B" --oem "$OEM" --psm "$PSM" "$CONFIG_LSTM" 2>&1 || true
+    } >> "$LSTMF_LOG"
     if [ -f "$GT_DIR/$base-$B.lstmf" ]; then mv -f "$GT_DIR/$base-$B.lstmf" "$TMP_DIR/"; LSTMF_COUNT=$((LSTMF_COUNT+1)); else echo "⚠️  Missing $base-$B.lstmf"; fi
     rm -f "$GT_DIR/$base-$B.gt.txt" 2>/dev/null || true
   done
 done < <(find "$GT_DIR" -maxdepth 1 -type f -name '*.tif' -print0)
-[ "$LSTMF_COUNT" -gt 0 ] || { echo "❌ No .lstmf generated"; exit 1; }
+[ "$LSTMF_COUNT" -gt 0 ] || { echo "❌ No .lstmf generated. See log: $LSTMF_LOG"; exit 1; }
 echo "✅ Generated $LSTMF_COUNT .lstmf files"
 
 echo "🗂️  Preparing listfiles..."
@@ -249,8 +279,8 @@ for START_BASE in "${BASE_LANGS[@]}"; do
     --model_output "$MODEL_PREFIX" \
     --train_listfile "$TMP_DIR/list.train" \
     --eval_listfile "$TMP_DIR/list.eval" \
-    --max_iterations 1500 \
-    --debug_interval 0 || true
+    --max_iterations "$MAX_ITERS" \
+    --debug_interval "$DEBUG_INTERVAL" ${TRAINING_EXTRA_ARGS:-} || true
   CHECKPOINT=$(ls -t "${MODEL_PREFIX}"_checkpoint* 2>/dev/null | head -1 || true)
   [ -z "${CHECKPOINT:-}" ] && [ -f "${MODEL_PREFIX}_checkpoint" ] && CHECKPOINT="${MODEL_PREFIX}_checkpoint"
   if [ -z "${CHECKPOINT:-}" ]; then echo "❌ No checkpoint produced for $START_BASE"; continue; fi
