@@ -17,7 +17,7 @@ cd "$ROOT"
 
 # Keep lists
 KEEP_SCRIPTS=(
-  "build_hybrid_ckb_traineddata.sh"
+  # removed: build_hybrid_ckb_traineddata.sh
   "generate_ckb_training_data.sh"
 )
 

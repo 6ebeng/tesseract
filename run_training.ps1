@@ -85,14 +85,12 @@ function Get-GroundTruthDir([string]$baseWin) {
 Write-Host "Select an option:" -ForegroundColor Blue
 Write-Host "1. Cleanup workspace (remove tests/.md)" -ForegroundColor White
 Write-Host "2. Generate training data (fonts + corpus) and Train" -ForegroundColor White
-Write-Host "3. Build hybrid ckb.traineddata (UTF-8, fas+ara)" -ForegroundColor White
-Write-Host "4. Run a quick OCR test (hybrid wrapper)" -ForegroundColor White
-Write-Host "5. Train now (skip generation)" -ForegroundColor White
-Write-Host "6. Smoke test trained ckb model" -ForegroundColor White
-Write-Host "7. Verify ckb.traineddata covers Kurdish chars" -ForegroundColor White
+Write-Host "3. Train now (skip generation)" -ForegroundColor White
+Write-Host "4. Smoke test trained ckb model" -ForegroundColor White
+Write-Host "5. Verify ckb.traineddata covers Kurdish chars" -ForegroundColor White
 Write-Host ""
 
-$choice = Read-Host "Enter your choice (1-7)"
+$choice = Read-Host "Enter your choice (1-5)"
 
 switch ($choice) {
     "1" {
@@ -152,18 +150,6 @@ switch ($choice) {
         }
     }
     "3" {
-        Write-Host "\nBuilding hybrid ckb.traineddata..." -ForegroundColor Yellow
-        wsl -d Ubuntu -- bash -lc "cd '$workDirWsl' && chmod +x build_hybrid_ckb_traineddata.sh && ./build_hybrid_ckb_traineddata.sh"
-    }
-    "4" {
-        $imagePath = Read-Host "Enter image path (Windows path, e.g., C:\\tesseract\\test-images\\kurdish_test.png)"
-        if (-not (Test-Path $imagePath)) { Write-Host "File not found." -ForegroundColor Red; break }
-        $wslPath = Convert-ToWslPath $imagePath
-        Write-Host "\nRunning hybrid OCR..." -ForegroundColor Yellow
-        wsl -d Ubuntu -- bash -lc "cd '$workDirWsl' && chmod +x hybrid_ckb_ocr.sh && ./hybrid_ckb_ocr.sh '$wslPath' result"
-        Write-Host "Output written to result.txt (in $workDirWin)" -ForegroundColor Green
-    }
-    "5" {
         # Train only (skip generation)
         $trainScriptWin = Join-Path $workDirWin 'execute_ckb_training.sh'
         $trainScriptWsl = Convert-ToWslPath $trainScriptWin
@@ -175,7 +161,7 @@ switch ($choice) {
         wsl -d Ubuntu -- bash -lc "cd '$workDirWsl' && chmod +x '$trainScriptWsl' && '$trainScriptWsl'"; $trainCode = $LASTEXITCODE
         if ($trainCode -ne 0) { Write-Host "Training failed (exit $trainCode). See logs above." -ForegroundColor Red; break }
     }
-    "6" {
+    "4" {
         # Smoke test trained ckb model
         function Get-GroundTruthDir {
             param([string]$baseWin)
@@ -202,7 +188,7 @@ switch ($choice) {
         Write-Host "\nRunning smoke test with ckb model..." -ForegroundColor Yellow
         wsl -d Ubuntu -- bash -lc "tesseract --tessdata-dir /mnt/c/tesseract/tessdata '$imgWsl' stdout -l ckb --psm 6 | head -n 12"
     }
-    "7" {
+    "5" {
         # Verify ckb.traineddata unicharset coverage against Kurdish letters
         $traineddataDefault = Join-Path (Join-Path $projectRootWin 'tessdata') 'ckb.traineddata'
         if (-not (Test-Path $traineddataDefault)) {
