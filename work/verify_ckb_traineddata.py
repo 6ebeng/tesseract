@@ -21,7 +21,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Set
 
 # Required Kurdish Arabic-based letters (Sorani)
@@ -158,7 +158,8 @@ def main() -> int:
     report = {
         'traineddata': os.path.abspath(traineddata_path),
         'unicharset': unicharset_path,
-        'timestamp': datetime.utcnow().isoformat() + 'Z',
+        # Use timezone-aware UTC timestamp to avoid deprecation warnings
+        'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'present_count': len(present),
         'required_letters': REQUIRED_KURDISH_ARABIC_LETTERS,
         'required_digits': REQUIRED_ARABIC_INDIC_DIGITS if args.include_digits else [],

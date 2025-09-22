@@ -199,13 +199,13 @@ wr=os.path.join(tmp,'words.raw')
 out=os.path.join(tmp,'words.txt')
 seen=set()
 with open(wr,'r',encoding='utf-8',errors='ignore') as f, open(out,'w',encoding='utf-8') as g:
-    for token in re.split(r"\\s+", f.read()):
-        t=token.strip()
-        if t and ok(t) and t not in seen:
-            seen.add(t); g.write(t+"\\n")
+  for token in re.split(r"\\s+", f.read()):
+    t=token.strip()
+    if t and ok(t) and t not in seen:
+      seen.add(t); g.write(t+"\n")
 if os.path.getsize(out)==0:
     with open(out,'w',encoding='utf-8') as g:
-        g.write("کورد\\nکوردی\\nدەنگ\\n")
+    g.write("کورد\nکوردی\nدەنگ\n")
 PY
   # Numbers and punctuation strictly from charset presence
   cat > "$LNX_TMP_DIR/numbers.txt" << 'EOF'

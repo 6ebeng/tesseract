@@ -259,15 +259,15 @@ class AdvancedKurdishFusion:
         report.append("=" * 45)
         
         # Model confidence scores
-        report.append("\\nModel Confidence Scores:")
+    report.append("\nModel Confidence Scores:")
         model_conf = analysis['model_confidences']
         for model, conf in model_conf.items():
             report.append(f"  {model.capitalize():8}: {conf:.3f}")
         
-        report.append(f"\\nBase Model Selected: {analysis['base_model'].upper()}")
+    report.append(f"\nBase Model Selected: {analysis['base_model'].upper()}")
         
         # Character-level decisions
-        report.append("\\nCharacter-Level Fusion Decisions:")
+    report.append("\nCharacter-Level Fusion Decisions:")
         char_decisions = analysis['character_decisions']
         
         for char, decision in char_decisions.items():
@@ -281,7 +281,7 @@ class AdvancedKurdishFusion:
             status = "🔄" if action == 'switch' else "✓"
             report.append(f"  {char} {status} {best_model.upper():7} ({conf_str}) Δ{conf_diff:+.2f}")
         
-        return "\\n".join(report)
+    return "\n".join(report)
 
 if __name__ == "__main__":
     fusion_engine = AdvancedKurdishFusion()
