@@ -1,7 +1,7 @@
 {
   "traineddata": "/mnt/c/tesseract/tessdata/ckb.traineddata",
-  "unicharset": "/mnt/c/tesseract/work/tmp/verify_unicharset/ckb_8nsnmtu1/ckb.lstm-unicharset",
-  "timestamp": "2025-09-22T18:54:18.211984Z",
+  "unicharset": "/mnt/c/tesseract/work/tmp/verify_unicharset/ckb_q1kae2ap/ckb.lstm-unicharset",
+  "timestamp": "2025-09-22T21:31:57.237122Z",
   "present_count": 71,
   "required_letters": [
     "ئ",

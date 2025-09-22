@@ -49,7 +49,7 @@ catch {
 function Invoke-Cleanup([bool]$deep) {
     $deepFlag = if ($deep) { '1' } else { '0' }
     Write-Host "`nRunning cleanup (DEEP=$deepFlag)..." -ForegroundColor Yellow
-    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl' && DEEP=$deepFlag chmod +x cleanup_unnecessary_files.sh && DEEP=$deepFlag ./cleanup_unnecessary_files.sh"
+    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' cleanup_unnecessary_files.sh 2>/dev/null || true; chmod +x cleanup_unnecessary_files.sh; DEEP=$deepFlag bash ./cleanup_unnecessary_files.sh"
 }
 
 function Invoke-GenerateTrain {
@@ -138,7 +138,7 @@ switch ($choice) {
         $deepFlag = if ($deep -match '^(y|yes)$') { '1' } else { '0' }
         Write-Host "`nRunning cleanup (DEEP=$deepFlag)..." -ForegroundColor Yellow
         # Pass DEEP flag into WSL
-        wsl -d Ubuntu -- bash -lc "cd '$workDirWsl' && DEEP=$deepFlag chmod +x cleanup_unnecessary_files.sh && DEEP=$deepFlag ./cleanup_unnecessary_files.sh"
+        wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' cleanup_unnecessary_files.sh 2>/dev/null || true; chmod +x cleanup_unnecessary_files.sh; DEEP=$deepFlag bash ./cleanup_unnecessary_files.sh"
     }
     "2" {
         Write-Host "`nGenerating training data..." -ForegroundColor Yellow

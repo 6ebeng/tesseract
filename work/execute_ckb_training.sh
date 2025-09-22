@@ -204,7 +204,7 @@ with open(wr,'r',encoding='utf-8',errors='ignore') as f, open(out,'w',encoding='
     if t and ok(t) and t not in seen:
       seen.add(t); g.write(t+"\n")
 if os.path.getsize(out)==0:
-    with open(out,'w',encoding='utf-8') as g:
+  with open(out,'w',encoding='utf-8') as g:
     g.write("کورد\nکوردی\nدەنگ\n")
 PY
   # Numbers and punctuation strictly from charset presence
@@ -260,10 +260,29 @@ for START_BASE in "${BASE_LANGS[@]}"; do
   if [ -f "$OUT_DIR/${LANG}_from_${START_BASE}.traineddata" ]; then echo "✅ Created: $OUT_DIR/${LANG}_from_${START_BASE}.traineddata"; fi
 done
 
-# Install preferred
-PREFERRED=""; [ -f "$OUT_DIR/${LANG}_from_fas.traineddata" ] && PREFERRED="$OUT_DIR/${LANG}_from_fas.traineddata"
-[ -z "$PREFERRED" ] && [ -f "$OUT_DIR/${LANG}_from_ara.traineddata" ] && PREFERRED="$OUT_DIR/${LANG}_from_ara.traineddata"
-if [ -n "$PREFERRED" ]; then
+# Install preferred: compare BCER from checkpoint filenames if available
+choose_best_model() {
+  local fas_ckpt ara_ckpt fas_err ara_err
+  fas_ckpt=$(ls -t "$OUT_DIR/ckb_from_fas_"*_*.checkpoint 2>/dev/null | head -1 || true)
+  ara_ckpt=$(ls -t "$OUT_DIR/ckb_from_ara_"*_*.checkpoint 2>/dev/null | head -1 || true)
+  if [ -n "$fas_ckpt" ]; then fas_err=$(echo "$fas_ckpt" | sed -E 's/.*_([0-9]+\.[0-9]+)_.*/\1/'); fi
+  if [ -n "$ara_ckpt" ]; then ara_err=$(echo "$ara_ckpt" | sed -E 's/.*_([0-9]+\.[0-9]+)_.*/\1/'); fi
+  # If both errors available, choose lower
+  if [ -n "${fas_err:-}" ] && [ -n "${ara_err:-}" ]; then
+    awk "BEGIN{exit !($fas_err < $ara_err)}" && echo "$OUT_DIR/${LANG}_from_fas.traineddata" && return 0 || true
+    echo "$OUT_DIR/${LANG}_from_ara.traineddata"; return 0
+  fi
+  # If only one exists, choose it
+  if [ -f "$OUT_DIR/${LANG}_from_fas.traineddata" ] && [ ! -f "$OUT_DIR/${LANG}_from_ara.traineddata" ]; then echo "$OUT_DIR/${LANG}_from_fas.traineddata"; return 0; fi
+  if [ -f "$OUT_DIR/${LANG}_from_ara.traineddata" ] && [ ! -f "$OUT_DIR/${LANG}_from_fas.traineddata" ]; then echo "$OUT_DIR/${LANG}_from_ara.traineddata"; return 0; fi
+  # Fallback: prefer fas then ara
+  if [ -f "$OUT_DIR/${LANG}_from_fas.traineddata" ]; then echo "$OUT_DIR/${LANG}_from_fas.traineddata"; return 0; fi
+  if [ -f "$OUT_DIR/${LANG}_from_ara.traineddata" ]; then echo "$OUT_DIR/${LANG}_from_ara.traineddata"; return 0; fi
+  return 1
+}
+
+PREFERRED="$(choose_best_model || true)"
+if [ -n "$PREFERRED" ] && [ -f "$PREFERRED" ]; then
   cp "$PREFERRED" "$OUT_DIR/$LANG.traineddata" || true
   cp "$PREFERRED" "$WIN_TESSDATA/ckb.traineddata" || true
   echo "✅ Installed to C:\\tesseract\\tessdata\\ckb.traineddata"

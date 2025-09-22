@@ -3,6 +3,12 @@
 # Kurdish Training Data Generation - All Fonts (Clean)
 # Generates training images/box files using text2image for all TTF fonts in fonts/
 
+set -uo pipefail
+shopt -s nullglob
+
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+
 echo "Kurdish Training Data Generation - Comprehensive"
 echo "=============================================="
 
@@ -14,7 +20,7 @@ OUTPUT_DIR="training_output"
 GROUND_TRUTH_DIR="$OUTPUT_DIR/ground_truth"
 
 # Create directories
-mkdir -p "$GROUND_TRUTH_DIR"
+mkdir -p "$GROUND_TRUTH_DIR" "${OUTPUT_DIR}/logs"
 
 echo ""
 echo "📂 Setting up directories:"
@@ -48,35 +54,80 @@ echo ""
 echo "🔤 Generating training data for all fonts..."
 echo "============================================"
 
+# Ensure fontconfig sees local fonts
+if command -v fc-cache >/dev/null 2>&1; then
+    echo "Refreshing font cache for $FONTS_DIR ..."
+    fc-cache -f "$(pwd)/$FONTS_DIR" || true
+fi
+
 GENERATED_COUNT=0
 ERROR_COUNT=0
 
 # Process each font
-for font_file in $FONTS_DIR/*.ttf; do
+while IFS= read -r -d '' font_file; do
     if [ ! -f "$font_file" ]; then
         continue
     fi
     
     font_name=$(basename "$font_file" .ttf)
     echo -n "Processing font: $font_name ... "
+    log_file="${OUTPUT_DIR}/logs/${font_name}.log"
+    : > "$log_file"
+    
+    # Try to resolve the internal family name, style, and fullname using fc-scan if available
+    internal_name="$font_name"
+    cand_family=""; cand_style=""; cand_fullname=""
+    if command -v fc-scan >/dev/null 2>&1; then
+        fam=$(fc-scan --format='%{family}\n' "$font_file" 2>>"$log_file" | head -1 || true)
+        sty=$(fc-scan --format='%{style}\n' "$font_file" 2>>"$log_file" | head -1 || true)
+        fn=$(fc-scan --format='%{fullname}\n' "$font_file" 2>>"$log_file" | head -1 || true)
+        # fc-scan may return comma-separated lists; pick the first token
+        [ -n "${fam:-}" ] && cand_family="${fam%%,*}"
+        [ -n "${sty:-}" ] && cand_style="${sty%%,*}"
+        [ -n "${fn:-}" ] && cand_fullname="${fn%%,*}"
+        if [ -n "$cand_family" ]; then internal_name="$cand_family"; fi
+    fi
     
     # Generate image and box file
     output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp0"
     
     # Generate training image using text2image
     # Use font family name; provide fonts_dir so text2image can discover TTFs
-    if text2image \
-        --text="$CORPUS_FILE" \
-        --outputbase="$output_base" \
-        --font="$font_name" \
-        --fonts_dir="$(pwd)/$FONTS_DIR" \
-        --ptsize=$FONT_SIZE \
-        --resolution=$DPI \
-        --margin=$MARGIN \
-        --leading=$LEADING \
-        --char_spacing=1 \
-        --exposure=0 \
-        2>/dev/null; then
+    # Build candidate font names to try with text2image
+    declare -a FONT_CANDS
+    FONT_CANDS=("$internal_name")
+    if [ -n "$cand_family" ] && [ -n "$cand_style" ]; then
+        FONT_CANDS+=("$cand_family $cand_style")
+    fi
+    if [ -n "$cand_fullname" ]; then
+        FONT_CANDS+=("$cand_fullname")
+    fi
+    # Also try the file basename as a last resort
+    FONT_CANDS+=("$font_name")
+
+    echo "Trying font candidates: ${FONT_CANDS[*]}" >>"$log_file"
+
+    success=0
+    for cand in "${FONT_CANDS[@]}"; do
+        echo "text2image --font='$cand'" >>"$log_file"
+        if text2image \
+            --text="$CORPUS_FILE" \
+            --outputbase="$output_base" \
+            --font="$cand" \
+            --fonts_dir="$(pwd)/$FONTS_DIR" \
+            --ptsize=$FONT_SIZE \
+            --resolution=$DPI \
+            --margin=$MARGIN \
+            --leading=$LEADING \
+            --char_spacing=1 \
+            --exposure=0 \
+            >>"$log_file" 2>&1; then
+            success=1
+            break
+        fi
+    done
+
+    if [ "$success" -eq 1 ]; then
         
         # Verify files were created
         if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
@@ -88,13 +139,15 @@ for font_file in $FONTS_DIR/*.ttf; do
             
         else
             echo "❌ Failed (missing files)"
+            echo "Output files missing after text2image. See $log_file" >>"$log_file"
             ((ERROR_COUNT++))
         fi
     else
         echo "❌ Failed (text2image error)"
+        echo "text2image returned non-zero exit code. See $log_file" >>"$log_file"
         ((ERROR_COUNT++))
     fi
-done
+done < <(find "$FONTS_DIR" -maxdepth 1 -type f -name "*.ttf" -print0)
 
 echo ""
 echo "📊 Generation Summary:"
@@ -121,6 +174,11 @@ if [ $GENERATED_COUNT -eq 0 ]; then
     # Check fonts directory
     if [ ! -d "$FONTS_DIR" ]; then
         echo "   - Fonts directory missing: $FONTS_DIR"
+    else
+        if command -v fc-list >/dev/null 2>&1; then
+            echo "   - Fontconfig families visible for our fonts directory:"
+            fc-list | grep -i -E "$(echo "$FONTS_DIR" | sed 's/[\\/]/./g')" | head -5 || true
+        fi
     fi
     
     exit 1

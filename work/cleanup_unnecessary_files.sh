@@ -19,6 +19,8 @@ cd "$ROOT"
 KEEP_SCRIPTS=(
   # removed: build_hybrid_ckb_traineddata.sh
   "generate_ckb_training_data.sh"
+  # keep the main training script – required by run_training.ps1 and workflow
+  "execute_ckb_training.sh"
 )
 
 echo "Keeping scripts: ${KEEP_SCRIPTS[*]}"
@@ -34,7 +36,6 @@ for file in \
   kurdish_ocr_ultimate.sh \
   kurdish_persian_ocr.sh \
   ultimate_kurdish_ocr.sh \
-  execute_ckb_training.sh \
   execute_ckb_training_optimized.sh \
   final_ckb_train.sh \
   generate_training_data_simple.sh \
