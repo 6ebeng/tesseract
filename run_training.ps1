@@ -89,9 +89,10 @@ Write-Host "3. Build hybrid ckb.traineddata (UTF-8, fas+ara)" -ForegroundColor W
 Write-Host "4. Run a quick OCR test (hybrid wrapper)" -ForegroundColor White
 Write-Host "5. Train now (skip generation)" -ForegroundColor White
 Write-Host "6. Smoke test trained ckb model" -ForegroundColor White
+Write-Host "7. Verify ckb.traineddata covers Kurdish chars" -ForegroundColor White
 Write-Host ""
 
-$choice = Read-Host "Enter your choice (1-6)"
+$choice = Read-Host "Enter your choice (1-7)"
 
 switch ($choice) {
     "1" {
@@ -200,6 +201,29 @@ switch ($choice) {
         $imgWsl = Convert-ToWslPath $imagePath
         Write-Host "\nRunning smoke test with ckb model..." -ForegroundColor Yellow
         wsl -d Ubuntu -- bash -lc "tesseract --tessdata-dir /mnt/c/tesseract/tessdata '$imgWsl' stdout -l ckb --psm 6 | head -n 12"
+    }
+    "7" {
+        # Verify ckb.traineddata unicharset coverage against Kurdish letters
+        $traineddataDefault = Join-Path (Join-Path $projectRootWin 'tessdata') 'ckb.traineddata'
+        if (-not (Test-Path $traineddataDefault)) {
+            $traineddataDefault = Join-Path (Join-Path $workDirWin 'hybrid_build') 'ckb.traineddata'
+        }
+    $tdPrompt = "Enter path to ckb.traineddata (Windows path)." + $(if (Test-Path $traineddataDefault) { " Default: $traineddataDefault" } else { "" })
+        $tdWin = Read-Host $tdPrompt
+        if (-not $tdWin -and (Test-Path $traineddataDefault)) { $tdWin = $traineddataDefault }
+        if (-not (Test-Path $tdWin)) { Write-Host "ckb.traineddata not found." -ForegroundColor Red; break }
+        $tdWsl = Convert-ToWslPath $tdWin
+        Write-Host "\nVerifying Kurdish unicharset coverage..." -ForegroundColor Yellow
+        $scriptWsl = Convert-ToWslPath (Join-Path $workDirWin 'verify_ckb_traineddata.py')
+        # Prefer Python3 in WSL and ensure combine_tessdata is accessible there
+        wsl -d Ubuntu -- bash -lc "cd '$workDirWsl' && python3 '$scriptWsl' --traineddata '$tdWsl' --out output/verify_report.json"; $vcode = $LASTEXITCODE
+        if ($vcode -eq 0) {
+            Write-Host "\nVerification PASSED: all required characters are present." -ForegroundColor Green
+        } elseif ($vcode -eq 2) {
+            Write-Host "\nVerification FAILED: missing required characters. See work/output/verify_report.json" -ForegroundColor Red
+        } else {
+            Write-Host "\nVerification ERROR: environment or tool issue. Check output logs." -ForegroundColor Red
+        }
     }
     default {
         Write-Host "Invalid choice. Exiting." -ForegroundColor Red

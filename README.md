@@ -53,3 +53,26 @@ wsl -d Ubuntu -- bash -c "bash /mnt/c/tesseract/work/scripts/quick_test.sh"
 ---
 
 For detailed instructions and troubleshooting, navigate to the `work/` directory.
+
+## ✅ Verify Kurdish character coverage
+
+After training or copying a `ckb.traineddata`, you can verify that it includes all Kurdish Arabic-based letters and Arabic‑Indic digits.
+
+- From PowerShell, run the launcher and choose the verify option:
+
+```powershell
+./run_training.ps1
+# Choose: 7. Verify ckb.traineddata covers Kurdish chars
+```
+
+- Or run the verifier directly inside WSL from the `work` folder:
+
+```bash
+python3 work/verify_ckb_traineddata.py --traineddata /mnt/c/tesseract/tessdata/ckb.traineddata --out work/output/verify_report.json
+```
+
+The script unpacks the traineddata using `combine_tessdata -u`, reads the `.unicharset`, and checks coverage. It returns:
+
+- 0 if all required characters are present
+- 2 if any characters are missing
+- 1 on environment/tool errors
