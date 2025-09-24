@@ -1,0 +1,160 @@
+# Kurdish characters and their Unicode equivalents
+
+> Note: No functional scripts rely on this file path. If you referenced the old location, update your links to `docs/kurdish_characters.md`.
+
+---
+
+Kurdish characters and their Unicode equivalents.
+
+### **Arabic-based Kurdish Script**
+
+**Characters**
+
+- **ئ**: U+0626 ARABIC LETTER YEH WITH HAMZA ABOVE
+- **ا**: U+0627 ARABIC LETTER ALEF
+- **ب**: U+0628 ARABIC LETTER BEH
+- **پ**: U+067e ARABIC LETTER PEH
+- **ت**: U+062a ARABIC LETTER TEH
+- **ج**: U+062c ARABIC LETTER JEEM
+- **چ**: U+0686 ARABIC LETTER TCHEH
+- **ح**: U+062d ARABIC LETTER HAH
+- **خ**: U+062e ARABIC LETTER KHAH
+- **د**: U+062f ARABIC LETTER DAL
+- **ر**: U+0631 ARABIC LETTER REH
+- **ڕ**: U+0695 ARABIC LETTER REH WITH SMALL V BELOW
+- **ز**: U+0632 ARABIC LETTER ZAIN
+- **ژ**: U+0698 ARABIC LETTER JEH
+- **س**: U+0633 ARABIC LETTER SEEN
+- **ش**: U+0634 ARABIC LETTER SHEEN
+- **ع**: U+0639 ARABIC LETTER AIN
+- **غ**: U+063a ARABIC LETTER GHAIN
+- **ف**: U+0641 ARABIC LETTER FEH
+- **ڤ**: U+06a4 ARABIC LETTER VEH
+- **ق**: U+0642 ARABIC LETTER QAF
+- **ک**: U+06a9 ARABIC LETTER KEHEH
+- **گ**: U+06af ARABIC LETTER GAF
+- **ل**: U+0644 ARABIC LETTER LAM
+- **ڵ**: U+06b5 ARABIC LETTER LAM WITH SMALL V
+- **م**: U+0645 ARABIC LETTER MEEM
+- **ن**: U+0646 ARABIC LETTER NOON
+- **ه**: U+0647 ARABIC LETTER HEH
+- **ە**: U+06d5 ARABIC LETTER AE
+- **و**: U+0648 ARABIC LETTER WAW
+- **ۆ**: U+06c6 ARABIC LETTER OE
+- **وو**: U+0648 ARABIC LETTER WAW (X2). A dedicated Unicode for the vowel version has not been defined.
+- **ی**: U+06cc ARABIC LETTER FARSI YEH
+- **ێ**: U+06ce ARABIC LETTER YEH WITH SMALL V
+- **و**: A consonant version of this letter has not been defined yet; it should have the same shape but a different Unicode.
+- **ی**: A consonant version of this letter has not been defined yet; it should have the same shape but a different Unicode.
+- **بزرۆکە**: Known as "Bizroke," this is not written in the Arabic-based Kurdish writing system.
+
+**Digits**
+
+- **٠**: U+0660 ARABIC-INDIC DIGIT ZERO
+- **١**: U+0661 ARABIC-INDIC DIGIT ONE
+- **٢**: U+0662 ARABIC-INDIC DIGIT TWO
+- **٣**: U+0663 ARABIC-INDIC DIGIT THREE
+- **٤**: U+0664 ARABIC-INDIC DIGIT FOUR
+- **٥**: U+0665 ARABIC-INDIC DIGIT FIVE
+- **٦**: U+0666 ARABIC-INDIC DIGIT SIX
+- **٧**: U+0667 ARABIC-INDIC DIGIT SEVEN
+- **٨**: U+0668 ARABIC-INDIC DIGIT EIGHT
+- **٩**: U+0669 ARABIC-INDIC DIGIT NINE
+
+---
+
+### **Latin-based Kurdish Script**
+
+**Characters**
+
+- **A**: U+0041 LATIN CAPITAL LETTER A
+- **B**: U+0042 LATIN CAPITAL LETTER B
+- **C**: U+0043 LATIN CAPITAL LETTER C
+- **Ç**: U+00c7 LATIN CAPITAL LETTER C WITH CEDILLA
+- **D**: U+0044 LATIN CAPITAL LETTER D
+- **E**: U+0045 LATIN CAPITAL LETTER E
+- **Ê**: U+00ca LATIN CAPITAL LETTER E WITH CIRCUMFLEX
+- **F**: U+0046 LATIN CAPITAL LETTER F
+- **G**: U+0047 LATIN CAPITAL LETTER G
+- **H**: U+0048 LATIN CAPITAL LETTER H
+- **I**: U+0049 LATIN CAPITAL LETTER I
+- **Î**: U+00ce LATIN CAPITAL LETTER I WITH CIRCUMFLEX
+- **J**: U+004a LATIN CAPITAL LETTER J
+- **K**: U+004b LATIN CAPITAL LETTER K
+- **L**: U+004c LATIN CAPITAL LETTER L
+- **M**: U+004d LATIN CAPITAL LETTER M
+- **N**: U+004e LATIN CAPITAL LETTER N
+- **O**: U+004f LATIN CAPITAL LETTER O
+- **P**: U+0050 LATIN CAPITAL LETTER P
+- **Q**: U+0051 LATIN CAPITAL LETTER Q
+- **R**: U+0052 LATIN CAPITAL LETTER R
+- **S**: U+0053 LATIN CAPITAL LETTER S
+- **Ş**: U+015e LATIN CAPITAL LETTER S WITH CEDILLA
+- **T**: U+0054 LATIN CAPITAL LETTER T
+- **U**: U+0055 LATIN CAPITAL LETTER U
+- **Û**: U+00db LATIN CAPITAL LETTER U WITH CIRCUMFLEX
+- **V**: U+0056 LATIN CAPITAL LETTER V
+- **W**: U+0057 LATIN CAPITAL LETTER W
+- **X**: U+0058 LATIN CAPITAL LETTER X
+- **Y**: U+0059 LATIN CAPITAL LETTER Y
+- **Z**: U+005a LATIN CAPITAL LETTER Z
+
+**Special/Undefined Latin-based Characters:**
+
+- **Ĥ**: This letter needs to be defined as an equivalent for the Arabic character (ح).
+- **RR**: A unique character for this does not yet exist and should have the shape (R̂). It can be represented by combining `U+0052` (R) and `U+0302` (COMBINING CIRCUMFLEX ACCENT). The document notes a temporary allocation of `Ŕ` (U+0154) / `ŕ` (U+0155) to prevent the misuse of "RR/rr".
+- **LL**: A unique character for this does not yet exist and should have the shape (L̂). It can be represented by combining `U+004c` (L) and `U+0302` (COMBINING CIRCUMFLEX ACCENT). The document notes a temporary allocation of `Ĺ` (U+0139) / `ĺ` (U+013A) to prevent the misuse of "LL/ll".
+- **XX**: A unique character for this does not yet exist and should have the shape (X̂). It can be represented by combining `U+0058` (X) and `U+0302` (COMBINING CIRCUMFLEX ACCENT). The document notes a temporary allocation of `Ẍ` (U+1E8C) / `ẍ` (U+1E8D) to prevent the misuse of "XX/xx".
+- **ع**: No letter, shape, or Unicode has been defined for this character. An apostrophe-like symbol `‘` is currently used.
+- **ئ**: No letter, shape, or Unicode has been defined for this character, and it has been removed from Latin-based Kurdish.
+
+**Digits**
+The digits are the same as in English.
+
+- **0**: U+0030 DIGIT ZERO
+- **1**: U+0031 DIGIT ONE
+- **2**: U+0032 DIGIT TWO
+- **3**: U+0033 DIGIT THREE
+- **4**: U+0034 DIGIT FOUR
+- **5**: U+0035 DIGIT FIVE
+- **6**: U+0036 DIGIT SIX
+- **7**: U+0037 DIGIT SEVEN
+- **8**: U+0038 DIGIT EIGHT
+- **9**: U+0039 DIGIT NINE
+
+---
+
+### **Related Scripts**
+
+**Arabic-based Persian Digits**
+These have completely different Unicode codes from Arabic-based Kurdish digits. While some shapes are the same (٠١٢٣٧٨٩), others are different in both shape and Unicode code (۴۵۶).
+
+- **۰**: U+06f0 EXTENDED ARABIC-INDIC DIGIT ZERO
+- **۱**: U+06f1 EXTENDED ARABIC-INDIC DIGIT ONE
+- **۲**: U+06f2 EXTENDED ARABIC-INDIC DIGIT TWO
+- **۳**: U+06f3 EXTENDED ARABIC-INDIC DIGIT THREE
+- **۴**: U+06f4 EXTENDED ARABIC-INDIC DIGIT FOUR
+- **۵**: U+06f5 EXTENDED ARABIC-INDIC DIGIT FIVE
+- **۶**: U+06f6 EXTENDED ARABIC-INDIC DIGIT SIX
+- **۷**: U+06f7 EXTENDED ARABIC-INDIC DIGIT SEVEN
+- **۸**: U+06f8 EXTENDED ARABIC-INDIC DIGIT EIGHT
+- **۹**: U+06f9 EXTENDED ARABIC-INDIC DIGIT NINE
+
+**Extra Arabic Characters**
+These characters are not used in Arabic-based Kurdish but are used in Arabic-based Persian.
+
+- **ص**: U+0635 ARABIC LETTER SAD
+- **ض**: U+0636 ARABIC LETTER DAD
+- **ط**: U+0637 ARABIC LETTER TAH
+- **ظ**: U+0638 ARABIC LETTER ZAH
+- **ذ**: U+0630 ARABIC LETTER THAL
+- **ي**: U+064a ARABIC LETTER YEH
+- **ة**: U+0629 ARABIC LETTER TEH MARBUTA
+- **ث**: U+062b ARABIC LETTER THEH
+- **ؤ**: U+0624 ARABIC LETTER WAW WITH HAMZA ABOVE
+- **أ**: U+0623 ARABIC LETTER ALEF WITH HAMZA ABOVE
+- **إ**: U+0625 ARABIC LETTER ALEF WITH HAMZA BELOW
+- **آ**: U+0622 ARABIC LETTER ALEF WITH MADDA ABOVE
+- **ك**: U+0643 ARABIC LETTER KAF
+- **ۀ**: U+06c0 ARABIC LETTER HEH WITH YEH ABOVE
+- **ى**: U+0649 ARABIC LETTER ALEF MAKSURA

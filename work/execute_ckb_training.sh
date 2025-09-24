@@ -84,18 +84,55 @@ fi
 echo "Using lstm.train config: $CONFIG_LSTM"
 
 # Script assets dir (Arabic/Latin/Common.unicharset + radical-stroke.txt)
-SCRIPT_DIR="$WORK_DIR/training_output/tmp/script"
-mkdir -p "$SCRIPT_DIR/ckb"
-fetch_asset() { # $1 url
-  local dst="$1"; local url="$2"
-  if [ ! -s "$dst" ]; then curl -fsSL -o "$dst" "$url" 2>/dev/null || return 1; fi
-}
-fetch_asset "$SCRIPT_DIR/radical-stroke.txt" "https://raw.githubusercontent.com/tesseract-ocr/langdata_lstm/main/radical-stroke.txt" || \
-fetch_asset "$SCRIPT_DIR/radical-stroke.txt" "https://github.com/tesseract-ocr/langdata_lstm/raw/main/radical-stroke.txt" || true
-for s in Arabic Latin Common; do
-  fetch_asset "$SCRIPT_DIR/${s}.unicharset" "https://raw.githubusercontent.com/tesseract-ocr/langdata_lstm/main/script/${s}.unicharset" || \
-  fetch_asset "$SCRIPT_DIR/${s}.unicharset" "https://github.com/tesseract-ocr/langdata_lstm/raw/main/script/${s}.unicharset" || true
-done
+# Prefer pre-populated local assets under work/charsets if present, else download into tmp/script
+DEFAULT_SCRIPT_DIR="$WORK_DIR/training_output/tmp/script"
+LOCAL_CHARSETS_DIR="$WORK_DIR/charsets"
+
+use_local_charsets=0
+if [ -d "$LOCAL_CHARSETS_DIR" ] \
+   && [ -s "$LOCAL_CHARSETS_DIR/Arabic.unicharset" ] \
+   && [ -s "$LOCAL_CHARSETS_DIR/Latin.unicharset" ] \
+   && [ -s "$LOCAL_CHARSETS_DIR/Common.unicharset" ]; then
+  SCRIPT_DIR="$LOCAL_CHARSETS_DIR"
+  use_local_charsets=1
+else
+  SCRIPT_DIR="$DEFAULT_SCRIPT_DIR"
+  mkdir -p "$SCRIPT_DIR/ckb"
+  fetch_asset() { # $1 dst, $2 url
+    local dst="$1"; local url="$2"
+    if [ ! -s "$dst" ]; then curl -fsSL -o "$dst" "$url" 2>/dev/null || return 1; fi
+  }
+  # Try langdata first, then fall back to langdata_lstm
+  fetch_asset "$SCRIPT_DIR/radical-stroke.txt" "https://raw.githubusercontent.com/tesseract-ocr/langdata/main/radical-stroke.txt" || \
+  fetch_asset "$SCRIPT_DIR/radical-stroke.txt" "https://raw.githubusercontent.com/tesseract-ocr/langdata/refs/heads/main/radical-stroke.txt" || \
+  fetch_asset "$SCRIPT_DIR/radical-stroke.txt" "https://github.com/tesseract-ocr/langdata/raw/main/radical-stroke.txt" || \
+  fetch_asset "$SCRIPT_DIR/radical-stroke.txt" "https://raw.githubusercontent.com/tesseract-ocr/langdata_lstm/main/radical-stroke.txt" || \
+  fetch_asset "$SCRIPT_DIR/radical-stroke.txt" "https://github.com/tesseract-ocr/langdata_lstm/raw/main/radical-stroke.txt" || true
+  for s in Arabic Latin Common; do
+    # Prefer top-level files in langdata
+    fetch_asset "$SCRIPT_DIR/${s}.unicharset" "https://raw.githubusercontent.com/tesseract-ocr/langdata/main/${s}.unicharset" || \
+    fetch_asset "$SCRIPT_DIR/${s}.unicharset" "https://raw.githubusercontent.com/tesseract-ocr/langdata/refs/heads/main/${s}.unicharset" || \
+    fetch_asset "$SCRIPT_DIR/${s}.unicharset" "https://github.com/tesseract-ocr/langdata/raw/main/${s}.unicharset" || \
+    fetch_asset "$SCRIPT_DIR/${s}.unicharset" "https://cdn.jsdelivr.net/gh/tesseract-ocr/langdata@main/${s}.unicharset" || \
+    # Legacy locations for compatibility
+    fetch_asset "$SCRIPT_DIR/${s}.unicharset" "https://raw.githubusercontent.com/tesseract-ocr/langdata/main/script/${s}.unicharset" || \
+    fetch_asset "$SCRIPT_DIR/${s}.unicharset" "https://github.com/tesseract-ocr/langdata/raw/main/script/${s}.unicharset" || \
+    fetch_asset "$SCRIPT_DIR/${s}.unicharset" "https://raw.githubusercontent.com/tesseract-ocr/langdata_lstm/main/script/${s}.unicharset" || \
+    fetch_asset "$SCRIPT_DIR/${s}.unicharset" "https://github.com/tesseract-ocr/langdata_lstm/raw/main/script/${s}.unicharset" || true
+  done
+  # Seed local charsets for future runs (optional cache)
+  mkdir -p "$LOCAL_CHARSETS_DIR" || true
+  for s in Arabic Latin Common; do
+    if [ -s "$SCRIPT_DIR/${s}.unicharset" ]; then
+      cp -f "$SCRIPT_DIR/${s}.unicharset" "$LOCAL_CHARSETS_DIR/" 2>/dev/null || true
+    fi
+  done
+  if [ -s "$SCRIPT_DIR/radical-stroke.txt" ]; then
+    cp -f "$SCRIPT_DIR/radical-stroke.txt" "$LOCAL_CHARSETS_DIR/" 2>/dev/null || true
+  fi
+  echo "Seeded local charsets at: $LOCAL_CHARSETS_DIR (if downloads succeeded)"
+fi
+echo "Using script assets from: $SCRIPT_DIR (local=$use_local_charsets)"
 
 # Prefer best tessdata for base models
 export TESSDATA_PREFIX="$WIN_TESSDATA_BEST"

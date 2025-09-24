@@ -4,10 +4,18 @@
 
 ```
 tesseract/
-├── README.md             # This file
-├── run_training.ps1      # Windows/WSL launcher
-├── tessdata/             # Trained OCR models (ckb.traineddata will be installed here)
-└── work/                 # Training system (runs inside WSL Ubuntu)
+├── README.md              # Overview and quick start
+├── .editorconfig          # Consistent line endings (LF for WSL scripts, CRLF for PowerShell)
+├── .gitattributes         # Normalize endings, mark binaries
+├── .gitignore             # Ignore generated artifacts
+├── run_training.ps1       # Windows/WSL launcher
+├── fonts.conf             # Fontconfig override (used by generation)
+├── tessdata/              # Trained models (ckb.traineddata installed here)
+├── tessdata_best/         # Optional: upstream best models
+├── docs/                  # Documentation (moved references here)
+│   ├── README.md
+│   └── kurdish_characters.md
+└── work/                  # Training system (runs inside WSL Ubuntu)
     ├── generate_ckb_training_data.sh
     ├── execute_ckb_training.sh
     ├── verify_ckb_traineddata.py
@@ -35,6 +43,8 @@ All training functionality is in the `work/` directory.
 
 ## 📚 Documentation
 
+- Docs now live under `docs/`.
+- Kurdish characters reference moved to `docs/kurdish_characters.md`.
 - Training scripts live under `work/`. Use the launcher for common tasks.
 
 ## ✅ Latest Training Results

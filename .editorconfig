@@ -1,0 +1,21 @@
+root = true
+
+# Default settings
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Shell/Python/Docs use LF for WSL compatibility
+[*.sh]
+end_of_line = lf
+
+[*.py]
+end_of_line = lf
+
+[*.{md,json,conf,txt}]
+end_of_line = lf
+
+# PowerShell on Windows
+[*.ps1]
+end_of_line = crlf

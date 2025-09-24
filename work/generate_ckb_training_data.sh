@@ -28,9 +28,17 @@ OUTPUT_DIR="${OUTPUT_DIR_OVERRIDE:-$OUTPUT_DIR_DEFAULT}"
 GROUND_TRUTH_DIR="$OUTPUT_DIR/ground_truth"
 TMP_DIR="$OUTPUT_DIR/tmp"
 
-# Prefer repo fontconfig to ensure local fonts are used
+# Prefer repo fontconfig (root) to ensure local fonts are used; fallback to work/fonts.conf if needed.
+# Note: Script charset files (Arabic/Latin/Common) come from tesseract-ocr/langdata (with fallback to langdata_lstm).
 if [ -f "/mnt/c/tesseract/fonts.conf" ]; then
-  export FONTCONFIG_FILE="/mnt/c/tesseract/fonts.conf"
+    export FONTCONFIG_FILE="/mnt/c/tesseract/fonts.conf"
+elif [ -f "$WORK_DIR/fonts.conf" ]; then
+    export FONTCONFIG_FILE="$WORK_DIR/fonts.conf"
+fi
+if [ -n "${FONTCONFIG_FILE:-}" ]; then
+    echo "Using FONTCONFIG_FILE=$FONTCONFIG_FILE"
+else
+    echo "Warning: fonts.conf not found; relying on system fontconfig"
 fi
 
 # Create directories

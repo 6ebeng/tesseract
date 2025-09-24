@@ -149,9 +149,9 @@ if [ "${DEEP:-0}" = "1" ]; then
   set -e
 fi
 
-# Remove markdown documentation files in work directory
-echo "Removing markdown files..."
-find . -maxdepth 1 -type f -name "*.md" -print -exec rm -f {} \; 2>/dev/null || true
+# Keep Markdown docs (README.md etc.) in work directory; only remove obvious test/backup md
+echo "Skipping deletion of Markdown docs (keeping README.md). Removing only test/backup md..."
+find . -maxdepth 1 -type f \( -name "*test*.md" -o -name "*backup*.md" -o -name "*.md.tmp" -o -name "*.md.backup" \) -print -exec rm -f {} \; 2>/dev/null || true
 
 echo "✅ Cleanup complete"
 exit 0
