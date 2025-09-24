@@ -4,45 +4,42 @@
 
 ```
 tesseract/
-├── README.md           # This file
-├── tessdata/          # Trained OCR models
-│   └── ckb.traineddata   # Kurdish model
-└── work/              # Training system
-    ├── scripts/       # All training scripts
-    ├── test-images/   # Test data
-    ├── docs/          # Documentation
-    └── README.md      # Detailed documentation
+├── README.md             # This file
+├── run_training.ps1      # Windows/WSL launcher
+├── tessdata/             # Trained OCR models (ckb.traineddata will be installed here)
+└── work/                 # Training system (runs inside WSL Ubuntu)
+    ├── generate_ckb_training_data.sh
+    ├── execute_ckb_training.sh
+    ├── verify_ckb_traineddata.py
+    ├── corpus/ckb.training_text
+    └── fonts/ (TTF files used for synthetic data)
 ```
 
 ## 🚀 Quick Start
 
 All training functionality is in the `work/` directory.
 
-### Run the Master Training Script
+### Run the training flow (PowerShell → WSL)
 
-```bash
-# From PowerShell
-wsl -d Ubuntu -- bash -c "cd /mnt/c/tesseract/work/scripts && bash master_training.sh"
+```powershell
+# From the repo root on Windows
+./run_training.ps1 -Mode GenerateTrain
 ```
 
 ### Quick Test
 
-```bash
-# From PowerShell
-wsl -d Ubuntu -- bash -c "bash /mnt/c/tesseract/work/scripts/quick_test.sh"
+```powershell
+# Quick smoke test (optionally after training)
+./run_training.ps1 -Mode SmokeTest
 ```
 
 ## 📚 Documentation
 
-- **Detailed Setup**: See [work/README.md](work/README.md)
-- **Quick Reference**: See [work/QUICK_START_GUIDE.md](work/QUICK_START_GUIDE.md)
-- **Training Report**: See [work/docs/FINAL_TRAINING_REPORT.md](work/docs/FINAL_TRAINING_REPORT.md)
+- Training scripts live under `work/`. Use the launcher for common tasks.
 
 ## ✅ Latest Training Results
 
-- **Error Rate**: Reduced from 54.864% to 7.314% (86.7% improvement)
-- **Iterations**: 5000 completed
-- **Model**: Kurdish (ckb) OCR model trained and installed
+Add your latest results here after running your experiments.
 
 ## 🛠️ Requirements
 
@@ -58,11 +55,14 @@ For detailed instructions and troubleshooting, navigate to the `work/` directory
 
 After training or copying a `ckb.traineddata`, you can verify that it includes all Kurdish Arabic-based letters and Arabic‑Indic digits.
 
-- From PowerShell, run the launcher and choose the verify option:
+- From PowerShell, run the launcher and choose the verify option or run non-interactively:
 
 ```powershell
 ./run_training.ps1
-# Choose: 7. Verify ckb.traineddata covers Kurdish chars
+# then choose: 5. Verify ckb.traineddata covers Kurdish chars
+
+# Non-interactive:
+./run_training.ps1 -Mode SmokeTest
 ```
 
 - Or run the verifier directly inside WSL from the `work` folder:

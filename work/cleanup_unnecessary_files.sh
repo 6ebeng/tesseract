@@ -123,22 +123,30 @@ rm -f final_training_summary.sh || true
 # Deep cleanup removes heavy generated directories
 if [ "${DEEP:-0}" = "1" ]; then
   echo "Removing heavy generated directories (DEEP)..."
-  rm -rf training_output || true
-  rm -rf final_model || true
-  rm -rf enhanced_training || true
-  rm -rf ckb_clean_build || true
-  rm -rf ground-truth-auto || true
-  rm -rf ground-truth-robust || true
-  rm -rf ground-truth-corpus || true
-  rm -rf ground-truth-robust.old.* || true
-  rm -rf ground-truth-final.old.* || true
-  rm -rf ground-truth-workaround.old.* || true
-  rm -rf tessdata_tmp.* || true
+  # Temporarily disable immediate exit on errors to avoid noisy failures on missing/locked paths
+  set +e
+  rm -rf training_output 2>/dev/null || true
+  rm -rf final_model 2>/dev/null || true
+  rm -rf enhanced_training 2>/dev/null || true
+  rm -rf ckb_clean_build 2>/dev/null || true
+  rm -rf ground-truth-auto 2>/dev/null || true
+  rm -rf ground-truth-robust 2>/dev/null || true
+  rm -rf ground-truth-corpus 2>/dev/null || true
+  rm -rf ground-truth-robust.old.* 2>/dev/null || true
+  rm -rf ground-truth-final.old.* 2>/dev/null || true
+  rm -rf ground-truth-workaround.old.* 2>/dev/null || true
+  rm -rf tessdata_tmp.* 2>/dev/null || true
+  # Clean up stray directories with odd suffixes (e.g., training_output\uf00d)
+  find . -maxdepth 1 -type d -name 'training_output*' ! -name 'training_output' -exec rm -rf -- {} + 2>/dev/null || true
 
   # Also remove generic TIFF/BOX in specific generated folders if they exist
   for d in output ocr-test syntax-test; do
-    [ -d "$d" ] && find "$d" -type f \( -name "*.tif" -o -name "*.box" -o -name "*.txt" \) -delete 2>/dev/null || true
+    if [ -d "$d" ]; then
+      find "$d" -type f \( -name "*.tif" -o -name "*.box" -o -name "*.txt" \) -delete 2>/dev/null || true
+    fi
   done
+  # Re-enable error exit for the remainder of the script
+  set -e
 fi
 
 # Remove markdown documentation files in work directory
@@ -146,3 +154,4 @@ echo "Removing markdown files..."
 find . -maxdepth 1 -type f -name "*.md" -print -exec rm -f {} \; 2>/dev/null || true
 
 echo "✅ Cleanup complete"
+exit 0

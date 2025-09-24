@@ -77,7 +77,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description='Verify ckb.traineddata unicharset covers Kurdish Arabic-based characters and digits')
     ap.add_argument('--traineddata', '-t', default=None, help='Path to ckb.traineddata (default: auto-detect common locations)')
     ap.add_argument('--out', default=os.path.join('output', 'verify_report.json'), help='Path to write JSON report')
-    ap.add_argument('--include-digits', action='store_true', default=True, help='Also verify Arabic-Indic digits (default: true)')
+    ap.add_argument('--no-digits', action='store_true', help='Do not verify Arabic-Indic digits (digits are verified by default)')
     args = ap.parse_args()
 
     # Resolve traineddata path
@@ -133,7 +133,8 @@ def main() -> int:
     present = parse_unicharset(unicharset_path)
 
     required = set(REQUIRED_KURDISH_ARABIC_LETTERS)
-    if args.include_digits:
+    include_digits = not args.no_digits
+    if include_digits:
         required.update(REQUIRED_ARABIC_INDIC_DIGITS)
 
     missing = sorted(ch for ch in required if ch not in present)
@@ -145,7 +146,7 @@ def main() -> int:
     print('====================')
     print(f"Total present in model: {len(present)}")
     print(f"Required Kurdish chars: {len(REQUIRED_KURDISH_ARABIC_LETTERS)}")
-    print(f"Required digits:        {len(REQUIRED_ARABIC_INDIC_DIGITS)} (included={args.include_digits})")
+    print(f"Required digits:        {len(REQUIRED_ARABIC_INDIC_DIGITS)} (included={include_digits})")
 
     if missing:
         print(f"\nMissing required characters ({len(missing)}):")
@@ -162,7 +163,7 @@ def main() -> int:
         'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'present_count': len(present),
         'required_letters': REQUIRED_KURDISH_ARABIC_LETTERS,
-        'required_digits': REQUIRED_ARABIC_INDIC_DIGITS if args.include_digits else [],
+    'required_digits': REQUIRED_ARABIC_INDIC_DIGITS if include_digits else [],
         'missing': missing,
         'ok': len(missing) == 0,
     }

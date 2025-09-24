@@ -88,7 +88,7 @@ SCRIPT_DIR="$WORK_DIR/training_output/tmp/script"
 mkdir -p "$SCRIPT_DIR/ckb"
 fetch_asset() { # $1 url
   local dst="$1"; local url="$2"
-  if [ ! -s "$dst" ]; then curl -fsSL -o "$dst" "$url" || return 1; fi
+  if [ ! -s "$dst" ]; then curl -fsSL -o "$dst" "$url" 2>/dev/null || return 1; fi
 }
 fetch_asset "$SCRIPT_DIR/radical-stroke.txt" "https://raw.githubusercontent.com/tesseract-ocr/langdata_lstm/main/radical-stroke.txt" || \
 fetch_asset "$SCRIPT_DIR/radical-stroke.txt" "https://github.com/tesseract-ocr/langdata_lstm/raw/main/radical-stroke.txt" || true
@@ -107,31 +107,22 @@ echo "📦 Ensuring base models (fas, ara) are available..."
 for lang in fas ara; do
   # 1) Prefer tessdata_best
   if [ ! -f "$WIN_TESSDATA_BEST/${lang}.traineddata" ] && [ ! -f "$TESSDATA_BEST_DIR/${lang}.traineddata" ]; then
-    curl -fsSL -o "$WIN_TESSDATA_BEST/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/main/${lang}.traineddata" \
-      || curl -fsSL -o "$WIN_TESSDATA_BEST/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata_best/raw/main/${lang}.traineddata" \
-      || true
+    curl -fsSL -o "$WIN_TESSDATA_BEST/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/main/${lang}.traineddata" 2>/dev/null \
+      || curl -fsSL -o "$WIN_TESSDATA_BEST/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata_best/raw/main/${lang}.traineddata" 2>/dev/null || true
   fi
   # 2) If best not available, try tessdata_fast
   if [ ! -s "$WIN_TESSDATA_BEST/${lang}.traineddata" ] && [ ! -f "$TESSDATA_BEST_DIR/${lang}.traineddata" ]; then
-    curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/${lang}.traineddata" \
-      || curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata_fast/raw/main/${lang}.traineddata" \
-      || true
+    curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/${lang}.traineddata" 2>/dev/null \
+      || curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata_fast/raw/main/${lang}.traineddata" 2>/dev/null || true
   fi
-  # 3) As an additional fallback (per user’s earlier request), try tessdata repo for fas; ara may 404 here, but attempt anyway
-  if [ ! -s "$WIN_TESSDATA/${lang}.traineddata" ] && [ ! -s "$WIN_TESSDATA_BEST/${lang}.traineddata" ] \
-     && [ ! -f "$TESSDATA_BEST_DIR/${lang}.traineddata" ] && [ ! -f "$TESSDATA_FAST_DIR/${lang}.traineddata" ]; then
-    if [ "$lang" = "fas" ]; then
-        curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata/refs/heads/main/${lang}.traineddata" \
-          || curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata/raw/refs/heads/main/${lang}.traineddata" \
-          || curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/${lang}.traineddata" \
-          || curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata/raw/main/${lang}.traineddata" || true
-    else
-      # Try the refs/heads/main path first (as requested), then fallback to main
-      curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata/refs/heads/main/${lang}.traineddata" \
-        || curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata/raw/refs/heads/main/${lang}.traineddata" \
-        || curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/${lang}.traineddata" \
-        || curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata/raw/main/${lang}.traineddata" || true
-    fi
+  # 3) Additional fallback: only for 'fas', pull from tessdata (avoid known 404s for 'ara')
+  if [ "$lang" = "fas" ] \
+     && [ ! -s "$WIN_TESSDATA/${lang}.traineddata" ] \
+     && [ ! -s "$WIN_TESSDATA_BEST/${lang}.traineddata" ] \
+     && [ ! -f "$TESSDATA_BEST_DIR/${lang}.traineddata" ] \
+     && [ ! -f "$TESSDATA_FAST_DIR/${lang}.traineddata" ]; then
+    curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/${lang}.traineddata" 2>/dev/null \
+      || curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata/raw/main/${lang}.traineddata" 2>/dev/null || true
   fi
   # 4) Final fallback: try installing via apt to get system models
   if [ ! -f "$WIN_TESSDATA_BEST/${lang}.traineddata" ] && [ ! -f "$TESSDATA_BEST_DIR/${lang}.traineddata" ] \
@@ -191,9 +182,24 @@ done < <(find "$GT_DIR" -maxdepth 1 -type f -name '*.tif' -print0)
 echo "✅ Generated $LSTMF_COUNT .lstmf files"
 
 echo "🗂️  Preparing listfiles..."
-cd "$TMP_DIR"; ls *.lstmf > list.all
+cd "$TMP_DIR"
+# Create list of files and shuffle to avoid font-bias in train/eval split
+ls *.lstmf > list.all
+if command -v shuf >/dev/null 2>&1; then
+  shuf list.all -o list.all
+else
+  # Busybox/alternative fallback
+  sort -R list.all -o list.all 2>/dev/null || cat list.all > list.all
+fi
 TOTAL=$(wc -l < list.all | tr -d ' ')
-if [ "$TOTAL" -le 1 ]; then cp list.all list.train; cp list.all list.eval; else TRAIN_COUNT=$(( (TOTAL*9 + 9)/10 )); head -n "$TRAIN_COUNT" list.all > list.train; tail -n +$((TRAIN_COUNT+1)) list.all > list.eval; fi
+if [ "$TOTAL" -le 1 ]; then
+  cp list.all list.train
+  cp list.all list.eval
+else
+  TRAIN_COUNT=$(( (TOTAL*9 + 9)/10 ))
+  head -n "$TRAIN_COUNT" list.all > list.train
+  tail -n +$((TRAIN_COUNT+1)) list.all > list.eval
+fi
 
 ensure_target_traineddata() {
   # Choose or build a ckb traineddata to provide unicharset/recoder
@@ -290,33 +296,53 @@ for START_BASE in "${BASE_LANGS[@]}"; do
   if [ -f "$OUT_DIR/${LANG}_from_${START_BASE}.traineddata" ]; then echo "✅ Created: $OUT_DIR/${LANG}_from_${START_BASE}.traineddata"; fi
 done
 
-# Install preferred: compare BCER from checkpoint filenames if available
-choose_best_model() {
-  local fas_ckpt ara_ckpt fas_err ara_err
-  fas_ckpt=$(ls -t "$OUT_DIR/ckb_from_fas_"*_*.checkpoint 2>/dev/null | head -1 || true)
-  ara_ckpt=$(ls -t "$OUT_DIR/ckb_from_ara_"*_*.checkpoint 2>/dev/null | head -1 || true)
-  if [ -n "$fas_ckpt" ]; then fas_err=$(echo "$fas_ckpt" | sed -E 's/.*_([0-9]+\.[0-9]+)_.*/\1/'); fi
-  if [ -n "$ara_ckpt" ]; then ara_err=$(echo "$ara_ckpt" | sed -E 's/.*_([0-9]+\.[0-9]+)_.*/\1/'); fi
-  # If both errors available, choose lower
-  if [ -n "${fas_err:-}" ] && [ -n "${ara_err:-}" ]; then
-    awk "BEGIN{exit !($fas_err < $ara_err)}" && echo "$OUT_DIR/${LANG}_from_fas.traineddata" && return 0 || true
-    echo "$OUT_DIR/${LANG}_from_ara.traineddata"; return 0
+# Evaluate models using lstmeval if available and install the better one
+eval_checkpoint_cer() {
+  # $1 checkpoint
+  local ckpt="$1"
+  local cer=""
+  if command -v lstmeval >/dev/null 2>&1; then
+    local logf="$OUT_DIR/eval_$(basename "$ckpt").log"
+    lstmeval --model "$ckpt" --traineddata "$TARGET_TRAINEDDATA" --eval_listfile "$TMP_DIR/list.eval" 2>&1 | tee "$logf" >/dev/null || true
+    cer=$(grep -Eo 'Character Error Rate[:=][[:space:]]*[0-9]*\.[0-9]+' "$logf" | tail -1 | grep -Eo '[0-9]*\.[0-9]+' || true)
   fi
-  # If only one exists, choose it
-  if [ -f "$OUT_DIR/${LANG}_from_fas.traineddata" ] && [ ! -f "$OUT_DIR/${LANG}_from_ara.traineddata" ]; then echo "$OUT_DIR/${LANG}_from_fas.traineddata"; return 0; fi
-  if [ -f "$OUT_DIR/${LANG}_from_ara.traineddata" ] && [ ! -f "$OUT_DIR/${LANG}_from_fas.traineddata" ]; then echo "$OUT_DIR/${LANG}_from_ara.traineddata"; return 0; fi
-  # Fallback: prefer fas then ara
-  if [ -f "$OUT_DIR/${LANG}_from_fas.traineddata" ]; then echo "$OUT_DIR/${LANG}_from_fas.traineddata"; return 0; fi
-  if [ -f "$OUT_DIR/${LANG}_from_ara.traineddata" ]; then echo "$OUT_DIR/${LANG}_from_ara.traineddata"; return 0; fi
+  echo "$cer"
+}
+
+pick_and_install() {
+  local fas_td="$OUT_DIR/${LANG}_from_fas.traineddata"
+  local ara_td="$OUT_DIR/${LANG}_from_ara.traineddata"
+  local fas_ckpt="" ara_ckpt="" fas_cer="" ara_cer=""
+
+  fas_ckpt=$(ls -t "$OUT_DIR/${LANG}_from_fas"_checkpoint* 2>/dev/null | head -1 || true)
+  ara_ckpt=$(ls -t "$OUT_DIR/${LANG}_from_ara"_checkpoint* 2>/dev/null | head -1 || true)
+
+  if [ -n "${fas_ckpt:-}" ]; then fas_cer=$(eval_checkpoint_cer "$fas_ckpt" || true); fi
+  if [ -n "${ara_ckpt:-}" ]; then ara_cer=$(eval_checkpoint_cer "$ara_ckpt" || true); fi
+
+  local preferred=""
+  if [ -n "${fas_cer:-}" ] && [ -n "${ara_cer:-}" ]; then
+    if awk "BEGIN{exit !($fas_cer < $ara_cer)}"; then preferred="$fas_td"; else preferred="$ara_td"; fi
+  elif [ -f "$fas_td" ] && [ ! -f "$ara_td" ]; then
+    preferred="$fas_td"
+  elif [ -f "$ara_td" ] && [ ! -f "$fas_td" ]; then
+    preferred="$ara_td"
+  elif [ -f "$fas_td" ]; then
+    preferred="$fas_td"
+  elif [ -f "$ara_td" ]; then
+    preferred="$ara_td"
+  fi
+
+  if [ -n "${preferred:-}" ] && [ -f "$preferred" ]; then
+    cp "$preferred" "$OUT_DIR/$LANG.traineddata" || true
+    cp "$preferred" "$WIN_TESSDATA/ckb.traineddata" || true
+    echo "✅ Installed to C:\\tesseract\\tessdata\\ckb.traineddata"
+    return 0
+  fi
   return 1
 }
 
-PREFERRED="$(choose_best_model || true)"
-if [ -n "$PREFERRED" ] && [ -f "$PREFERRED" ]; then
-  cp "$PREFERRED" "$OUT_DIR/$LANG.traineddata" || true
-  cp "$PREFERRED" "$WIN_TESSDATA/ckb.traineddata" || true
-  echo "✅ Installed to C:\\tesseract\\tessdata\\ckb.traineddata"
-else
+if ! pick_and_install; then
   echo "❌ No trained model finalized"
   exit 1
 fi

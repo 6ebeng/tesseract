@@ -1,6 +1,6 @@
 param(
     [switch]$NoClear,
-    [ValidateSet('Clean','GenerateTrain','Train','SmokeTest')]
+    [ValidateSet('Clean', 'Generate', 'GenerateTrain', 'Train', 'SmokeTest')]
     [string]$Mode = '',
     [switch]$Deep = $false,
     [string]$ImagePath = '',
@@ -51,22 +51,24 @@ function Escape-ShellSingleQuotes([string]$s) {
 # Build env string for training
 function Get-TrainEnvPrefix() {
     $parts = @()
-    if ($MaxIters)       { $parts += "MAX_ITERS='${MaxIters}'" }
-    if ($DebugInterval)  { $parts += "DEBUG_INTERVAL='${DebugInterval}'" }
+    if ($MaxIters) { $parts += "MAX_ITERS='${MaxIters}'" }
+    if ($DebugInterval) { $parts += "DEBUG_INTERVAL='${DebugInterval}'" }
     # Only set OEM/PSM if valid values are explicitly provided
-    if ($OEM -in 1,2,3)  { $parts += "OEM='${OEM}'" }
+    if ($OEM -in 1, 2, 3) { $parts += "OEM='${OEM}'" }
     if ($PSM -ge 3 -and $PSM -le 13) { $parts += "PSM='${PSM}'" }
     # Ensure lstm.train is discoverable in WSL. Allow Windows env override, else default to repo's tessdata/configs.
     try {
         if ($env:LSTM_TRAIN_CONFIG) {
             $parts += "LSTM_TRAIN_CONFIG='$(Escape-ShellSingleQuotes (Convert-ToWslPath $env:LSTM_TRAIN_CONFIG))'"
-        } else {
+        }
+        else {
             $repoCfgWin = Join-Path (Join-Path $projectRootWin 'tessdata') 'configs\lstm.train'
             if (Test-Path $repoCfgWin) {
                 $parts += "LSTM_TRAIN_CONFIG='$(Escape-ShellSingleQuotes (Convert-ToWslPath $repoCfgWin))'"
             }
         }
-    } catch { }
+    }
+    catch { }
     if ($TrainingExtraArgs) {
         $escaped = Escape-ShellSingleQuotes $TrainingExtraArgs
         $parts += "TRAINING_EXTRA_ARGS='${escaped}'"
@@ -77,13 +79,13 @@ function Get-TrainEnvPrefix() {
 # Build env string for generation
 function Get-GenEnvPrefix() {
     $parts = @()
-    if ($CorpusFileOverride)  { $parts += "CORPUS_FILE_OVERRIDE='$(Escape-ShellSingleQuotes (Convert-ToWslPath $CorpusFileOverride))'" }
-    if ($FontsDirOverride)    { $parts += "FONTS_DIR_OVERRIDE='$(Escape-ShellSingleQuotes (Convert-ToWslPath $FontsDirOverride))'" }
-    if ($OutputDirOverride)   { $parts += "OUTPUT_DIR_OVERRIDE='$(Escape-ShellSingleQuotes (Convert-ToWslPath $OutputDirOverride))'" }
-    if ($FontSize)            { $parts += "FONT_SIZE='${FontSize}'" }
-    if ($DPI)                 { $parts += "DPI='${DPI}'" }
-    if ($Margin)              { $parts += "MARGIN='${Margin}'" }
-    if ($Leading)             { $parts += "LEADING='${Leading}'" }
+    if ($CorpusFileOverride) { $parts += "CORPUS_FILE_OVERRIDE='$(Escape-ShellSingleQuotes (Convert-ToWslPath $CorpusFileOverride))'" }
+    if ($FontsDirOverride) { $parts += "FONTS_DIR_OVERRIDE='$(Escape-ShellSingleQuotes (Convert-ToWslPath $FontsDirOverride))'" }
+    if ($OutputDirOverride) { $parts += "OUTPUT_DIR_OVERRIDE='$(Escape-ShellSingleQuotes (Convert-ToWslPath $OutputDirOverride))'" }
+    if ($FontSize) { $parts += "FONT_SIZE='${FontSize}'" }
+    if ($DPI) { $parts += "DPI='${DPI}'" }
+    if ($Margin) { $parts += "MARGIN='${Margin}'" }
+    if ($Leading) { $parts += "LEADING='${Leading}'" }
     if ($parts.Count -gt 0) { return ($parts -join ' ') + ' ' } else { return '' }
 }
 
@@ -116,7 +118,6 @@ function Invoke-GenerateTrain {
     Write-Host "`nGenerating training data..." -ForegroundColor Yellow
     # Normalize line endings (CRLF->LF) to avoid $'\r' errors in WSL
     $genEnv = Get-GenEnvPrefix
-    $trainEnv = Get-TrainEnvPrefix
     wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' generate_ckb_training_data.sh 2>/dev/null || true; sed -i 's/\r$//' execute_ckb_training.sh 2>/dev/null || true"
     wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; chmod +x generate_ckb_training_data.sh; $($genEnv)bash generate_ckb_training_data.sh"; $code = $LASTEXITCODE
     if ($code -ne 0) {
@@ -129,23 +130,72 @@ function Invoke-GenerateTrain {
         }
         if ($tifCount -gt 0 -and $boxCount -gt 0) {
             Write-Host "Generation exited with code $code, but found $tifCount TIF and $boxCount BOX files. Continuing..." -ForegroundColor Yellow
-        } else {
+        }
+        else {
             throw "Data generation failed (exit $code) and no ground-truth was found."
         }
     }
+    # Proceed to training (unattended pipeline)
+    Invoke-Train
+}
+
+# Generate only (no training)
+function Invoke-GenerateOnly {
+    Write-Host "`nGenerating training data (only)..." -ForegroundColor Yellow
+    $genEnv = Get-GenEnvPrefix
+    # Preflight (Windows side)
+    $genScriptWin = Join-Path $workDirWin 'generate_ckb_training_data.sh'
+    if (-not (Test-Path $genScriptWin)) { throw "Missing script: $genScriptWin" }
+    $fontsDirWin = Join-Path $workDirWin 'fonts'
+    if (-not (Test-Path $fontsDirWin)) { Write-Host "Warning: fonts directory not found at $fontsDirWin" -ForegroundColor DarkYellow }
+    $corpusFileWin = Join-Path (Join-Path $workDirWin 'corpus') 'ckb.training_text'
+    if (-not (Test-Path $corpusFileWin)) { Write-Host "Warning: corpus file not found at $corpusFileWin" -ForegroundColor DarkYellow }
+    # Preflight (WSL tools)
+    wsl -d Ubuntu -- bash -lc "command -v text2image >/dev/null 2>&1"; $t2i = $LASTEXITCODE
+    if ($t2i -ne 0) {
+        Write-Host "Error: text2image not found in WSL PATH. Install tesseract-ocr-dev." -ForegroundColor Red
+        Write-Host "Tip (WSL): sudo apt-get update; sudo apt-get install -y tesseract-ocr-dev" -ForegroundColor DarkYellow
+        throw "Missing dependency: text2image"
+    }
+    # Normalize line endings (CRLF->LF) to avoid $'\r' errors in WSL
+    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' generate_ckb_training_data.sh 2>/dev/null || true"
+    # Run generation; keep output visible, but capture exit code
+    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; chmod +x generate_ckb_training_data.sh; $($genEnv)bash generate_ckb_training_data.sh"; $code = $LASTEXITCODE
+    if ($code -ne 0) {
+        # Fallback: check from Windows if ground-truth files exist
+        $gtDirWin = Join-Path $workDirWin 'training_output\ground_truth'
+        $tifCount = 0; $boxCount = 0
+        if (Test-Path $gtDirWin) {
+            $tifCount = (Get-ChildItem -Path $gtDirWin -Filter *.tif -File -ErrorAction SilentlyContinue | Measure-Object).Count
+            $boxCount = (Get-ChildItem -Path $gtDirWin -Filter *.box -File -ErrorAction SilentlyContinue | Measure-Object).Count
+        }
+        if ($tifCount -gt 0 -and $boxCount -gt 0) {
+            Write-Host "Generation exited with code $code, but found $tifCount TIF and $boxCount BOX files. Treating as success..." -ForegroundColor Yellow
+        }
+        else {
+            throw "Data generation failed (exit $code) and no ground-truth was found."
+        }
+    }
+    Write-Host "`nGeneration completed successfully (no training executed)." -ForegroundColor Green
+}
+
+# Train only helper
+function Invoke-Train {
     $trainScriptWin = Join-Path $workDirWin 'execute_ckb_training.sh'
     $trainScriptWsl = Convert-ToWslPath $trainScriptWin
     if (-not (Test-Path $trainScriptWin)) { throw "Training script not found at $trainScriptWin" }
     Write-Host "`nStarting training to build ckb.traineddata..." -ForegroundColor Yellow
-    # Ensure line endings are normalized for the training script as well
+    # Normalize line endings and run training script with env
+    $trainEnv = Get-TrainEnvPrefix
     wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' '$trainScriptWsl' 2>/dev/null || true; chmod +x '$trainScriptWsl'; $($trainEnv)bash '$trainScriptWsl'"; $trainCode = $LASTEXITCODE
     if ($trainCode -ne 0) { throw "Training failed (exit $trainCode)." }
+    Write-Host "`nTraining complete." -ForegroundColor Green
 }
 
 function Get-GroundTruthDir([string]$baseWin) {
     $cands = @(
-        'training_output/ground_truth','ground-truth','ground-truth-robust',
-        'ground-truth-system','ground-truth-final','ground-truth-workaround','ground-truth-corpus'
+        'training_output/ground_truth', 'ground-truth', 'ground-truth-robust',
+        'ground-truth-system', 'ground-truth-final', 'ground-truth-workaround', 'ground-truth-corpus'
     )
     foreach ($rel in $cands) {
         $p = Join-Path $baseWin $rel
@@ -162,8 +212,19 @@ if ($Mode) {
             Write-Host "`nDone." -ForegroundColor Green
             exit 0
         }
+        'Generate' {
+            try {
+                Invoke-GenerateOnly
+                exit 0
+            }
+            catch {
+                Write-Host $_ -ForegroundColor Red
+                exit 1
+            }
+        }
         'GenerateTrain' {
             try {
+                # Unattended pipeline: generate then train
                 Invoke-GenerateTrain
                 Write-Host "`nGeneration + training completed successfully." -ForegroundColor Green
                 exit 0
@@ -174,13 +235,13 @@ if ($Mode) {
             }
         }
         'Train' {
-            $trainScriptWin = Join-Path $workDirWin 'execute_ckb_training.sh'
-            $trainScriptWsl = Convert-ToWslPath $trainScriptWin
-            if (-not (Test-Path $trainScriptWin)) { Write-Host "Training script not found at $trainScriptWin" -ForegroundColor Red; exit 1 }
-            $trainEnv = Get-TrainEnvPrefix
-            wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' '$trainScriptWsl' 2>/dev/null || true; chmod +x '$trainScriptWsl'; $($trainEnv)bash '$trainScriptWsl'"; $trainCode = $LASTEXITCODE
-            if ($trainCode -ne 0) { Write-Host "Training failed (exit $trainCode)." -ForegroundColor Red; exit $trainCode }
-            Write-Host "`nTraining complete." -ForegroundColor Green
+            try {
+                Invoke-Train
+            }
+            catch {
+                Write-Host $_ -ForegroundColor Red
+                exit $LASTEXITCODE
+            }
             exit 0
         }
         'SmokeTest' {
@@ -215,7 +276,7 @@ if ($Mode) {
 
 Write-Host "Select an option:" -ForegroundColor Blue
 Write-Host "1. Cleanup workspace (remove tests/.md)" -ForegroundColor White
-Write-Host "2. Generate training data (fonts + corpus) and Train" -ForegroundColor White
+Write-Host "2. Generate training data (then optionally Train)" -ForegroundColor White
 Write-Host "3. Train now (skip generation)" -ForegroundColor White
 Write-Host "4. Smoke test trained ckb model" -ForegroundColor White
 Write-Host "5. Verify ckb.traineddata covers Kurdish chars" -ForegroundColor White
@@ -225,16 +286,23 @@ $choice = Read-Host "Enter your choice (1-5)"
 
 switch ($choice) {
     "1" {
-        $deep = Read-Host "Deep cleanup? This removes generated directories (y/N)"
-        $deepFlag = if ($deep -match '^(y|yes)$') { '1' } else { '0' }
-        Write-Host "`nRunning cleanup (DEEP=$deepFlag)..." -ForegroundColor Yellow
-        # Pass DEEP flag into WSL
-        wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' cleanup_unnecessary_files.sh 2>/dev/null || true; chmod +x cleanup_unnecessary_files.sh; DEEP=$deepFlag bash ./cleanup_unnecessary_files.sh"
+        # Use a separate variable name to avoid clashing with script param [switch]$Deep (variables are case-insensitive)
+        $deepInput = Read-Host "Deep cleanup? This removes generated directories (y/N)"
+        $deepBool = if ($deepInput -match '^(y|yes)$') { $true } else { $false }
+        # Reuse the cleanup helper which handles the WSL invocation
+        Invoke-Cleanup -deep:$deepBool
     }
     "2" {
+        # Generate, then ask user whether to start training
         try {
-            Invoke-GenerateTrain
-            Write-Host "`nGeneration + training completed successfully." -ForegroundColor Green
+            Invoke-GenerateOnly
+            $start = Read-Host "Start training now? (y/N)"
+            if ($start -match '^(y|yes)$') {
+                Invoke-Train
+            }
+            else {
+                Write-Host "Training skipped by user." -ForegroundColor Yellow
+            }
         }
         catch {
             Write-Host $_ -ForegroundColor Red
@@ -242,17 +310,12 @@ switch ($choice) {
     }
     "3" {
         # Train only (skip generation)
-        $trainScriptWin = Join-Path $workDirWin 'execute_ckb_training.sh'
-        $trainScriptWsl = Convert-ToWslPath $trainScriptWin
-        if (-not (Test-Path $trainScriptWin)) {
-            Write-Host "Training script not found at $trainScriptWin" -ForegroundColor Red
-            break
+        try {
+            Invoke-Train
         }
-        Write-Host "`nStarting training to build ckb.traineddata..." -ForegroundColor Yellow
-        # Normalize line endings to avoid $'\r' errors
-        $trainEnv = Get-TrainEnvPrefix
-        wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' '$trainScriptWsl' 2>/dev/null || true; chmod +x '$trainScriptWsl'; ${trainEnv}bash '$trainScriptWsl'"; $trainCode = $LASTEXITCODE
-        if ($trainCode -ne 0) { Write-Host "Training failed (exit $trainCode). See logs above." -ForegroundColor Red; break }
+        catch {
+            Write-Host "Training failed. See logs above." -ForegroundColor Red
+        }
     }
     "4" {
         # Smoke test trained ckb model
@@ -303,20 +366,22 @@ switch ($choice) {
         if (-not (Test-Path $traineddataDefault)) {
             $traineddataDefault = Join-Path (Join-Path $workDirWin 'hybrid_build') 'ckb.traineddata'
         }
-    $tdPrompt = "Enter path to ckb.traineddata (Windows path)." + $(if (Test-Path $traineddataDefault) { " Default: $traineddataDefault" } else { "" })
+        $tdPrompt = "Enter path to ckb.traineddata (Windows path)." + $(if (Test-Path $traineddataDefault) { " Default: $traineddataDefault" } else { "" })
         $tdWin = Read-Host $tdPrompt
         if (-not $tdWin -and (Test-Path $traineddataDefault)) { $tdWin = $traineddataDefault }
         if (-not (Test-Path $tdWin)) { Write-Host "ckb.traineddata not found." -ForegroundColor Red; break }
         $tdWsl = Convert-ToWslPath $tdWin
-    Write-Host "`nVerifying Kurdish unicharset coverage..." -ForegroundColor Yellow
+        Write-Host "`nVerifying Kurdish unicharset coverage..." -ForegroundColor Yellow
         $scriptWsl = Convert-ToWslPath (Join-Path $workDirWin 'verify_ckb_traineddata.py')
         # Prefer Python3 in WSL and ensure combine_tessdata is accessible there
         wsl -d Ubuntu -- bash -lc "cd '$workDirWsl' && python3 '$scriptWsl' --traineddata '$tdWsl' --out output/verify_report.json"; $vcode = $LASTEXITCODE
         if ($vcode -eq 0) {
             Write-Host "`nVerification PASSED: all required characters are present." -ForegroundColor Green
-        } elseif ($vcode -eq 2) {
+        }
+        elseif ($vcode -eq 2) {
             Write-Host "`nVerification FAILED: missing required characters. See work/output/verify_report.json" -ForegroundColor Red
-        } else {
+        }
+        else {
             Write-Host "`nVerification ERROR: environment or tool issue. Check output logs." -ForegroundColor Red
         }
     }

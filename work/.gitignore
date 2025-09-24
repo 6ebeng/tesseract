@@ -1,0 +1,15 @@
+# Generated training artifacts
+training_output/
+output/
+tmp/
+hybrid_build/
+# Logs
+*.log
+# LSTM and intermediate files at work root
+*.lstmf
+*.tr
+*.unicharset
+*.checkpoint
+# OS/editor noise
+.DS_Store
+*.swp
