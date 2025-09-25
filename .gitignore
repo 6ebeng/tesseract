@@ -229,7 +229,6 @@ tesseract_opencl_profile_devices.dat
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
-Makefile
 
 # Make
 *.o
