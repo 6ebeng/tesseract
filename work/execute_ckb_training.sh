@@ -15,6 +15,8 @@ LANG="ckb"
 MAX_ITERS="${MAX_ITERS:-1500}"
 DEBUG_INTERVAL="${DEBUG_INTERVAL:-0}"
 TRAINING_EXTRA_ARGS="${TRAINING_EXTRA_ARGS:-}"
+LATIN_DIGITS="${LATIN_DIGITS:-0}" # 1 to include ASCII 0-9 in numbers.txt for minimal traineddata
+PUNCS_EXTRA="${PUNCS_EXTRA:-}"   # extra punctuation to append to defaults
 
 mkdir -p "$TMP_DIR" "$OUT_DIR"
 # Resolve ground truth directory with fallbacks if default is missing
@@ -48,8 +50,10 @@ if [ ! -d "$TESSDATA_BEST_DIR" ]; then TESSDATA_BEST_DIR="/usr/share/tesseract-o
 if [ ! -d "$TESSDATA_FAST_DIR" ]; then TESSDATA_FAST_DIR="/usr/share/tesseract-ocr/4.00/tessdata_fast"; fi
 
 WIN_TESSDATA="/mnt/c/tesseract/tessdata"
-WIN_TESSDATA_BEST="/mnt/c/tesseract/tessdata_best"
+WIN_TESSDATA_BEST="/mnt/c/tesseract/tessdata/best"
+WIN_TESSDATA_FAST="/mnt/c/tesseract/tessdata/fast"
 mkdir -p "$WIN_TESSDATA_BEST" || true
+mkdir -p "$WIN_TESSDATA_FAST" || true
 
 echo "🔧 Checking required tools..."
 for tool in tesseract lstmtraining combine_tessdata unicharset_extractor combine_lang_model set_unicharset_properties ; do
@@ -149,8 +153,8 @@ for lang in fas ara; do
   fi
   # 2) If best not available, try tessdata_fast
   if [ ! -s "$WIN_TESSDATA_BEST/${lang}.traineddata" ] && [ ! -f "$TESSDATA_BEST_DIR/${lang}.traineddata" ]; then
-    curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/${lang}.traineddata" 2>/dev/null \
-      || curl -fsSL -o "$WIN_TESSDATA/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata_fast/raw/main/${lang}.traineddata" 2>/dev/null || true
+    curl -fsSL -o "$WIN_TESSDATA_FAST/${lang}.traineddata" "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/${lang}.traineddata" 2>/dev/null \
+      || curl -fsSL -o "$WIN_TESSDATA_FAST/${lang}.traineddata" "https://github.com/tesseract-ocr/tessdata_fast/raw/main/${lang}.traineddata" 2>/dev/null || true
   fi
   # 3) Additional fallback: only for 'fas', pull from tessdata (avoid known 404s for 'ara')
   if [ "$lang" = "fas" ] \
@@ -174,7 +178,7 @@ for lang in fas ara; do
 done
 
 have_model() { # returns path to model
-  local l="$1"; for d in "$WIN_TESSDATA_BEST" "$TESSDATA_BEST_DIR" "$WIN_TESSDATA" "$TESSDATA_FAST_DIR" "$TESSDATA_DIR"; do [ -f "$d/$l.traineddata" ] && { echo "$d/$l.traineddata"; return 0; }; done; return 1; }
+  local l="$1"; for d in "$WIN_TESSDATA_BEST" "$TESSDATA_BEST_DIR" "$WIN_TESSDATA_FAST" "$TESSDATA_FAST_DIR" "$WIN_TESSDATA" "$TESSDATA_DIR"; do [ -f "$d/$l.traineddata" ] && { echo "$d/$l.traineddata"; return 0; }; done; return 1; }
 
 fas_path=$(have_model fas || true)
 ara_path=$(have_model ara || true)
@@ -237,6 +241,7 @@ else
   head -n "$TRAIN_COUNT" list.all > list.train
   tail -n +$((TRAIN_COUNT+1)) list.all > list.eval
 fi
+EVAL_COUNT=$(wc -l < list.eval | tr -d ' ')
 
 ensure_target_traineddata() {
   # Choose or build a ckb traineddata to provide unicharset/recoder
@@ -245,7 +250,7 @@ ensure_target_traineddata() {
   if [ -z "$target" ] && [ -f "$WIN_TESSDATA/ckb.traineddata" ]; then target="$WIN_TESSDATA/ckb.traineddata"; fi
   if [ -n "$target" ] && combine_tessdata -d "$target" >/dev/null 2>&1; then echo "$target"; return 0; fi
 
-  echo "🧪 Building minimal $LANG.traineddata (unicharset + recoder) from GT..."
+  echo "🧪 Building minimal $LANG.traineddata (unicharset + recoder) from GT..." 1>&2
   LNX_TMP_DIR="/tmp/tess_ckb_build"; rm -rf "$LNX_TMP_DIR"; mkdir -p "$LNX_TMP_DIR"
   cd "$GT_DIR"; rm -f "$LNX_TMP_DIR/unicharset"; unicharset_extractor *.box; mv -f unicharset "$LNX_TMP_DIR/unicharset"
   # Set properties using script_dir assets (best-effort)
@@ -253,6 +258,7 @@ ensure_target_traineddata() {
   # Build words list from corpus/GT and filter to allowed charset using Python
   cat /dev/null > "$LNX_TMP_DIR/words.raw"
   if [ -f "$WORK_DIR/corpus/ckb.training_text" ]; then cat "$WORK_DIR/corpus/ckb.training_text" >> "$LNX_TMP_DIR/words.raw"; fi
+  if [ -f "$WORK_DIR/corpus/ckb.training_text.final" ]; then cat "$WORK_DIR/corpus/ckb.training_text.final" >> "$LNX_TMP_DIR/words.raw"; fi
   cat "$GT_DIR"/*.gt.txt 2>/dev/null >> "$LNX_TMP_DIR/words.raw" || true
   python3 - "$LNX_TMP_DIR" << 'PY'
 import sys, re, os
@@ -270,24 +276,52 @@ def ok(word):
     return all(c in allowed for c in word)
 wr=os.path.join(tmp,'words.raw')
 out=os.path.join(tmp,'words.txt')
-seen=set()
-with open(wr,'r',encoding='utf-8',errors='ignore') as f, open(out,'w',encoding='utf-8') as g:
+freq=os.path.join(tmp,'freq_words.txt')
+counts={}
+with open(wr,'r',encoding='utf-8',errors='ignore') as f:
   for token in re.split(r"\\s+", f.read()):
     t=token.strip()
-    if t and ok(t) and t not in seen:
-      seen.add(t); g.write(t+"\n")
+    if not t: continue
+    if not ok(t): continue
+    counts[t]=counts.get(t,0)+1
+with open(out,'w',encoding='utf-8') as g:
+  for t in counts.keys():
+    g.write(t+"\n")
+with open(freq,'w',encoding='utf-8') as g:
+  for t,c in sorted(counts.items(), key=lambda kv:(-kv[1], kv[0])):
+    g.write(t+"\n")
 if os.path.getsize(out)==0:
   with open(out,'w',encoding='utf-8') as g:
     g.write("کورد\nکوردی\nدەنگ\n")
 PY
-  # Numbers and punctuation strictly from charset presence
-  cat > "$LNX_TMP_DIR/numbers.txt" << 'EOF'
-٠١٢٣٤٥٦٧٨٩
-EOF
-  cat > "$LNX_TMP_DIR/puncs.txt" << 'EOF'
-،؛:؟«»-()٪
-EOF
-  # Combine to traineddata
+  # Numbers and punctuation filtered to allowed charset to prevent DAWG build errors
+  python3 - "$LNX_TMP_DIR" << 'PY'
+import os, sys
+tmp=sys.argv[1]
+u=os.path.join(tmp,'unicharset')
+allowed=set()
+with open(u,'r',encoding='utf-8',errors='ignore') as f:
+    for i,l in enumerate(f.read().splitlines()):
+        if i==0: continue
+        ch=l.split(' ')[0]
+        if ch!='NULL': allowed.add(ch)
+arabic_digits="٠١٢٣٤٥٦٧٨٩"
+ascii_digits="0123456789"
+base_puncs="،؛:؟«»-()٪"
+extra=os.environ.get('PUNCS_EXTRA','')
+digits=arabic_digits+(ascii_digits if os.environ.get('LATIN_DIGITS','0')=='1' else '')
+nums=[c for c in digits if c in allowed]
+puncs=[c for c in (base_puncs+extra) if c in allowed]
+with open(os.path.join(tmp,'numbers.txt'),'w',encoding='utf-8') as f:
+    if nums:
+        f.write(''.join(sorted(set(nums), key=nums.index))+'\n')
+with open(os.path.join(tmp,'puncs.txt'),'w',encoding='utf-8') as f:
+    if puncs:
+        f.write(''.join(sorted(set(puncs), key=puncs.index))+'\n')
+PY
+  # Combine to traineddata (use frequency DAWGs if available)
+  NUMBERS_OPT=""; [ -s "$LNX_TMP_DIR/numbers.txt" ] && NUMBERS_OPT="--numbers $LNX_TMP_DIR/numbers.txt"
+  PUNCS_OPT=""; [ -s "$LNX_TMP_DIR/puncs.txt" ] && PUNCS_OPT="--puncs $LNX_TMP_DIR/puncs.txt"
   combine_lang_model \
     --input_unicharset "$LNX_TMP_DIR/unicharset" \
     --output_dir "$LNX_TMP_DIR" \
@@ -297,9 +331,17 @@ EOF
     --pass_through_recoder \
     --version_str ckb_minimal \
     --words "$LNX_TMP_DIR/words.txt" \
-    --numbers "$LNX_TMP_DIR/numbers.txt" \
-    --puncs "$LNX_TMP_DIR/puncs.txt" || true
-  if [ -f "$LNX_TMP_DIR/$LANG.traineddata" ]; then echo "$LNX_TMP_DIR/$LANG.traineddata"; return 0; fi
+    ${NUMBERS_OPT} \
+    ${PUNCS_OPT} \
+    $( [ -s "$LNX_TMP_DIR/freq_words.txt" ] && echo --freq_input "$LNX_TMP_DIR/freq_words.txt" ) || true
+  # Handle outputs written either directly to output_dir or inside a lang subfolder
+  if [ -f "$LNX_TMP_DIR/$LANG.traineddata" ]; then
+    echo "$LNX_TMP_DIR/$LANG.traineddata"; return 0
+  fi
+  if [ -f "$LNX_TMP_DIR/$LANG/$LANG.traineddata" ]; then
+    cp -f "$LNX_TMP_DIR/$LANG/$LANG.traineddata" "$LNX_TMP_DIR/$LANG.traineddata" 2>/dev/null || true
+    echo "$LNX_TMP_DIR/$LANG.traineddata"; return 0
+  fi
   echo "❌ Failed to build minimal $LANG.traineddata"; return 1
 }
 
@@ -328,9 +370,13 @@ for START_BASE in "${BASE_LANGS[@]}"; do
   [ -z "${CHECKPOINT:-}" ] && [ -f "${MODEL_PREFIX}_checkpoint" ] && CHECKPOINT="${MODEL_PREFIX}_checkpoint"
   if [ -z "${CHECKPOINT:-}" ]; then echo "❌ No checkpoint produced for $START_BASE"; continue; fi
   echo "✅ Using checkpoint: $(basename "$CHECKPOINT")"
-  echo "🧱 Finalizing traineddata for $START_BASE..."
+  echo "🧱 Finalizing traineddata for $START_BASE (best + fast)..."
+  # Best (float) variant
   lstmtraining --stop_training --continue_from "$CHECKPOINT" --traineddata "$TARGET_TRAINEDDATA" --model_output "$OUT_DIR/${LANG}_from_${START_BASE}.traineddata" || true
-  if [ -f "$OUT_DIR/${LANG}_from_${START_BASE}.traineddata" ]; then echo "✅ Created: $OUT_DIR/${LANG}_from_${START_BASE}.traineddata"; fi
+  if [ -f "$OUT_DIR/${LANG}_from_${START_BASE}.traineddata" ]; then echo "✅ Created (best): $OUT_DIR/${LANG}_from_${START_BASE}.traineddata"; fi
+  # Fast (int8) variant
+  lstmtraining --stop_training --continue_from "$CHECKPOINT" --traineddata "$TARGET_TRAINEDDATA" --model_output "$OUT_DIR/${LANG}_from_${START_BASE}_fast.traineddata" --convert_to_int || true
+  if [ -f "$OUT_DIR/${LANG}_from_${START_BASE}_fast.traineddata" ]; then echo "✅ Created (fast): $OUT_DIR/${LANG}_from_${START_BASE}_fast.traineddata"; fi
 done
 
 # Evaluate models using lstmeval if available and install the better one
@@ -347,33 +393,60 @@ eval_checkpoint_cer() {
 }
 
 pick_and_install() {
-  local fas_td="$OUT_DIR/${LANG}_from_fas.traineddata"
-  local ara_td="$OUT_DIR/${LANG}_from_ara.traineddata"
+  local fas_best="$OUT_DIR/${LANG}_from_fas.traineddata"
+  local fas_fast="$OUT_DIR/${LANG}_from_fas_fast.traineddata"
+  local ara_best="$OUT_DIR/${LANG}_from_ara.traineddata"
+  local ara_fast="$OUT_DIR/${LANG}_from_ara_fast.traineddata"
   local fas_ckpt="" ara_ckpt="" fas_cer="" ara_cer=""
 
   fas_ckpt=$(ls -t "$OUT_DIR/${LANG}_from_fas"_checkpoint* 2>/dev/null | head -1 || true)
   ara_ckpt=$(ls -t "$OUT_DIR/${LANG}_from_ara"_checkpoint* 2>/dev/null | head -1 || true)
 
-  if [ -n "${fas_ckpt:-}" ]; then fas_cer=$(eval_checkpoint_cer "$fas_ckpt" || true); fi
-  if [ -n "${ara_ckpt:-}" ]; then ara_cer=$(eval_checkpoint_cer "$ara_ckpt" || true); fi
-
-  local preferred=""
-  if [ -n "${fas_cer:-}" ] && [ -n "${ara_cer:-}" ]; then
-    if awk "BEGIN{exit !($fas_cer < $ara_cer)}"; then preferred="$fas_td"; else preferred="$ara_td"; fi
-  elif [ -f "$fas_td" ] && [ ! -f "$ara_td" ]; then
-    preferred="$fas_td"
-  elif [ -f "$ara_td" ] && [ ! -f "$fas_td" ]; then
-    preferred="$ara_td"
-  elif [ -f "$fas_td" ]; then
-    preferred="$fas_td"
-  elif [ -f "$ara_td" ]; then
-    preferred="$ara_td"
+  # Metrics CSV
+  local metrics_csv="$OUT_DIR/metrics.csv"
+  if [ ! -f "$metrics_csv" ]; then
+    echo "timestamp,base,checkpoint,cer,max_iters,debug_interval,train_count,eval_count,total_lstmf" > "$metrics_csv"
   fi
 
-  if [ -n "${preferred:-}" ] && [ -f "$preferred" ]; then
-    cp "$preferred" "$OUT_DIR/$LANG.traineddata" || true
-    cp "$preferred" "$WIN_TESSDATA/ckb.traineddata" || true
-    echo "✅ Installed to C:\\tesseract\\tessdata\\ckb.traineddata"
+  if [ -n "${fas_ckpt:-}" ]; then
+    fas_cer=$(eval_checkpoint_cer "$fas_ckpt" || true)
+    echo "$(date -Iseconds),fas,$(basename "$fas_ckpt"),${fas_cer:-},$MAX_ITERS,$DEBUG_INTERVAL,$TRAIN_COUNT,${EVAL_COUNT:-},$TOTAL" >> "$metrics_csv"
+  fi
+  if [ -n "${ara_ckpt:-}" ]; then
+    ara_cer=$(eval_checkpoint_cer "$ara_ckpt" || true)
+    echo "$(date -Iseconds),ara,$(basename "$ara_ckpt"),${ara_cer:-},$MAX_ITERS,$DEBUG_INTERVAL,$TRAIN_COUNT,${EVAL_COUNT:-},$TOTAL" >> "$metrics_csv"
+  fi
+
+  local preferred_base=""
+  if [ -n "${fas_cer:-}" ] && [ -n "${ara_cer:-}" ]; then
+    if awk "BEGIN{exit !($fas_cer < $ara_cer)}"; then preferred_base="fas"; else preferred_base="ara"; fi
+  elif [ -f "$fas_best" ] && [ ! -f "$ara_best" ]; then
+    preferred_base="fas"
+  elif [ -f "$ara_best" ] && [ ! -f "$fas_best" ]; then
+    preferred_base="ara"
+  elif [ -f "$fas_best" ]; then
+    preferred_base="fas"
+  elif [ -f "$ara_best" ]; then
+    preferred_base="ara"
+  fi
+
+  if [ -n "${preferred_base:-}" ]; then
+    local preferred_best preferred_fast
+    if [ "$preferred_base" = "fas" ]; then
+      preferred_best="$fas_best"; preferred_fast="$fas_fast"
+    else
+      preferred_best="$ara_best"; preferred_fast="$ara_fast"
+    fi
+    # Write standardized outputs in OUT_DIR
+    if [ -f "$preferred_best" ]; then cp -f "$preferred_best" "$OUT_DIR/${LANG}.best.traineddata" 2>/dev/null || true; fi
+    if [ -f "$preferred_fast" ]; then cp -f "$preferred_fast" "$OUT_DIR/${LANG}.fast.traineddata" 2>/dev/null || true; fi
+
+    # Install: best -> tessdata_best, fast -> tessdata_fast (keep folders separate)
+    if [ -f "$preferred_best" ]; then cp -f "$preferred_best" "$WIN_TESSDATA_BEST/ckb.traineddata" 2>/dev/null || true; fi
+    if [ -f "$preferred_fast" ]; then cp -f "$preferred_fast" "$WIN_TESSDATA_FAST/ckb.traineddata" 2>/dev/null || true; fi
+    echo "✅ Installed:"
+  echo "   best -> C:\\tesseract\\tessdata\\best\\ckb.traineddata"
+  if [ -f "$preferred_fast" ]; then echo "   fast -> C:\\tesseract\\tessdata\\fast\\ckb.traineddata"; else echo "   fast -> (not produced)"; fi
     return 0
   fi
   return 1

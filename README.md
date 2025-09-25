@@ -11,7 +11,8 @@ tesseract/
 ├── run_training.ps1       # Windows/WSL launcher
 ├── fonts.conf             # Fontconfig override (used by generation)
 ├── tessdata/              # Trained models (ckb.traineddata installed here)
-├── tessdata_best/         # Optional: upstream best models
+│   ├── best/              # Best model variant (float)
+│   └── fast/              # Fast model variant (int8)
 ├── docs/                  # Documentation (moved references here)
 │   ├── README.md
 │   └── kurdish_characters.md
@@ -78,7 +79,7 @@ After training or copying a `ckb.traineddata`, you can verify that it includes a
 - Or run the verifier directly inside WSL from the `work` folder:
 
 ```bash
-python3 work/verify_ckb_traineddata.py --traineddata /mnt/c/tesseract/tessdata/ckb.traineddata --out work/output/verify_report.json
+python3 work/verify_ckb_traineddata.py --traineddata /mnt/c/tesseract/tessdata/best/ckb.traineddata --out work/output/verify_report.json
 ```
 
 The script unpacks the traineddata using `combine_tessdata -u`, reads the `.unicharset`, and checks coverage. It returns:

@@ -54,6 +54,8 @@ FONT_SIZE="${FONT_SIZE:-18}"
 DPI="${DPI:-300}"
 MARGIN="${MARGIN:-15}"
 LEADING="${LEADING:-22}"
+CHAR_SPACING="${CHAR_SPACING:-1}"
+ENABLE_AUG="${ENABLE_AUG:-0}"
 
 # Exposures to render for variety; filenames will use exp0/1/2 (allow EXPOSURES env as comma list)
 if [ -n "${EXPOSURES:-}" ]; then
@@ -69,6 +71,7 @@ echo "Font Size: ${FONT_SIZE}pt"
 echo "DPI: ${DPI}"
 echo "Margin: ${MARGIN}px"
 echo "Leading: ${LEADING}px"
+echo "Char spacing: ${CHAR_SPACING}"
 echo "Exposures: ${EXPOSURES[*]}"
 
 # Count available fonts
@@ -184,7 +187,7 @@ while IFS= read -r -d '' font_file; do
     ok_this_font=0
     for EXP in "${EXPOSURES[@]}"; do
         output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp${exp_idx}"
-        if text2image \
+                if text2image \
             --text="$CORPUS_SRC" \
             --outputbase="$output_base" \
             --font="$used_font" \
@@ -193,11 +196,21 @@ while IFS= read -r -d '' font_file; do
             --resolution=$DPI \
             --margin=$MARGIN \
             --leading=$LEADING \
-            --char_spacing=1 \
+                        --char_spacing=$CHAR_SPACING \
             --exposure="$EXP" \
             >>"$log_file" 2>&1; then
             if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
                 cp "$CORPUS_SRC" "${output_base}.gt.txt"
+                                # Optional simple augmentation via ImageMagick
+                                if [ "$ENABLE_AUG" = "1" ] && command -v convert >/dev/null 2>&1; then
+                                    aug_base="${output_base}.aug"
+                                    convert "${output_base}.tif" -colorspace Gray -contrast-stretch 1%x1% -blur 0x0.5 -attenuate 0.02 +noise Gaussian "${aug_base}.tif" 2>>"$log_file" || true
+                                    if [ -f "${aug_base}.tif" ]; then
+                                        # Duplicate gt for augmented image; box reused is not ideal but acceptable for small perturbations
+                                        cp "${output_base}.box" "${aug_base}.box" 2>/dev/null || true
+                                        cp "${output_base}.gt.txt" "${aug_base}.gt.txt" 2>/dev/null || true
+                                    fi
+                                fi
                 ok_this_font=1
             fi
         fi

@@ -7,6 +7,7 @@ Key scripts:
 - `generate_ckb_training_data.sh`: renders synthetic ground-truth from the corpus using local fonts.
 - `execute_ckb_training.sh`: runs the LSTM fine-tuning pipeline and exports `ckb.traineddata`.
 - `verify_ckb_traineddata.py`: checks that a traineddata covers Kurdish characters.
+- `tools/eval_real_cer.py`: computes real-world CER on `real_gt/eval` image+gt pairs and writes `output/real_metrics.csv`.
 
 Data layout:
 
@@ -21,3 +22,8 @@ Run everything from Windows using the repo launcher:
 ```
 
 Or run individual steps inside WSL by `cd` into this folder.
+
+Real eval (optional):
+
+- Put a few real images and their matching `.gt.txt` under `real_gt/eval/`.
+- Then run: `python3 tools/eval_real_cer.py` (from this folder in WSL) to get average CER.

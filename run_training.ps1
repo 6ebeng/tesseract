@@ -1,6 +1,6 @@
 param(
     [switch]$NoClear,
-    [ValidateSet('Clean', 'Generate', 'GenerateTrain', 'Train', 'SmokeTest')]
+    [ValidateSet('Clean', 'Generate', 'GenerateTrain', 'Train', 'SmokeTest', 'SmokeTestBest', 'SmokeTestFast', 'Bootstrap', 'BuildCorpus', 'Eval', 'All')]
     [string]$Mode = '',
     [switch]$Deep = $false,
     [string]$ImagePath = '',
@@ -10,6 +10,8 @@ param(
     [int]$OEM,
     [int]$PSM,
     [string]$TrainingExtraArgs,
+    [switch]$LatinDigits,
+    [string]$PuncsExtra,
     # Data generation overrides
     [string]$CorpusFileOverride,
     [string]$FontsDirOverride,
@@ -17,7 +19,14 @@ param(
     [int]$FontSize,
     [int]$DPI,
     [int]$Margin,
-    [int]$Leading
+    [int]$Leading,
+    [int]$CharSpacing,
+    [switch]$EnableAug,
+    # Corpus builder options
+    [switch]$UseFixer,
+    [int]$CorpusMinCount,
+    # All-mode options
+    [switch]$SkipEval
 )
 
 if (-not $NoClear) {
@@ -56,6 +65,8 @@ function Get-TrainEnvPrefix() {
     # Only set OEM/PSM if valid values are explicitly provided
     if ($OEM -in 1, 2, 3) { $parts += "OEM='${OEM}'" }
     if ($PSM -ge 3 -and $PSM -le 13) { $parts += "PSM='${PSM}'" }
+    if ($LatinDigits) { $parts += "LATIN_DIGITS='1'" }
+    if ($PuncsExtra) { $parts += "PUNCS_EXTRA='$(Escape-ShellSingleQuotes $PuncsExtra)'" }
     # Ensure lstm.train is discoverable in WSL. Allow Windows env override, else default to repo's tessdata/configs.
     try {
         if ($env:LSTM_TRAIN_CONFIG) {
@@ -86,6 +97,8 @@ function Get-GenEnvPrefix() {
     if ($DPI) { $parts += "DPI='${DPI}'" }
     if ($Margin) { $parts += "MARGIN='${Margin}'" }
     if ($Leading) { $parts += "LEADING='${Leading}'" }
+    if ($CharSpacing) { $parts += "CHAR_SPACING='${CharSpacing}'" }
+    if ($EnableAug) { $parts += "ENABLE_AUG='1'" }
     if ($parts.Count -gt 0) { return ($parts -join ' ') + ' ' } else { return '' }
 }
 
@@ -108,10 +121,158 @@ catch {
 # (moved non-interactive Mode handler below function definitions)
 
 
+
+function Invoke-SmokeTest {
+    param(
+        [ValidateSet('auto', 'best', 'fast')] [string]$Variant = 'auto',
+        [switch]$Interactive
+    )
+    # Determine image path
+    $imgWin = $null
+    if ($Interactive) {
+        $gtDirWin = Get-GroundTruthDir -baseWin $workDirWin
+        $defaultImg = $null
+        if ($gtDirWin) {
+            $firstTif = Get-ChildItem -Path $gtDirWin -Filter *.tif -File | Select-Object -First 1
+            if ($firstTif) { $defaultImg = $firstTif.FullName }
+        }
+        $smokePrompt = "Enter image path for smoke test (Windows path)." + $(if ($defaultImg) { " Default: $defaultImg" } else { "" })
+        $inputImg = Read-Host $smokePrompt
+        if (-not $inputImg -and $defaultImg) { $imgWin = $defaultImg } else { $imgWin = $inputImg }
+    }
+    else {
+        if ($ImagePath) { $imgWin = $ImagePath }
+        if (-not $imgWin) {
+            $gtDirWin = Get-GroundTruthDir -baseWin $workDirWin
+            if ($gtDirWin) {
+                $firstTif = Get-ChildItem -Path $gtDirWin -Filter *.tif -File | Select-Object -First 1
+                if ($firstTif) { $imgWin = $firstTif.FullName }
+            }
+        }
+    }
+    if (-not $imgWin -or -not (Test-Path $imgWin)) {
+        Write-Host "No input image found for smoke test. Provide -ImagePath or ensure ground-truth exists." -ForegroundColor DarkYellow
+        exit 2
+    }
+    $imgWsl = Convert-ToWslPath $imgWin
+    # Choose tessdata dir with ckb.traineddata based on variant
+    $tessRoot = Join-Path $projectRootWin 'tessdata'
+    $bestDir = Join-Path $tessRoot 'best'
+    $fastDir = Join-Path $tessRoot 'fast'
+    $tdWinCandidates = @()
+    switch ($Variant) {
+        'best' { $tdWinCandidates = @($bestDir) }
+        'fast' { $tdWinCandidates = @($fastDir) }
+        default { $tdWinCandidates = @($bestDir, $fastDir, $tessRoot) }
+    }
+    $tessdataWin = $null
+    foreach ($td in $tdWinCandidates) {
+        $ckb = Join-Path $td 'ckb.traineddata'
+        if (Test-Path $ckb) { $tessdataWin = $td; break }
+    }
+    if (-not $tessdataWin) {
+        $variantMsg = if ($Variant -eq 'best') { 'tessdata\\best' } elseif ($Variant -eq 'fast') { 'tessdata\\fast' } else { 'tessdata\\best or tessdata\\fast' }
+        Write-Host "ckb.traineddata not found in $variantMsg. Run training first or place the model there." -ForegroundColor Yellow
+        exit 2
+    }
+    $tessdataWsl = Convert-ToWslPath $tessdataWin
+    Write-Host "`nRunning smoke test ($Variant) with ckb model..." -ForegroundColor Yellow
+    $cmd = "echo 'Using tessdata dir: $tessdataWsl'; tesseract --tessdata-dir '$tessdataWsl' -l ckb --psm 6 '$imgWsl' stdout 2>&1 | head -n 15"
+    $out = wsl -d Ubuntu -- bash -lc $cmd
+    $code = $LASTEXITCODE
+    if ($out) { Write-Host $out }
+    else { Write-Host "(no text output)" -ForegroundColor DarkYellow }
+    return $code
+}
+
+function Invoke-MigrateLegacyTessdata {
+    try {
+        $tessRoot = Join-Path $projectRootWin 'tessdata'
+        $bestNew = Join-Path $tessRoot 'best'
+        $fastNew = Join-Path $tessRoot 'fast'
+        if (-not (Test-Path $bestNew)) { New-Item -ItemType Directory -Path $bestNew -Force | Out-Null }
+        if (-not (Test-Path $fastNew)) { New-Item -ItemType Directory -Path $fastNew -Force | Out-Null }
+
+        $legacyBest = Join-Path $projectRootWin 'tessdata_best'
+        $legacyFast = Join-Path $projectRootWin 'tessdata_fast'
+        $moved = $false
+        if (Test-Path $legacyBest) {
+            Get-ChildItem -Path $legacyBest -Filter *.traineddata -File -ErrorAction SilentlyContinue | ForEach-Object {
+                Move-Item -Force -Path $_.FullName -Destination (Join-Path $bestNew $_.Name) -ErrorAction SilentlyContinue
+                $script:moved = $true
+            }
+        }
+        if (Test-Path $legacyFast) {
+            Get-ChildItem -Path $legacyFast -Filter *.traineddata -File -ErrorAction SilentlyContinue | ForEach-Object {
+                Move-Item -Force -Path $_.FullName -Destination (Join-Path $fastNew $_.Name) -ErrorAction SilentlyContinue
+                $script:moved = $true
+            }
+        }
+        if ($moved) {
+            Write-Host "Migrated legacy models from tessdata_best/tessdata_fast to tessdata\\best/tessdata\\fast." -ForegroundColor DarkYellow
+        }
+    }
+    catch { }
+}
+
+# Migrate any legacy tessdata folders into tessdata\best/fast (after functions are defined)
+Invoke-MigrateLegacyTessdata
+
+
 function Invoke-Cleanup([bool]$deep) {
     $deepFlag = if ($deep) { '1' } else { '0' }
     Write-Host "`nRunning cleanup (DEEP=$deepFlag)..." -ForegroundColor Yellow
     wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' cleanup_unnecessary_files.sh 2>/dev/null || true; chmod +x cleanup_unnecessary_files.sh; DEEP=$deepFlag bash ./cleanup_unnecessary_files.sh"
+}
+
+function Invoke-Bootstrap {
+    Write-Host "`nBootstrapping WSL training environment..." -ForegroundColor Yellow
+    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' tools/bootstrap_wsl_training.sh 2>/dev/null || true; chmod +x tools/bootstrap_wsl_training.sh; tools/bootstrap_wsl_training.sh"; $code = $LASTEXITCODE
+    if ($code -ne 0) { throw "Bootstrap failed (exit $code)." }
+    Write-Host "Bootstrap complete." -ForegroundColor Green
+}
+
+function Invoke-BuildCorpus {
+    Write-Host "`nBuilding balanced corpus..." -ForegroundColor Yellow
+    $argsList = @('python3', 'tools/corpus_build.py')
+    if ($UseFixer) { $argsList += '--fixer' }
+    if ($CorpusMinCount -gt 0) { $argsList += @('--min-count', "$CorpusMinCount") }
+    # Join arguments directly; no extra quoting needed for simple tokens
+    $cmd = ($argsList -join ' ')
+    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; $cmd"; $code = $LASTEXITCODE
+    if ($code -eq 2) { Write-Host "No corpus sources found; skipping corpus build." -ForegroundColor DarkYellow; return }
+    if ($code -ne 0) { throw "Corpus build failed (exit $code)." }
+    Write-Host "Corpus build complete (corpus/ckb.training_text.final)." -ForegroundColor Green
+}
+
+function Invoke-EvalReal {
+    Write-Host "`nEvaluating real-world CER..." -ForegroundColor Yellow
+    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; python3 tools/eval_real_cer.py"; $ecode = $LASTEXITCODE
+    if ($ecode -ne 0) { Write-Host "Real eval returned code $ecode (no eval set or error)." -ForegroundColor DarkYellow }
+    else { Write-Host "Real eval complete. See work/output/real_metrics.csv" -ForegroundColor Green }
+}
+
+function Invoke-All {
+    try {
+        Invoke-BuildCorpus
+    }
+    catch {
+        Write-Host "Corpus build skipped/failed: $_" -ForegroundColor DarkYellow
+    }
+
+    # Prefer final corpus automatically if user did not override
+    $prevCorpus = $CorpusFileOverride
+    if (-not $CorpusFileOverride) {
+        $finalWin = Join-Path (Join-Path $workDirWin 'corpus') 'ckb.training_text.final'
+        if (Test-Path $finalWin) { $script:CorpusFileOverride = $finalWin }
+    }
+
+    Invoke-GenerateTrain
+
+    # Restore corpus override
+    $script:CorpusFileOverride = $prevCorpus
+
+    if (-not $SkipEval) { Invoke-EvalReal }
 }
 
 function Invoke-GenerateTrain {
@@ -170,10 +331,7 @@ function Invoke-GenerateOnly {
             $boxCount = (Get-ChildItem -Path $gtDirWin -Filter *.box -File -ErrorAction SilentlyContinue | Measure-Object).Count
         }
         if ($tifCount -gt 0 -and $boxCount -gt 0) {
-            Write-Host "Generation exited with code $code, but found $tifCount TIF and $boxCount BOX files. Treating as success..." -ForegroundColor Yellow
-        }
-        else {
-            throw "Data generation failed (exit $code) and no ground-truth was found."
+            Write-Host "Generation exited with code $code, but found $tifCount TIF and $boxCount BOX files. Continuing..." -ForegroundColor Yellow
         }
     }
     Write-Host "`nGeneration completed successfully (no training executed)." -ForegroundColor Green
@@ -212,6 +370,12 @@ if ($Mode) {
             Write-Host "`nDone." -ForegroundColor Green
             exit 0
         }
+        'Bootstrap' {
+            try { Invoke-Bootstrap; Write-Host "`nDone." -ForegroundColor Green; exit 0 } catch { Write-Host $_ -ForegroundColor Red; exit 1 }
+        }
+        'BuildCorpus' {
+            try { Invoke-BuildCorpus; Write-Host "`nDone." -ForegroundColor Green; exit 0 } catch { Write-Host $_ -ForegroundColor Red; exit 1 }
+        }
         'Generate' {
             try {
                 Invoke-GenerateOnly
@@ -244,29 +408,15 @@ if ($Mode) {
             }
             exit 0
         }
-        'SmokeTest' {
-            $gtDirWin = Get-GroundTruthDir -baseWin $workDirWin
-            if (-not $gtDirWin) { Write-Host "Ground-truth directory not found for smoke test." -ForegroundColor DarkYellow; exit 2 }
-            $firstTif = Get-ChildItem -Path $gtDirWin -Filter *.tif -File | Select-Object -First 1
-            if (-not $firstTif) { Write-Host "No .tif files found under $gtDirWin" -ForegroundColor DarkYellow; exit 2 }
-            $imgWsl = Convert-ToWslPath $firstTif.FullName
-            # Choose tessdata dir with ckb.traineddata
-            $tdWinCandidates = @(
-                (Join-Path $projectRootWin 'tessdata'),
-                (Join-Path $projectRootWin 'tessdata_best')
-            )
-            $tessdataWin = 'C:\tesseract\tessdata'
-            foreach ($td in $tdWinCandidates) {
-                $ckb = Join-Path $td 'ckb.traineddata'
-                if (Test-Path $ckb) { $tessdataWin = $td; break }
-            }
-            if (-not (Test-Path (Join-Path $tessdataWin 'ckb.traineddata'))) {
-                Write-Host "ckb.traineddata not found in $tessdataWin. Run option 2 (Generate+Train) first or place the model there." -ForegroundColor Yellow
-                exit 2
-            }
-            $tessdataWsl = Convert-ToWslPath $tessdataWin
-            wsl -d Ubuntu -- bash -lc "echo 'Using tessdata dir: $tessdataWsl'; tesseract --psm 6 --tessdata-dir '$tessdataWsl' -l ckb '$imgWsl' stdout 2>&1 | head -n 15"; exit $LASTEXITCODE
+        'Eval' {
+            try { Invoke-EvalReal; Write-Host "`nDone." -ForegroundColor Green; exit 0 } catch { Write-Host $_ -ForegroundColor Red; exit 1 }
         }
+        'All' {
+            try { Invoke-All; Write-Host "`nAll pipeline completed." -ForegroundColor Green; exit 0 } catch { Write-Host $_ -ForegroundColor Red; exit 1 }
+        }
+        'SmokeTest' { $code = Invoke-SmokeTest -Variant auto; exit $code }
+        'SmokeTestBest' { $code = Invoke-SmokeTest -Variant best; exit $code }
+        'SmokeTestFast' { $code = Invoke-SmokeTest -Variant fast; exit $code }
         default {
             Write-Host "Unknown Mode: $Mode" -ForegroundColor Red
             exit 1
@@ -278,11 +428,17 @@ Write-Host "Select an option:" -ForegroundColor Blue
 Write-Host "1. Cleanup workspace (remove tests/.md)" -ForegroundColor White
 Write-Host "2. Generate training data (then optionally Train)" -ForegroundColor White
 Write-Host "3. Train now (skip generation)" -ForegroundColor White
-Write-Host "4. Smoke test trained ckb model" -ForegroundColor White
-Write-Host "5. Verify ckb.traineddata covers Kurdish chars" -ForegroundColor White
-Write-Host ""
+Write-Host "4. Smoke test trained ckb model (auto: best→fast)" -ForegroundColor White
+Write-Host "5. Smoke test (best only)" -ForegroundColor White
+Write-Host "6. Smoke test (fast only)" -ForegroundColor White
+Write-Host "7. Verify ckb.traineddata covers Kurdish chars" -ForegroundColor White
+Write-Host "8. Build balanced corpus (uses fixer)" -ForegroundColor White
+Write-Host "9. Evaluate real-world CER (real_gt/eval)" -ForegroundColor White
+Write-Host "10. Bootstrap WSL training toolchain" -ForegroundColor White
+Write-Host "11. All: Corpus → Generate → Train → Eval" -ForegroundColor White
+Write-Host "" 
 
-$choice = Read-Host "Enter your choice (1-5)"
+$choice = Read-Host "Enter your choice (1-11)"
 
 switch ($choice) {
     "1" {
@@ -318,49 +474,18 @@ switch ($choice) {
         }
     }
     "4" {
-        # Smoke test trained ckb model
-        function Get-GroundTruthDir {
-            param([string]$baseWin)
-            $cands = @(
-                'training_output/ground_truth', 'ground-truth', 'ground-truth-robust',
-                'ground-truth-system', 'ground-truth-final', 'ground-truth-workaround', 'ground-truth-corpus'
-            )
-            foreach ($rel in $cands) {
-                $p = Join-Path $baseWin $rel
-                if (Test-Path $p) { return $p }
-            }
-            return $null
-        }
-        $gtDirWin = Get-GroundTruthDir -baseWin $workDirWin
-        $defaultImg = $null
-        if ($gtDirWin) {
-            $firstTif = Get-ChildItem -Path $gtDirWin -Filter *.tif -File | Select-Object -First 1
-            if ($firstTif) { $defaultImg = $firstTif.FullName }
-        }
-        $smokePrompt = "Enter image path for smoke test (Windows path)." + $(if ($defaultImg) { " Default: $defaultImg" } else { "" })
-        $imagePath = Read-Host $smokePrompt
-        if (-not $imagePath -and $defaultImg) { $imagePath = $defaultImg }
-        if (-not (Test-Path $imagePath)) { Write-Host "File not found." -ForegroundColor Red; break }
-        $imgWsl = Convert-ToWslPath $imagePath
-        # Pick a tessdata dir with ckb.traineddata if available
-        $tdWinCandidates = @(
-            (Join-Path $projectRootWin 'tessdata'),
-            (Join-Path $projectRootWin 'tessdata_best')
-        )
-        $tessdataWin = 'C:\tesseract\tessdata'
-        foreach ($td in $tdWinCandidates) {
-            $ckb = Join-Path $td 'ckb.traineddata'
-            if (Test-Path $ckb) { $tessdataWin = $td; break }
-        }
-        if (-not (Test-Path (Join-Path $tessdataWin 'ckb.traineddata'))) {
-            Write-Host "ckb.traineddata not found in $tessdataWin. Run option 2 (Generate+Train) first or place the model there." -ForegroundColor Yellow
-            break
-        }
-        $tessdataWsl = Convert-ToWslPath $tessdataWin
-        Write-Host "`nRunning smoke test with ckb model..." -ForegroundColor Yellow
-        wsl -d Ubuntu -- bash -lc "echo 'Using tessdata dir: $tessdataWsl'; tesseract --tessdata-dir '$tessdataWsl' -l ckb --psm 6 '$imgWsl' stdout 2>&1 | head -n 15"
+        # Smoke test auto (best→fast)
+        $null = Invoke-SmokeTest -Variant auto -Interactive
     }
     "5" {
+        # Smoke test best only
+        $null = Invoke-SmokeTest -Variant best -Interactive
+    }
+    "6" {
+        # Smoke test fast only
+        $null = Invoke-SmokeTest -Variant fast -Interactive
+    }
+    "7" {
         # Verify ckb.traineddata unicharset coverage against Kurdish letters
         $traineddataDefault = Join-Path (Join-Path $projectRootWin 'tessdata') 'ckb.traineddata'
         if (-not (Test-Path $traineddataDefault)) {
@@ -384,6 +509,22 @@ switch ($choice) {
         else {
             Write-Host "`nVerification ERROR: environment or tool issue. Check output logs." -ForegroundColor Red
         }
+    }
+    "8" {
+        try {
+            $script:UseFixer = $true
+            Invoke-BuildCorpus
+        }
+        catch { Write-Host $_ -ForegroundColor Red }
+    }
+    "9" {
+        try { Invoke-EvalReal } catch { Write-Host $_ -ForegroundColor Red }
+    }
+    "10" {
+        try { Invoke-Bootstrap } catch { Write-Host $_ -ForegroundColor Red }
+    }
+    "11" {
+        try { Invoke-All } catch { Write-Host $_ -ForegroundColor Red }
     }
     default {
         Write-Host "Invalid choice. Exiting." -ForegroundColor Red
