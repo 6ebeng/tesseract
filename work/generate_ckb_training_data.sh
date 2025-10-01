@@ -56,6 +56,11 @@ MARGIN="${MARGIN:-15}"
 LEADING="${LEADING:-22}"
 CHAR_SPACING="${CHAR_SPACING:-1}"
 ENABLE_AUG="${ENABLE_AUG:-0}"
+FONT_SIZE_LIST="${FONT_SIZE_LIST:-}"
+DPI_LIST="${DPI_LIST:-}"
+LEADING_LIST="${LEADING_LIST:-}"
+CHAR_SPACING_LIST="${CHAR_SPACING_LIST:-}"
+AUG_VARIANTS="${AUG_VARIANTS:-2}"
 
 # Exposures to render for variety; filenames will use exp0/1/2 (allow EXPOSURES env as comma list)
 if [ -n "${EXPOSURES:-}" ]; then
@@ -67,11 +72,11 @@ fi
 echo ""
 echo "🎨 Font Generation Settings:"
 echo "=========================="
-echo "Font Size: ${FONT_SIZE}pt"
-echo "DPI: ${DPI}"
+echo "Font Size: ${FONT_SIZE}pt${FONT_SIZE_LIST:+ (list: $FONT_SIZE_LIST)}"
+echo "DPI: ${DPI}${DPI_LIST:+ (list: $DPI_LIST)}"
 echo "Margin: ${MARGIN}px"
-echo "Leading: ${LEADING}px"
-echo "Char spacing: ${CHAR_SPACING}"
+echo "Leading: ${LEADING}px${LEADING_LIST:+ (list: $LEADING_LIST)}"
+echo "Char spacing: ${CHAR_SPACING}${CHAR_SPACING_LIST:+ (list: $CHAR_SPACING_LIST)}"
 echo "Exposures: ${EXPOSURES[*]}"
 
 # Count available fonts
@@ -116,8 +121,56 @@ PY
   fi
 fi
 
+# Optionally split corpus into multiple pages to increase training diversity
+MAX_PAGES="${MAX_PAGES:-1}"
+CHARS_PER_PAGE="${CHARS_PER_PAGE:-3000}"
+PAGE_LIST=()
+PAGES_DIR="$TMP_DIR/pages"
+mkdir -p "$PAGES_DIR"
+if [ "$MAX_PAGES" -gt 1 ]; then
+    python3 - "$CORPUS_SRC" "$PAGES_DIR" "$MAX_PAGES" "$CHARS_PER_PAGE" << 'PY'
+import sys, os
+src, outdir, max_pages, chars_per = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+with open(src, 'r', encoding='utf-8', errors='ignore') as f:
+        text = f.read()
+tokens = text.split()
+pages = []
+curr = []
+count = 0
+for tok in tokens:
+        if count + len(tok) + (1 if count else 0) > chars_per and pages and len(pages) < max_pages:
+                pages.append(' '.join(curr))
+                curr = [tok]
+                count = len(tok)
+        else:
+                if count:
+                        curr.append(tok)
+                        count += 1 + len(tok)
+                else:
+                        curr = [tok]
+                        count = len(tok)
+if curr:
+        pages.append(' '.join(curr))
+pages = pages[:max_pages]
+os.makedirs(outdir, exist_ok=True)
+for i, p in enumerate(pages):
+        with open(os.path.join(outdir, f'page_{i:03d}.txt'), 'w', encoding='utf-8') as g:
+                g.write(p)
+print(len(pages))
+PY
+    # Build PAGE_LIST in bash
+    while IFS= read -r -d '' pf; do PAGE_LIST+=("$pf"); done < <(find "$PAGES_DIR" -maxdepth 1 -type f -name 'page_*.txt' -print0 | sort -z)
+    echo "Using corpus split into ${#PAGE_LIST[@]} pages (MAX_PAGES=$MAX_PAGES, CHARS_PER_PAGE=$CHARS_PER_PAGE)"
+fi
+
 GENERATED_COUNT=0
 ERROR_COUNT=0
+
+# Helper to iterate a list env or fallback to single value
+iter_or_single() {
+    local list="$1"; local single="$2"
+    if [ -n "$list" ]; then echo "$list" | tr ',' ' '; else echo "$single"; fi
+}
 
 # Process each font
 while IFS= read -r -d '' font_file; do
@@ -182,39 +235,123 @@ while IFS= read -r -d '' font_file; do
         continue
     fi
 
-    # Generate multiple exposures for the validated font
+    # Generate multiple exposures for the validated font across param lists
     exp_idx=0
     ok_this_font=0
     for EXP in "${EXPOSURES[@]}"; do
-        output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp${exp_idx}"
+      for THIS_DPI in $(iter_or_single "$DPI_LIST" "$DPI"); do
+        for THIS_PTSIZE in $(iter_or_single "$FONT_SIZE_LIST" "$FONT_SIZE"); do
+          for THIS_LEADING in $(iter_or_single "$LEADING_LIST" "$LEADING"); do
+            for THIS_CHSP in $(iter_or_single "$CHAR_SPACING_LIST" "$CHAR_SPACING"); do
+        # Choose texts: either split pages or the whole corpus
+        if [ "${#PAGE_LIST[@]}" -gt 0 ]; then
+            page_i=0
+            for page_file in "${PAGE_LIST[@]}"; do
+                output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp${exp_idx}.p${page_i}.d${THIS_DPI}.s${THIS_PTSIZE}.l${THIS_LEADING}.c${THIS_CHSP}"
                 if text2image \
+            --text="$page_file" \
+            --outputbase="$output_base" \
+            --font="$used_font" \
+            --fonts_dir="$(pwd)/$FONTS_DIR" \
+            --ptsize=$THIS_PTSIZE \
+            --resolution=$THIS_DPI \
+            --margin=$MARGIN \
+            --leading=$THIS_LEADING \
+                        --char_spacing=$THIS_CHSP \
+            --exposure="$EXP" \
+            >>"$log_file" 2>&1; then
+            if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
+                cp "$page_file" "${output_base}.gt.txt"
+                                # Optional multi-variant photometric augmentation (box-safe)
+                                                                if [ "$ENABLE_AUG" = "1" ] && command -v convert >/dev/null 2>&1; then
+                                                                        for k in $(seq 1 "$AUG_VARIANTS"); do
+                                                                                aug_base="${output_base}.aug${k}"
+                                                                                case $k in
+                                                                                    1)
+                                                                                        # Gaussian noise + light blur (baseline)
+                                                                                        convert "${output_base}.tif" -colorspace Gray \
+                                                                                            \( +clone -contrast-stretch 1%x1% -attenuate 0.02 +noise Gaussian -blur 0x0.4 \) \
+                                                                                            -compose over -composite "${aug_base}.tif" 2>>"$log_file" || true ;;
+                                                                                    2)
+                                                                                        # JPEG-like artifacts
+                                                                                        convert "${output_base}.tif" -colorspace Gray -quality 85 "${aug_base}.jpg" 2>>"$log_file" || true
+                                                                                        if [ -f "${aug_base}.jpg" ]; then convert "${aug_base}.jpg" "${aug_base}.tif" 2>>"$log_file" || true; fi ;;
+                                                                                    3)
+                                                                                        # Halftone/dot pattern subtle
+                                                                                        convert "${output_base}.tif" -colorspace Gray -ordered-dither o8x8 -blur 0x0.3 "${aug_base}.tif" 2>>"$log_file" || true ;;
+                                                                                    4)
+                                                                                        # Paper texture overlay (noise + grain)
+                                                                                        convert "${output_base}.tif" -colorspace Gray \( -size 2000x2000 xc:white -attenuate 0.02 +noise Multiplicative -colorspace Gray -resize "@" \) \
+                                                                                            -compose multiply -composite -contrast-stretch 2%x2% "${aug_base}.tif" 2>>"$log_file" || true ;;
+                                                                                    5)
+                                                                                        # Mild uneven illumination (vignette-ish)
+                                                                                        convert "${output_base}.tif" -colorspace Gray \( +clone -radial-blur 0.2 \) -compose overlay -composite "${aug_base}.tif" 2>>"$log_file" || true ;;
+                                                                                    *)
+                                                                                        convert "${output_base}.tif" -colorspace Gray -attenuate 0.01 +noise Gaussian "${aug_base}.tif" 2>>"$log_file" || true ;;
+                                                                                esac
+                                                                                if [ -f "${aug_base}.tif" ]; then
+                                                                                        cp "${output_base}.box" "${aug_base}.box" 2>/dev/null || true
+                                                                                        cp "${output_base}.gt.txt" "${aug_base}.gt.txt" 2>/dev/null || true
+                                                                                fi
+                                                                        done
+                                                                fi
+                ok_this_font=1
+            fi
+            fi
+                page_i=$((page_i+1))
+            done
+        else
+            output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp${exp_idx}.d${THIS_DPI}.s${THIS_PTSIZE}.l${THIS_LEADING}.c${THIS_CHSP}"
+            if text2image \
             --text="$CORPUS_SRC" \
             --outputbase="$output_base" \
             --font="$used_font" \
             --fonts_dir="$(pwd)/$FONTS_DIR" \
-            --ptsize=$FONT_SIZE \
-            --resolution=$DPI \
+            --ptsize=$THIS_PTSIZE \
+            --resolution=$THIS_DPI \
             --margin=$MARGIN \
-            --leading=$LEADING \
-                        --char_spacing=$CHAR_SPACING \
+            --leading=$THIS_LEADING \
+                        --char_spacing=$THIS_CHSP \
             --exposure="$EXP" \
             >>"$log_file" 2>&1; then
             if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
                 cp "$CORPUS_SRC" "${output_base}.gt.txt"
-                                # Optional simple augmentation via ImageMagick
-                                if [ "$ENABLE_AUG" = "1" ] && command -v convert >/dev/null 2>&1; then
-                                    aug_base="${output_base}.aug"
-                                    convert "${output_base}.tif" -colorspace Gray -contrast-stretch 1%x1% -blur 0x0.5 -attenuate 0.02 +noise Gaussian "${aug_base}.tif" 2>>"$log_file" || true
-                                    if [ -f "${aug_base}.tif" ]; then
-                                        # Duplicate gt for augmented image; box reused is not ideal but acceptable for small perturbations
-                                        cp "${output_base}.box" "${aug_base}.box" 2>/dev/null || true
-                                        cp "${output_base}.gt.txt" "${aug_base}.gt.txt" 2>/dev/null || true
-                                    fi
-                                fi
+                                                                if [ "$ENABLE_AUG" = "1" ] && command -v convert >/dev/null 2>&1; then
+                                                                        for k in $(seq 1 "$AUG_VARIANTS"); do
+                                                                                aug_base="${output_base}.aug${k}"
+                                                                                case $k in
+                                                                                    1)
+                                                                                        convert "${output_base}.tif" -colorspace Gray \
+                                                                                            \( +clone -contrast-stretch 1%x1% -attenuate 0.02 +noise Gaussian -blur 0x0.4 \) \
+                                                                                            -compose over -composite "${aug_base}.tif" 2>>"$log_file" || true ;;
+                                                                                    2)
+                                                                                        convert "${output_base}.tif" -colorspace Gray -quality 85 "${aug_base}.jpg" 2>>"$log_file" || true
+                                                                                        if [ -f "${aug_base}.jpg" ]; then convert "${aug_base}.jpg" "${aug_base}.tif" 2>>"$log_file" || true; fi ;;
+                                                                                    3)
+                                                                                        convert "${output_base}.tif" -colorspace Gray -ordered-dither o8x8 -blur 0x0.3 "${aug_base}.tif" 2>>"$log_file" || true ;;
+                                                                                    4)
+                                                                                        convert "${output_base}.tif" -colorspace Gray \( -size 2000x2000 xc:white -attenuate 0.02 +noise Multiplicative -colorspace Gray -resize "@" \) \
+                                                                                            -compose multiply -composite -contrast-stretch 2%x2% "${aug_base}.tif" 2>>"$log_file" || true ;;
+                                                                                    5)
+                                                                                        convert "${output_base}.tif" -colorspace Gray \( +clone -radial-blur 0.2 \) -compose overlay -composite "${aug_base}.tif" 2>>"$log_file" || true ;;
+                                                                                    *)
+                                                                                        convert "${output_base}.tif" -colorspace Gray -attenuate 0.01 +noise Gaussian "${aug_base}.tif" 2>>"$log_file" || true ;;
+                                                                                esac
+                                                                                if [ -f "${aug_base}.tif" ]; then
+                                                                                        cp "${output_base}.box" "${aug_base}.box" 2>/dev/null || true
+                                                                                        cp "${output_base}.gt.txt" "${aug_base}.gt.txt" 2>/dev/null || true
+                                                                                fi
+                                                                        done
+                                                                fi
                 ok_this_font=1
+            fi
             fi
         fi
         exp_idx=$((exp_idx+1))
+            done
+          done
+        done
+      done
     done
 
     if [ "$ok_this_font" -eq 1 ]; then

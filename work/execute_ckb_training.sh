@@ -17,6 +17,8 @@ DEBUG_INTERVAL="${DEBUG_INTERVAL:-0}"
 TRAINING_EXTRA_ARGS="${TRAINING_EXTRA_ARGS:-}"
 LATIN_DIGITS="${LATIN_DIGITS:-0}" # 1 to include ASCII 0-9 in numbers.txt for minimal traineddata
 PUNCS_EXTRA="${PUNCS_EXTRA:-}"   # extra punctuation to append to defaults
+OEM="${OEM:-1}"
+PSM="${PSM:-6}"
 
 mkdir -p "$TMP_DIR" "$OUT_DIR"
 # Resolve ground truth directory with fallbacks if default is missing
@@ -54,6 +56,34 @@ WIN_TESSDATA_BEST="/mnt/c/tesseract/tessdata/best"
 WIN_TESSDATA_FAST="/mnt/c/tesseract/tessdata/fast"
 mkdir -p "$WIN_TESSDATA_BEST" || true
 mkdir -p "$WIN_TESSDATA_FAST" || true
+
+IMPORT_REAL_EVAL="${IMPORT_REAL_EVAL:-0}"
+REAL_EVAL_DIR="$WORK_DIR/real_gt/eval"
+if [ "$IMPORT_REAL_EVAL" = "1" ] && [ -d "$REAL_EVAL_DIR" ]; then
+  echo "➕ Importing real eval pairs (enabled via IMPORT_REAL_EVAL=1): $REAL_EVAL_DIR"
+  while IFS= read -r -d '' tif; do
+    base=$(basename "$tif" .tif)
+    gt="$REAL_EVAL_DIR/$base.gt.txt"
+    [ -f "$gt" ] || continue
+    dst_base="$GT_DIR/real_$base"
+    cp -f "$tif" "${dst_base}.tif" 2>/dev/null || true
+    cp -f "$gt"  "${dst_base}.gt.txt" 2>/dev/null || true
+    if [ ! -f "${dst_base}.box" ]; then
+      CKB_TESSDATA="/mnt/c/tesseract/tessdata/best"; [ -f "$CKB_TESSDATA/ckb.traineddata" ] || CKB_TESSDATA="${TESSDATA_BEST_DIR}"
+      echo "Bootstrapping boxes for $(basename "$dst_base") using ckb model (psm=$PSM) ..."
+      tesseract --tessdata-dir "$CKB_TESSDATA" "${dst_base}.tif" "${dst_base}" -l ckb --oem "$OEM" --psm "$PSM" makebox 2>/dev/null || true
+      if [ ! -f "${dst_base}.box" ]; then
+        ALT_DIR="$WIN_TESSDATA_BEST"; [ -d "$ALT_DIR" ] || ALT_DIR="$TESSDATA_BEST_DIR"
+        if [ -f "$ALT_DIR/ara.traineddata" ]; then
+          tesseract --tessdata-dir "$ALT_DIR" "${dst_base}.tif" "${dst_base}" -l ara --oem "$OEM" --psm "$PSM" makebox 2>/dev/null || true
+        fi
+      fi
+    fi
+  done < <(find "$REAL_EVAL_DIR" -maxdepth 1 -type f -name '*.tif' -print0)
+else
+  # Ensure previously imported real_* samples are removed from GT to keep eval data separate from training
+  find "$GT_DIR" -maxdepth 1 -type f -name 'real_*.*' -print0 | xargs -0 -r rm -f 2>/dev/null || true
+fi
 
 echo "🔧 Checking required tools..."
 for tool in tesseract lstmtraining combine_tessdata unicharset_extractor combine_lang_model set_unicharset_properties ; do
@@ -225,7 +255,7 @@ echo "✅ Generated $LSTMF_COUNT .lstmf files"
 echo "🗂️  Preparing listfiles..."
 cd "$TMP_DIR"
 # Create list of files and shuffle to avoid font-bias in train/eval split
-ls *.lstmf > list.all
+find . -maxdepth 1 -type f -name '*.lstmf' -printf '%f\n' | sed 's/^\.\///' > list.all
 if command -v shuf >/dev/null 2>&1; then
   shuf list.all -o list.all
 else
@@ -246,13 +276,28 @@ EVAL_COUNT=$(wc -l < list.eval | tr -d ' ')
 ensure_target_traineddata() {
   # Choose or build a ckb traineddata to provide unicharset/recoder
   local target=""
+  # 0) Highest priority: explicit custom override in repo root
   if [ -f "$WIN_TESSDATA/ckb_custom.traineddata" ]; then target="$WIN_TESSDATA/ckb_custom.traineddata"; fi
+  # 1) Next: repo root tessdata (if user dropped one there)
   if [ -z "$target" ] && [ -f "$WIN_TESSDATA/ckb.traineddata" ]; then target="$WIN_TESSDATA/ckb.traineddata"; fi
+  # 2) Prefer existing best/fast/system ckb models before building a minimal one
+  if [ -z "$target" ]; then
+    for d in "$WIN_TESSDATA_BEST" "$TESSDATA_BEST_DIR" "$WIN_TESSDATA_FAST" "$TESSDATA_FAST_DIR" "$TESSDATA_DIR"; do
+      if [ -f "$d/ckb.traineddata" ]; then target="$d/ckb.traineddata"; break; fi
+    done
+  fi
   if [ -n "$target" ] && combine_tessdata -d "$target" >/dev/null 2>&1; then echo "$target"; return 0; fi
 
   echo "🧪 Building minimal $LANG.traineddata (unicharset + recoder) from GT..." 1>&2
   LNX_TMP_DIR="/tmp/tess_ckb_build"; rm -rf "$LNX_TMP_DIR"; mkdir -p "$LNX_TMP_DIR"
-  cd "$GT_DIR"; rm -f "$LNX_TMP_DIR/unicharset"; unicharset_extractor *.box; mv -f unicharset "$LNX_TMP_DIR/unicharset"
+  rm -f "$LNX_TMP_DIR/unicharset" "$LNX_TMP_DIR/all.box"
+  # Aggregate all .box files to avoid Arg list too long
+  find "$GT_DIR" -maxdepth 1 -type f -name '*.box' -print0 | xargs -0 cat -- > "$LNX_TMP_DIR/all.box"
+  if [ ! -s "$LNX_TMP_DIR/all.box" ]; then echo "❌ No .box files found in $GT_DIR"; return 1; fi
+  # Extract unicharset in the temp folder to ensure predictable output path
+  ( cd "$LNX_TMP_DIR" && unicharset_extractor "$LNX_TMP_DIR/all.box" )
+  mv -f "$LNX_TMP_DIR/unicharset" "$LNX_TMP_DIR/unicharset" 2>/dev/null || true
+  rm -f "$LNX_TMP_DIR/all.box"
   # Set properties using script_dir assets (best-effort)
   set_unicharset_properties -U "$LNX_TMP_DIR/unicharset" -O "$LNX_TMP_DIR/unicharset" --script_dir="$SCRIPT_DIR" || true
   # Build words list from corpus/GT and filter to allowed charset using Python
@@ -316,8 +361,11 @@ with open(os.path.join(tmp,'numbers.txt'),'w',encoding='utf-8') as f:
     if nums:
         f.write(''.join(sorted(set(nums), key=nums.index))+'\n')
 with open(os.path.join(tmp,'puncs.txt'),'w',encoding='utf-8') as f:
-    if puncs:
-        f.write(''.join(sorted(set(puncs), key=puncs.index))+'\n')
+  # Ensure non-empty puncs list for combine_lang_model; fallback to a minimal Arabic punctuation set
+  if puncs:
+    f.write(''.join(sorted(set(puncs), key=puncs.index))+'\n')
+  else:
+    f.write('،٪؛\n')
 PY
   # Combine to traineddata (use frequency DAWGs if available)
   NUMBERS_OPT=""; [ -s "$LNX_TMP_DIR/numbers.txt" ] && NUMBERS_OPT="--numbers $LNX_TMP_DIR/numbers.txt"

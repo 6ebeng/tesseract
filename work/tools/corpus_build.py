@@ -72,6 +72,10 @@ def main() -> int:
         print(f"Corpus dir missing: {CORPUS_DIR}")
         return 2
     sources = [p for p in CORPUS_DIR.glob('*.txt') if 'final' not in p.name.lower()]
+    # Ensure shaping coverage is included first if available
+    shaping = CORPUS_DIR / 'shaping_augment.txt'
+    if shaping.exists():
+        sources = [shaping] + [p for p in sources if p != shaping]
     if not sources:
         print(f"No source corpus files found in {CORPUS_DIR}")
         return 2

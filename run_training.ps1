@@ -17,16 +17,26 @@ param(
     [string]$FontsDirOverride,
     [string]$OutputDirOverride,
     [int]$FontSize,
+    [string]$FontSizes,
     [int]$DPI,
+    [string]$DPIs,
     [int]$Margin,
     [int]$Leading,
+    [string]$LeadingList,
     [int]$CharSpacing,
+    [string]$CharSpacings,
     [switch]$EnableAug,
+    [int]$AugVariants,
+    [int]$MaxPages,
+    [int]$CharsPerPage,
     # Corpus builder options
     [switch]$UseFixer,
     [int]$CorpusMinCount,
     # All-mode options
-    [switch]$SkipEval
+    [switch]$SkipEval,
+    [string]$EvalPSMs,
+    [switch]$EvalUseGTLexicon,
+    [string]$EvalPrep
 )
 
 if (-not $NoClear) {
@@ -94,11 +104,18 @@ function Get-GenEnvPrefix() {
     if ($FontsDirOverride) { $parts += "FONTS_DIR_OVERRIDE='$(Escape-ShellSingleQuotes (Convert-ToWslPath $FontsDirOverride))'" }
     if ($OutputDirOverride) { $parts += "OUTPUT_DIR_OVERRIDE='$(Escape-ShellSingleQuotes (Convert-ToWslPath $OutputDirOverride))'" }
     if ($FontSize) { $parts += "FONT_SIZE='${FontSize}'" }
+    if ($FontSizes) { $parts += "FONT_SIZE_LIST='$(Escape-ShellSingleQuotes $FontSizes)'" }
     if ($DPI) { $parts += "DPI='${DPI}'" }
+    if ($DPIs) { $parts += "DPI_LIST='$(Escape-ShellSingleQuotes $DPIs)'" }
     if ($Margin) { $parts += "MARGIN='${Margin}'" }
     if ($Leading) { $parts += "LEADING='${Leading}'" }
+    if ($LeadingList) { $parts += "LEADING_LIST='$(Escape-ShellSingleQuotes $LeadingList)'" }
     if ($CharSpacing) { $parts += "CHAR_SPACING='${CharSpacing}'" }
+    if ($CharSpacings) { $parts += "CHAR_SPACING_LIST='$(Escape-ShellSingleQuotes $CharSpacings)'" }
     if ($EnableAug) { $parts += "ENABLE_AUG='1'" }
+    if ($AugVariants) { $parts += "AUG_VARIANTS='${AugVariants}'" }
+    if ($MaxPages) { $parts += "MAX_PAGES='${MaxPages}'" }
+    if ($CharsPerPage) { $parts += "CHARS_PER_PAGE='${CharsPerPage}'" }
     if ($parts.Count -gt 0) { return ($parts -join ' ') + ' ' } else { return '' }
 }
 
@@ -243,11 +260,28 @@ function Invoke-BuildCorpus {
     if ($code -eq 2) { Write-Host "No corpus sources found; skipping corpus build." -ForegroundColor DarkYellow; return }
     if ($code -ne 0) { throw "Corpus build failed (exit $code)." }
     Write-Host "Corpus build complete (corpus/ckb.training_text.final)." -ForegroundColor Green
+
+    # Run corpus audit (non-fatal but reported)
+    Write-Host "Running corpus audit..." -ForegroundColor Yellow
+    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; python3 tools/corpus_audit.py --out output/corpus_audit"; $acode = $LASTEXITCODE
+    if ($acode -eq 0) {
+        Write-Host "Audit passed: no out-of-set characters." -ForegroundColor Green
+    }
+    elseif ($acode -eq 2) {
+        Write-Host "Audit found out-of-set characters. See work/output/corpus_audit.json and .txt" -ForegroundColor DarkYellow
+    }
 }
 
 function Invoke-EvalReal {
     Write-Host "`nEvaluating real-world CER..." -ForegroundColor Yellow
-    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; python3 tools/eval_real_cer.py"; $ecode = $LASTEXITCODE
+    $psmArg = ''
+    if ($EvalPSMs) {
+        $psmList = $EvalPSMs -replace ' ', ''
+        $psmArg = " --psm-sweep '$psmList'"
+    }
+    $lexArg = if ($EvalUseGTLexicon) { ' --gt-lexicon' } else { '' }
+    $prepArg = if ($EvalPrep) { " --prep '$(Escape-ShellSingleQuotes $EvalPrep)'" } else { '' }
+    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; python3 tools/eval_real_cer.py$psmArg$lexArg$prepArg"; $ecode = $LASTEXITCODE
     if ($ecode -ne 0) { Write-Host "Real eval returned code $ecode (no eval set or error)." -ForegroundColor DarkYellow }
     else { Write-Host "Real eval complete. See work/output/real_metrics.csv" -ForegroundColor Green }
 }

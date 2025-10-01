@@ -12,6 +12,34 @@ import unicodedata
 
 class KurdishCharacterFixer:
     def __init__(self):
+        # Basic normalization mappings (codepoint-level) for Sorani
+        self.letter_map = {
+            # Arabic to Kurdish codepoint unification
+            '\u0643': '\u06A9',  # ك -> ک (KEHEH)
+            '\u064A': '\u06CC',  # ي -> ی (FARSI YEH)
+            '\u0649': '\u06D5',  # ى -> ە (AE) when misused
+            '\u0629': '\u06D5',  # ة -> ە (AE)
+            '\u0647\u200C': '\u0647',  # ه‌ (with ZWNJ) -> ه
+        }
+        # Persian digits -> Arabic-Indic digits (Sorani default)
+        self.persian_digit_map = {
+            '\u06F0': '\u0660', '\u06F1': '\u0661', '\u06F2': '\u0662', '\u06F3': '\u0663',
+            '\u06F4': '\u0664', '\u06F5': '\u0665', '\u06F6': '\u0666', '\u06F7': '\u0667',
+            '\u06F8': '\u0668', '\u06F9': '\u0669',
+        }
+        # Punctuation normalization
+        self.punc_map = {
+            ',': '،',
+            '?': '؟',
+            '%': '٪',
+        }
+        # Characters to drop entirely
+        self.drop_chars = set([
+            '\u0640',             # tatweel
+            '\u200C', '\u200D',  # ZWNJ, ZWJ
+            '\u200E', '\u200F',  # LRM, RLM
+            '\u202A', '\u202B', '\u202C', '\u202D', '\u202E', # bidi embeddings/override/PDF
+        ])
         # Mapping of commonly misrecognized patterns to Kurdish characters
         self.character_patterns = {
             # گ (gaf) recognition patterns
@@ -107,7 +135,7 @@ class KurdishCharacterFixer:
 
     def fix_kurdish_text(self, text):
         """Apply comprehensive Kurdish character fixes"""
-        fixed_text = text.strip()
+        fixed_text = self._normalize_text(text)
         
         # Apply character-specific pattern fixes
         for char, patterns in self.character_patterns.items():
@@ -124,26 +152,53 @@ class KurdishCharacterFixer:
         
         return fixed_text.strip()
     
+    def _normalize_text(self, text: str) -> str:
+        """Systematic normalization for Sorani Kurdish corpus.
+        - NFC normalize
+        - remove tatweel/zero-width/bidi controls
+        - strip diacritics (Mn)
+        - unify Arabic vs Kurdish letter forms
+        - convert Persian digits to Arabic-Indic
+        - normalize common punctuation
+        - collapse whitespace
+        """
+        # Ensure str
+        if not isinstance(text, str):
+            text = str(text)
+        # NFC
+        text = unicodedata.normalize('NFC', text)
+        # Drop unwanted control chars + tatweel quickly
+        text = ''.join(ch for ch in text if ch not in self.drop_chars)
+        # Strip combining marks (Arabic harakat etc.)
+        text = ''.join(ch for ch in text if unicodedata.category(ch) != 'Mn')
+        # Map letters (simple pass)
+        for src, dst in self.letter_map.items():
+            text = text.replace(src, dst)
+        # Map Persian digits to Arabic-Indic
+        for src, dst in self.persian_digit_map.items():
+            text = text.replace(src, dst)
+        # Normalize punctuation
+        for src, dst in self.punc_map.items():
+            text = text.replace(src, dst)
+        # Collapse multiple spaces/newlines gently
+        text = re.sub(r'[\t\x0b\x0c\r]', ' ', text)
+        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r'\s*\n\s*', '\n', text)
+        return text.strip()
+
     def _apply_general_fixes(self, text):
         """Apply general Kurdish text fixes"""
-        # Basic character substitutions
+        # Additional conservative substitutions after normalization
         basic_fixes = {
-            'ك': 'ک',   # Arabic kaf → Kurdish kaf
-            'ي': 'ی',   # Arabic ya → Kurdish ya
-            'ث': 'ت',   # Arabic tha → Kurdish ta
-            'ة': 'ە',   # Arabic ta marbuta → Kurdish schwa
-            'أ': 'ئا',  # Arabic alif hamza → Kurdish hamza alif
-            'إ': 'ئی',  # Arabic alif hamza kasra → Kurdish hamza ya
-            'ؤ': 'ۆ',   # Arabic waw hamza → Kurdish o
+            'ث': 'ت',   # Arabic THEH rarely appears; map to TEH if present
+            'ؤ': 'ۆ',   # WAW with hamza -> Kurdish "o"
+            'أ': 'ئا',  # Alif with hamza above -> hamza + alif
+            'إ': 'ئی',  # Alif with hamza below -> hamza + yeh
         }
-        
         for old, new in basic_fixes.items():
             text = text.replace(old, new)
-        
-        # Clean up extra spaces and normalize
-        text = re.sub(r'\s+', ' ', text)
-        text = text.strip()
-        
+        # Final whitespace tidy
+        text = re.sub(r'\s+', ' ', text).strip()
         return text
 
 def main():
