@@ -38,8 +38,9 @@ TMP_DIR="$OUTPUT_DIR/tmp"
 # Note: Script charset files (Arabic/Latin/Common) come from tesseract-ocr/langdata (with fallback to langdata_lstm).
 if [ -f "/mnt/c/tesseract/fonts.conf" ]; then
     export FONTCONFIG_FILE="/mnt/c/tesseract/fonts.conf"
-elif [ -f "$WORK_DIR/fonts.conf" ]; then
-    export FONTCONFIG_FILE="$WORK_DIR/fonts.conf"
+elif [ -f "./fonts.conf" ]; then
+    # When running from work/, prefer the local fonts.conf
+    export FONTCONFIG_FILE="$(pwd)/fonts.conf"
 fi
 if [ -n "${FONTCONFIG_FILE:-}" ]; then
     echo "Using FONTCONFIG_FILE=$FONTCONFIG_FILE"

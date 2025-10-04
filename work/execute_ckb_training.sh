@@ -58,12 +58,19 @@ mkdir -p "$WIN_TESSDATA_BEST" || true
 mkdir -p "$WIN_TESSDATA_FAST" || true
 
 IMPORT_REAL_EVAL="${IMPORT_REAL_EVAL:-0}"
+REAL_TRAIN_DIR="$WORK_DIR/real_gt/train"
 REAL_EVAL_DIR="$WORK_DIR/real_gt/eval"
-if [ "$IMPORT_REAL_EVAL" = "1" ] && [ -d "$REAL_EVAL_DIR" ]; then
-  echo "➕ Importing real eval pairs (enabled via IMPORT_REAL_EVAL=1): $REAL_EVAL_DIR"
-  while IFS= read -r -d '' tif; do
+if [ "$IMPORT_REAL_EVAL" = "1" ]; then
+  src_dirs=()
+  [ -d "$REAL_TRAIN_DIR" ] && src_dirs+=("$REAL_TRAIN_DIR")
+  [ -d "$REAL_EVAL_DIR" ] && src_dirs+=("$REAL_EVAL_DIR")
+  if [ ${#src_dirs[@]} -gt 0 ]; then
+    echo "➕ Importing real pairs into training set (IMPORT_REAL_EVAL=1): ${src_dirs[*]}"
+  fi
+  for SRC in "${src_dirs[@]}"; do
+    while IFS= read -r -d '' tif; do
     base=$(basename "$tif" .tif)
-    gt="$REAL_EVAL_DIR/$base.gt.txt"
+      gt="$SRC/$base.gt.txt"
     [ -f "$gt" ] || continue
     dst_base="$GT_DIR/real_$base"
     cp -f "$tif" "${dst_base}.tif" 2>/dev/null || true
@@ -79,7 +86,8 @@ if [ "$IMPORT_REAL_EVAL" = "1" ] && [ -d "$REAL_EVAL_DIR" ]; then
         fi
       fi
     fi
-  done < <(find "$REAL_EVAL_DIR" -maxdepth 1 -type f -name '*.tif' -print0)
+    done < <(find "$SRC" -maxdepth 1 -type f -name '*.tif' -print0)
+  done
 else
   # Ensure previously imported real_* samples are removed from GT to keep eval data separate from training
   find "$GT_DIR" -maxdepth 1 -type f -name 'real_*.*' -print0 | xargs -0 -r rm -f 2>/dev/null || true

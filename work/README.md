@@ -32,3 +32,10 @@ Real eval (optional):
 
 - Put a few real images and their matching `.gt.txt` under `real_gt/eval/`.
 - Then run: `python3 tools/eval_real_cer.py` (from this folder in WSL) to get average CER.
+
+Real GT for training (optional):
+
+- You can place additional real pages under `real_gt/train/`. When training runs with `IMPORT_REAL_EVAL=1` (toggle exposed in the Windows driver via `-TrainUseRealEval`), both `real_gt/train/` and `real_gt/eval/` will be imported as `real_*.tif/gt.txt` into the GT set, and boxes will be bootstrapped automatically. If you want to strictly hold out eval, leave `-TrainUseRealEval` off or keep pages only in `real_gt/eval/`.
+
+Useful generation flags in the Windows driver (`run_training.ps1`): `-MaxPages`, `-CharsPerPage`, `-EnableAug`, `-AugVariants`, `-Exposures`.
+Training flags: `-MaxIters`, `-DebugInterval`, `-ForceMinimal`, `-LatinDigits`, `-PuncsExtra`, `-TrainUseRealEval`.

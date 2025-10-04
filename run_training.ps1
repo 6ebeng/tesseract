@@ -14,6 +14,7 @@ param(
     [switch]$LatinDigits,
     [string]$PuncsExtra,
     [switch]$TrainUseRealEval,
+    [string]$Exposures,
     # Data generation overrides
     [string]$CorpusFileOverride,
     [string]$FontsDirOverride,
@@ -122,6 +123,7 @@ function Get-GenEnvPrefix() {
     if ($CharSpacings) { $parts += "CHAR_SPACING_LIST='$(Escape-ShellSingleQuotes $CharSpacings)'" }
     if ($EnableAug) { $parts += "ENABLE_AUG='1'" }
     if ($AugVariants) { $parts += "AUG_VARIANTS='${AugVariants}'" }
+    if ($Exposures) { $parts += "EXPOSURES='$(Escape-ShellSingleQuotes $Exposures)'" }
     if ($MaxPages) { $parts += "MAX_PAGES='${MaxPages}'" }
     if ($CharsPerPage) { $parts += "CHARS_PER_PAGE='${CharsPerPage}'" }
     if ($parts.Count -gt 0) { return ($parts -join ' ') + ' ' } else { return '' }
