@@ -10,9 +10,9 @@ if ! command -v apt-get >/dev/null 2>&1; then
 fi
 
 sudo apt-get update
+# Install core OCR and build deps; on Ubuntu 24.04 (noble), tesseract-ocr-dev is replaced by libtesseract-dev
 sudo apt-get install -y \
   tesseract-ocr \
-  tesseract-ocr-dev \
   libtesseract-dev \
   libleptonica-dev \
   build-essential \
@@ -20,7 +20,15 @@ sudo apt-get install -y \
   libpng-dev libjpeg-dev libtiff-dev zlib1g-dev \
   python3 python3-pip \
   fonts-dejavu-core fontconfig \
-  imagemagick
+  imagemagick || true
+
+# Fallback attempts for any missing packages
+if ! command -v tesseract >/dev/null 2>&1; then
+  sudo apt-get install -y tesseract-ocr || true
+fi
+if ! dpkg -s libtesseract-dev >/dev/null 2>&1; then
+  sudo apt-get install -y libtesseract-dev || true
+fi
 
 # Optional: lstmeval ships with training tools in recent versions
 # Verify tools
@@ -31,6 +39,14 @@ done
 
 if [ ${#missing[@]} -gt 0 ]; then
   echo "WARNING: Missing tools: ${missing[*]}" >&2
+  # Try to install extras via apt if available
+  sudo apt-get install -y tesseract-ocr-all || true
+  # Recheck
+  re_missing=()
+  for tool in "${missing[@]}"; do command -v "$tool" >/dev/null 2>&1 || re_missing+=("$tool"); done
+  if [ ${#re_missing[@]} -gt 0 ]; then
+    echo "Still missing: ${re_missing[*]}" >&2
+  fi
 else
   echo "All required training tools found."
 fi

@@ -213,6 +213,9 @@ have_model() { # returns path to model
 fas_path=$(have_model fas || true)
 ara_path=$(have_model ara || true)
 BASE_LANGS=(); [ -n "$fas_path" ] && BASE_LANGS+=(fas); [ -n "$ara_path" ] && BASE_LANGS+=(ara)
+# If Latin GT exists, try to include English as an auxiliary segmenter to better align Latin text lines
+eng_path=$(have_model eng || true)
+if [ -n "$eng_path" ]; then BASE_LANGS+=(eng); fi
 if [ ${#BASE_LANGS[@]} -eq 0 ]; then echo "❌ No base models (fas/ara) found"; exit 1; fi
 echo "Found bases: ${BASE_LANGS[*]}"
 
@@ -236,6 +239,7 @@ while IFS= read -r -d '' tif; do
   [ -f "$gt_txt" ] || { echo "⚠️  Missing $base.gt.txt"; continue; }
   for B in "${BASE_LANGS[@]}"; do
     MODEL_PATH=""; [ "$B" = fas ] && MODEL_PATH="$fas_path" || MODEL_PATH="$ara_path"
+    if [ "$B" = eng ]; then MODEL_PATH="$eng_path"; fi
     MODEL_DIR=$(dirname "$MODEL_PATH")
     # Ensure matching GT for suffixed output base
     cp -f "$gt_txt" "$GT_DIR/$base-$B.gt.txt"
@@ -243,7 +247,7 @@ while IFS= read -r -d '' tif; do
     {
       echo "---- $(date -Iseconds) : $base (seg=$B) ----"
       echo "CMD: tesseract --tessdata-dir '$MODEL_DIR' '$tif' '$base-$B' -l '$B' --oem $OEM --psm $PSM '$CONFIG_LSTM'"
-      tesseract --tessdata-dir "$MODEL_DIR" "$tif" "$base-$B" -l "$B" --oem "$OEM" --psm "$PSM" "$CONFIG_LSTM" 2>&1 || true
+        tesseract --tessdata-dir "$MODEL_DIR" "$tif" "$base-$B" -l "$B" --oem "$OEM" --psm "$PSM" "$CONFIG_LSTM" 2>&1 || true
     } >> "$LSTMF_LOG"
     if [ -f "$GT_DIR/$base-$B.lstmf" ]; then mv -f "$GT_DIR/$base-$B.lstmf" "$TMP_DIR/"; LSTMF_COUNT=$((LSTMF_COUNT+1)); else echo "⚠️  Missing $base-$B.lstmf"; fi
     rm -f "$GT_DIR/$base-$B.gt.txt" 2>/dev/null || true
@@ -276,12 +280,17 @@ EVAL_COUNT=$(wc -l < list.eval | tr -d ' ')
 ensure_target_traineddata() {
   # Choose or build a ckb traineddata to provide unicharset/recoder
   local target=""
+  # Allow forcing a minimal rebuild from GT regardless of existing ckb models
+  local force_minimal="${FORCE_MINIMAL:-0}"
+  if [ "$force_minimal" = "1" ]; then
+    echo "FORCE_MINIMAL=1 requested; skipping existing ckb models and building minimal from GT..." 1>&2
+  fi
   # 0) Highest priority: explicit custom override in repo root
-  if [ -f "$WIN_TESSDATA/ckb_custom.traineddata" ]; then target="$WIN_TESSDATA/ckb_custom.traineddata"; fi
+  if [ "$force_minimal" != "1" ] && [ -f "$WIN_TESSDATA/ckb_custom.traineddata" ]; then target="$WIN_TESSDATA/ckb_custom.traineddata"; fi
   # 1) Next: repo root tessdata (if user dropped one there)
-  if [ -z "$target" ] && [ -f "$WIN_TESSDATA/ckb.traineddata" ]; then target="$WIN_TESSDATA/ckb.traineddata"; fi
+  if [ "$force_minimal" != "1" ] && [ -z "$target" ] && [ -f "$WIN_TESSDATA/ckb.traineddata" ]; then target="$WIN_TESSDATA/ckb.traineddata"; fi
   # 2) Prefer existing best/fast/system ckb models before building a minimal one
-  if [ -z "$target" ]; then
+  if [ "$force_minimal" != "1" ] && [ -z "$target" ]; then
     for d in "$WIN_TESSDATA_BEST" "$TESSDATA_BEST_DIR" "$WIN_TESSDATA_FAST" "$TESSDATA_FAST_DIR" "$TESSDATA_DIR"; do
       if [ -f "$d/ckb.traineddata" ]; then target="$d/ckb.traineddata"; break; fi
     done

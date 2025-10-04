@@ -10,8 +10,10 @@ param(
     [int]$OEM,
     [int]$PSM,
     [string]$TrainingExtraArgs,
+    [switch]$ForceMinimal,
     [switch]$LatinDigits,
     [string]$PuncsExtra,
+    [switch]$TrainUseRealEval,
     # Data generation overrides
     [string]$CorpusFileOverride,
     [string]$FontsDirOverride,
@@ -36,7 +38,11 @@ param(
     [switch]$SkipEval,
     [string]$EvalPSMs,
     [switch]$EvalUseGTLexicon,
-    [string]$EvalPrep
+    [string]$EvalPrep,
+    [switch]$EvalHOCRLines,
+    [int]$EvalHOCRPSM,
+    [switch]$EvalUserWordsCorpus,
+    [switch]$EvalDisableDAWGs
 )
 
 if (-not $NoClear) {
@@ -77,6 +83,7 @@ function Get-TrainEnvPrefix() {
     if ($PSM -ge 3 -and $PSM -le 13) { $parts += "PSM='${PSM}'" }
     if ($LatinDigits) { $parts += "LATIN_DIGITS='1'" }
     if ($PuncsExtra) { $parts += "PUNCS_EXTRA='$(Escape-ShellSingleQuotes $PuncsExtra)'" }
+    if ($TrainUseRealEval) { $parts += "IMPORT_REAL_EVAL='1'" }
     # Ensure lstm.train is discoverable in WSL. Allow Windows env override, else default to repo's tessdata/configs.
     try {
         if ($env:LSTM_TRAIN_CONFIG) {
@@ -94,6 +101,7 @@ function Get-TrainEnvPrefix() {
         $escaped = Escape-ShellSingleQuotes $TrainingExtraArgs
         $parts += "TRAINING_EXTRA_ARGS='${escaped}'"
     }
+    if ($ForceMinimal) { $parts += "FORCE_MINIMAL='1'" }
     if ($parts.Count -gt 0) { return ($parts -join ' ') + ' ' } else { return '' }
 }
 
@@ -281,7 +289,12 @@ function Invoke-EvalReal {
     }
     $lexArg = if ($EvalUseGTLexicon) { ' --gt-lexicon' } else { '' }
     $prepArg = if ($EvalPrep) { " --prep '$(Escape-ShellSingleQuotes $EvalPrep)'" } else { '' }
-    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; python3 tools/eval_real_cer.py$psmArg$lexArg$prepArg"; $ecode = $LASTEXITCODE
+    $oemArg = if ($OEM -in 1,2,3) { " --oem '$OEM'" } else { '' }
+    $hocrArg = if ($EvalHOCRLines) { ' --hocr-lines' } else { '' }
+    $hocrPsmArg = if ($EvalHOCRLines -and $EvalHOCRPSM) { " --hocr-psm '$EvalHOCRPSM'" } else { '' }
+    $uwCorpusArg = if ($EvalUserWordsCorpus) { ' --user-words-corpus' } else { '' }
+    $disableDawgsArg = if ($EvalDisableDAWGs) { ' --disable-dawgs' } else { '' }
+    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; python3 tools/eval_real_cer.py$psmArg$lexArg$prepArg$oemArg$hocrArg$hocrPsmArg$uwCorpusArg$disableDawgsArg"; $ecode = $LASTEXITCODE
     if ($ecode -ne 0) { Write-Host "Real eval returned code $ecode (no eval set or error)." -ForegroundColor DarkYellow }
     else { Write-Host "Real eval complete. See work/output/real_metrics.csv" -ForegroundColor Green }
 }

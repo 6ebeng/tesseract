@@ -18,12 +18,15 @@ echo "=============================================="
 # Configuration (allow overrides from environment)
 LANG_CODE="ckb"
 CORPUS_FILE_DEFAULT="corpus/ckb.training_text"
+# Optional Latin-based Kurdish corpus for mixed-script exposure
+LATIN_CORPUS_DEFAULT="corpus/ckb_latin.training_text"
 FONTS_DIR_DEFAULT="fonts"
 OUTPUT_DIR_DEFAULT="training_output"
 
 CORPUS_FILE="${CORPUS_FILE_OVERRIDE:-$CORPUS_FILE_DEFAULT}"
 FONTS_DIR="${FONTS_DIR_OVERRIDE:-$FONTS_DIR_DEFAULT}"
 OUTPUT_DIR="${OUTPUT_DIR_OVERRIDE:-$OUTPUT_DIR_DEFAULT}"
+LATIN_CORPUS_FILE="$LATIN_CORPUS_DEFAULT"
 
 GROUND_TRUTH_DIR="$OUTPUT_DIR/ground_truth"
 TMP_DIR="$OUTPUT_DIR/tmp"
@@ -94,8 +97,8 @@ echo "============================================"
 
 # Ensure fontconfig sees local fonts
 if command -v fc-cache >/dev/null 2>&1; then
-    echo "Refreshing font cache for $FONTS_DIR ..."
-    fc-cache -f "$(pwd)/$FONTS_DIR" || true
+    echo "Refreshing font cache (system + repo fonts) ..."
+    fc-cache -f || true
 fi
 
 # Normalize corpus to Kurdish letter forms (best-effort) and NFC
@@ -119,6 +122,24 @@ PY
   else
     echo "Warning: normalization failed, falling back to original corpus." | tee -a "${OUTPUT_DIR}/logs/corpus_norm.log"
   fi
+fi
+
+# Normalize optional Latin corpus (if present)
+LATIN_SRC="$LATIN_CORPUS_FILE"
+LATIN_NFC="$TMP_DIR/ckb_latin.training_text.nfc"
+if [ -f "$LATIN_CORPUS_FILE" ]; then
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$LATIN_CORPUS_FILE" "$LATIN_NFC" << 'PY'
+import sys, unicodedata
+src, dst = sys.argv[1], sys.argv[2]
+with open(src, 'r', encoding='utf-8', errors='ignore') as f:
+        txt = f.read()
+txt = unicodedata.normalize('NFC', txt)
+with open(dst, 'w', encoding='utf-8') as g:
+        g.write(txt)
+PY
+        LATIN_SRC="$LATIN_NFC"
+    fi
 fi
 
 # Optionally split corpus into multiple pages to increase training diversity
@@ -205,6 +226,9 @@ while IFS= read -r -d '' font_file; do
         FONT_CANDS+=("$cand_fullname")
     fi
     FONT_CANDS+=("$font_name")
+    # Common fallbacks to improve resolution on mixed environments
+    # Fallbacks limited to Arabic-supporting families to avoid encoding failures
+    FONT_CANDS+=("Noto Naskh Arabic" "Noto Naskh Arabic Medium")
 
     echo "Trying font candidates: ${FONT_CANDS[*]}" >>"$log_file"
 
@@ -262,6 +286,24 @@ while IFS= read -r -d '' font_file; do
             >>"$log_file" 2>&1; then
             if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
                 cp "$page_file" "${output_base}.gt.txt"
+                # Optionally render a Latin page alongside for mixed-script robustness
+                if [ -f "$LATIN_SRC" ]; then
+                    latin_base="${output_base}.latin"
+                    text2image \
+                        --text="$LATIN_SRC" \
+                        --outputbase="$latin_base" \
+                        --font="$used_font" \
+                        --ptsize=$THIS_PTSIZE \
+                        --resolution=$THIS_DPI \
+                        --margin=$MARGIN \
+                        --leading=$THIS_LEADING \
+                        --char_spacing=$THIS_CHSP \
+                        --exposure="$EXP" \
+                        >>"$log_file" 2>&1 || true
+                    if [ -f "${latin_base}.tif" ] && [ -f "${latin_base}.box" ]; then
+                        cp "$LATIN_SRC" "${latin_base}.gt.txt" 2>/dev/null || true
+                    fi
+                fi
                                 # Optional multi-variant photometric augmentation (box-safe)
                                                                 if [ "$ENABLE_AUG" = "1" ] && command -v convert >/dev/null 2>&1; then
                                                                         for k in $(seq 1 "$AUG_VARIANTS"); do
@@ -316,6 +358,23 @@ while IFS= read -r -d '' font_file; do
             >>"$log_file" 2>&1; then
             if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
                 cp "$CORPUS_SRC" "${output_base}.gt.txt"
+                if [ -f "$LATIN_SRC" ]; then
+                    latin_base="${output_base}.latin"
+                    text2image \
+                        --text="$LATIN_SRC" \
+                        --outputbase="$latin_base" \
+                        --font="$used_font" \
+                        --ptsize=$THIS_PTSIZE \
+                        --resolution=$THIS_DPI \
+                        --margin=$MARGIN \
+                        --leading=$THIS_LEADING \
+                        --char_spacing=$THIS_CHSP \
+                        --exposure="$EXP" \
+                        >>"$log_file" 2>&1 || true
+                    if [ -f "${latin_base}.tif" ] && [ -f "${latin_base}.box" ]; then
+                        cp "$LATIN_SRC" "${latin_base}.gt.txt" 2>/dev/null || true
+                    fi
+                fi
                                                                 if [ "$ENABLE_AUG" = "1" ] && command -v convert >/dev/null 2>&1; then
                                                                         for k in $(seq 1 "$AUG_VARIANTS"); do
                                                                                 aug_base="${output_base}.aug${k}"
