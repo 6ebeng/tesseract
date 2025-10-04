@@ -1,0 +1,19 @@
+# Formats, named entities, and structured text in Sorani (Arabic script)
+# Dates, times, phone numbers, emails, URLs, currency, addresses
+
+بەروار: ٢٠٢٥/١٠/٠٤، 04/10/2025، 2025-10-04، کاتژمێر: ١٤:٣٠، 2:30 PM
+ژمارەی تەلەفۆن: +964 750 123 4567، (0750) 123-4567
+پۆستی ئەلیکترۆنی: name@example.com، info@kurdistan.gov.krd
+ناونیشان: کوردستان، هەولێر، سەردەمی ١٠٠ مەتر، ژمارە ١٢٣
+پارە: ١٢٣٬٤٥٠ دینار، 123,450 IQD، $1,234.50
+
+# URLs and file paths
+http://example.com، https://gov.krd/ministry, www.wiki.krd
+C:\\Users\\Name\\Documents\\file.txt، /home/user/data.csv
+
+# Names and locations
+نەوشیروان مستەفا، جەلال طالبانی، مسعود بارزانی
+هەولێر، سلێمانی، کەرکووک، دهۆک، هەڵەبجە
+
+# Organizations and acronyms
+سازمانە نێودەوڵەتییەکان (UN)، یەکێتیی نەتەوەییەکان (EU)، ناوچەی بازرگانی (Zakho Free Zone)

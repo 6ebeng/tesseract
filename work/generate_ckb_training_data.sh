@@ -20,6 +20,8 @@ LANG_CODE="ckb"
 CORPUS_FILE_DEFAULT="corpus/ckb.training_text"
 # Optional Latin-based Kurdish corpus for mixed-script exposure
 LATIN_CORPUS_DEFAULT="corpus/ckb_latin.training_text"
+# Optional mixed-script corpus (Arabic + Latin in the same line)
+MIXED_CORPUS_DEFAULT="corpus/ckb_mixed.training_text"
 FONTS_DIR_DEFAULT="fonts"
 OUTPUT_DIR_DEFAULT="training_output"
 
@@ -27,6 +29,7 @@ CORPUS_FILE="${CORPUS_FILE_OVERRIDE:-$CORPUS_FILE_DEFAULT}"
 FONTS_DIR="${FONTS_DIR_OVERRIDE:-$FONTS_DIR_DEFAULT}"
 OUTPUT_DIR="${OUTPUT_DIR_OVERRIDE:-$OUTPUT_DIR_DEFAULT}"
 LATIN_CORPUS_FILE="$LATIN_CORPUS_DEFAULT"
+MIXED_CORPUS_FILE="$MIXED_CORPUS_DEFAULT"
 
 GROUND_TRUTH_DIR="$OUTPUT_DIR/ground_truth"
 TMP_DIR="$OUTPUT_DIR/tmp"
@@ -101,13 +104,28 @@ if command -v fc-cache >/dev/null 2>&1; then
     fc-cache -f || true
 fi
 
+# Build a combined Arabic-script corpus from available pieces, then normalize
+# Prefer a final built corpus if present
+BASE_CKB="$CORPUS_FILE"
+if [ -f "corpus/ckb.training_text.final" ]; then BASE_CKB="corpus/ckb.training_text.final"; fi
+COMBINED_CKB="$TMP_DIR/ckb.corpus_combined.txt"
+{
+    [ -f "$BASE_CKB" ] && cat "$BASE_CKB" || true
+    # Pull in curated coverage and extra sentences if present
+    [ -f "corpus/ckb_core_coverage.txt" ] && cat "corpus/ckb_core_coverage.txt" || true
+    [ -f "corpus/ckb_extra_sentences.txt" ] && cat "corpus/ckb_extra_sentences.txt" || true
+    [ -f "corpus/ckb_formats_ner.txt" ] && cat "corpus/ckb_formats_ner.txt" || true
+    # Shaping augment is small but helpful
+    [ -f "corpus/shaping_augment.txt" ] && cat "corpus/shaping_augment.txt" || true
+} > "$COMBINED_CKB"
+
 # Normalize corpus to Kurdish letter forms (best-effort) and NFC
-CORPUS_SRC="$CORPUS_FILE"
+CORPUS_SRC="$COMBINED_CKB"
 CORPUS_NORM="$TMP_DIR/ckb.training_text.norm"
 CORPUS_NFC="$TMP_DIR/ckb.training_text.norm.nfc"
 if command -v python3 >/dev/null 2>&1 && [ -f "kurdish_character_fixer.py" ]; then
   echo "Normalizing corpus with kurdish_character_fixer.py ..."
-  if python3 kurdish_character_fixer.py "$CORPUS_FILE" "$CORPUS_NORM" 2>>"${OUTPUT_DIR}/logs/corpus_norm.log"; then
+    if python3 kurdish_character_fixer.py "$CORPUS_SRC" "$CORPUS_NORM" 2>>"${OUTPUT_DIR}/logs/corpus_norm.log"; then
     # NFC normalize to stabilize shaping across fonts
     python3 - "$CORPUS_NORM" "$CORPUS_NFC" << 'PY'
 import sys, unicodedata
@@ -118,18 +136,25 @@ txt = unicodedata.normalize('NFC', txt)
 with open(dst, 'w', encoding='utf-8') as g:
     g.write(txt)
 PY
-    CORPUS_SRC="$CORPUS_NFC"
+        CORPUS_SRC="$CORPUS_NFC"
   else
     echo "Warning: normalization failed, falling back to original corpus." | tee -a "${OUTPUT_DIR}/logs/corpus_norm.log"
   fi
 fi
 
-# Normalize optional Latin corpus (if present)
+# Build a combined Latin-script corpus if present, then NFC it
 LATIN_SRC="$LATIN_CORPUS_FILE"
 LATIN_NFC="$TMP_DIR/ckb_latin.training_text.nfc"
 if [ -f "$LATIN_CORPUS_FILE" ]; then
+    LATIN_COMBINED="$TMP_DIR/ckb_latin.corpus_combined.txt"
+    {
+        [ -f "$LATIN_CORPUS_FILE" ] && cat "$LATIN_CORPUS_FILE" || true
+        [ -f "corpus/ckb_latin_core_coverage.txt" ] && cat "corpus/ckb_latin_core_coverage.txt" || true
+        [ -f "corpus/ckb_latin_extra_sentences.txt" ] && cat "corpus/ckb_latin_extra_sentences.txt" || true
+        [ -f "corpus/ckb_latin_formats_ner.txt" ] && cat "corpus/ckb_latin_formats_ner.txt" || true
+    } > "$LATIN_COMBINED"
     if command -v python3 >/dev/null 2>&1; then
-        python3 - "$LATIN_CORPUS_FILE" "$LATIN_NFC" << 'PY'
+        python3 - "$LATIN_COMBINED" "$LATIN_NFC" << 'PY'
 import sys, unicodedata
 src, dst = sys.argv[1], sys.argv[2]
 with open(src, 'r', encoding='utf-8', errors='ignore') as f:
@@ -139,6 +164,24 @@ with open(dst, 'w', encoding='utf-8') as g:
         g.write(txt)
 PY
         LATIN_SRC="$LATIN_NFC"
+    fi
+fi
+
+# Normalize optional mixed-script corpus (if present)
+MIXED_SRC="$MIXED_CORPUS_FILE"
+MIXED_NFC="$TMP_DIR/ckb_mixed.training_text.nfc"
+if [ -f "$MIXED_CORPUS_FILE" ]; then
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$MIXED_CORPUS_FILE" "$MIXED_NFC" << 'PY'
+import sys, unicodedata
+src, dst = sys.argv[1], sys.argv[2]
+with open(src, 'r', encoding='utf-8', errors='ignore') as f:
+    txt = f.read()
+txt = unicodedata.normalize('NFC', txt)
+with open(dst, 'w', encoding='utf-8') as g:
+    g.write(txt)
+PY
+        MIXED_SRC="$MIXED_NFC"
     fi
 fi
 
@@ -302,6 +345,62 @@ while IFS= read -r -d '' font_file; do
                         >>"$log_file" 2>&1 || true
                     if [ -f "${latin_base}.tif" ] && [ -f "${latin_base}.box" ]; then
                         cp "$LATIN_SRC" "${latin_base}.gt.txt" 2>/dev/null || true
+                    else
+                        # Retry with Latin-capable fallback fonts
+                        for lf in "Noto Sans" "DejaVu Sans" "Liberation Sans"; do
+                            text2image \
+                                --text="$LATIN_SRC" \
+                                --outputbase="$latin_base" \
+                                --font="$lf" \
+                                --ptsize=$THIS_PTSIZE \
+                                --resolution=$THIS_DPI \
+                                --margin=$MARGIN \
+                                --leading=$THIS_LEADING \
+                                --char_spacing=$THIS_CHSP \
+                                --exposure="$EXP" \
+                                >>"$log_file" 2>&1 || true
+                            if [ -f "${latin_base}.tif" ] && [ -f "${latin_base}.box" ]; then
+                                cp "$LATIN_SRC" "${latin_base}.gt.txt" 2>/dev/null || true
+                                break
+                            fi
+                        done
+                    fi
+                fi
+                # Optionally render mixed-script page (Arabic+Latin in same lines)
+                if [ -f "$MIXED_SRC" ]; then
+                    mixed_base="${output_base}.mixed"
+                    text2image \
+                        --text="$MIXED_SRC" \
+                        --outputbase="$mixed_base" \
+                        --font="$used_font" \
+                        --ptsize=$THIS_PTSIZE \
+                        --resolution=$THIS_DPI \
+                        --margin=$MARGIN \
+                        --leading=$THIS_LEADING \
+                        --char_spacing=$THIS_CHSP \
+                        --exposure="$EXP" \
+                        >>"$log_file" 2>&1 || true
+                    if [ -f "${mixed_base}.tif" ] && [ -f "${mixed_base}.box" ]; then
+                        cp "$MIXED_SRC" "${mixed_base}.gt.txt" 2>/dev/null || true
+                    else
+                        # Retry mixed with an Arabic font plus Latin fallback family
+                        for lf in "Noto Sans" "DejaVu Sans" "Liberation Sans"; do
+                            text2image \
+                                --text="$MIXED_SRC" \
+                                --outputbase="$mixed_base" \
+                                --font="$lf" \
+                                --ptsize=$THIS_PTSIZE \
+                                --resolution=$THIS_DPI \
+                                --margin=$MARGIN \
+                                --leading=$THIS_LEADING \
+                                --char_spacing=$THIS_CHSP \
+                                --exposure="$EXP" \
+                                >>"$log_file" 2>&1 || true
+                            if [ -f "${mixed_base}.tif" ] && [ -f "${mixed_base}.box" ]; then
+                                cp "$MIXED_SRC" "${mixed_base}.gt.txt" 2>/dev/null || true
+                                break
+                            fi
+                        done
                     fi
                 fi
                                 # Optional multi-variant photometric augmentation (box-safe)
@@ -373,6 +472,59 @@ while IFS= read -r -d '' font_file; do
                         >>"$log_file" 2>&1 || true
                     if [ -f "${latin_base}.tif" ] && [ -f "${latin_base}.box" ]; then
                         cp "$LATIN_SRC" "${latin_base}.gt.txt" 2>/dev/null || true
+                    else
+                        for lf in "Noto Sans" "DejaVu Sans" "Liberation Sans"; do
+                            text2image \
+                                --text="$LATIN_SRC" \
+                                --outputbase="$latin_base" \
+                                --font="$lf" \
+                                --ptsize=$THIS_PTSIZE \
+                                --resolution=$THIS_DPI \
+                                --margin=$MARGIN \
+                                --leading=$THIS_LEADING \
+                                --char_spacing=$THIS_CHSP \
+                                --exposure="$EXP" \
+                                >>"$log_file" 2>&1 || true
+                            if [ -f "${latin_base}.tif" ] && [ -f "${latin_base}.box" ]; then
+                                cp "$LATIN_SRC" "${latin_base}.gt.txt" 2>/dev/null || true
+                                break
+                            fi
+                        done
+                    fi
+                fi
+                if [ -f "$MIXED_SRC" ]; then
+                    mixed_base="${output_base}.mixed"
+                    text2image \
+                        --text="$MIXED_SRC" \
+                        --outputbase="$mixed_base" \
+                        --font="$used_font" \
+                        --ptsize=$THIS_PTSIZE \
+                        --resolution=$THIS_DPI \
+                        --margin=$MARGIN \
+                        --leading=$THIS_LEADING \
+                        --char_spacing=$THIS_CHSP \
+                        --exposure="$EXP" \
+                        >>"$log_file" 2>&1 || true
+                    if [ -f "${mixed_base}.tif" ] && [ -f "${mixed_base}.box" ]; then
+                        cp "$MIXED_SRC" "${mixed_base}.gt.txt" 2>/dev/null || true
+                    else
+                        for lf in "Noto Sans" "DejaVu Sans" "Liberation Sans"; do
+                            text2image \
+                                --text="$MIXED_SRC" \
+                                --outputbase="$mixed_base" \
+                                --font="$lf" \
+                                --ptsize=$THIS_PTSIZE \
+                                --resolution=$THIS_DPI \
+                                --margin=$MARGIN \
+                                --leading=$THIS_LEADING \
+                                --char_spacing=$THIS_CHSP \
+                                --exposure="$EXP" \
+                                >>"$log_file" 2>&1 || true
+                            if [ -f "${mixed_base}.tif" ] && [ -f "${mixed_base}.box" ]; then
+                                cp "$MIXED_SRC" "${mixed_base}.gt.txt" 2>/dev/null || true
+                                break
+                            fi
+                        done
                     fi
                 fi
                                                                 if [ "$ENABLE_AUG" = "1" ] && command -v convert >/dev/null 2>&1; then
