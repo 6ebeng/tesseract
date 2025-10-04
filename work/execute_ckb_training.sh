@@ -219,7 +219,138 @@ if [ -n "$eng_path" ]; then BASE_LANGS+=(eng); fi
 if [ ${#BASE_LANGS[@]} -eq 0 ]; then echo "❌ No base models (fas/ara) found"; exit 1; fi
 echo "Found bases: ${BASE_LANGS[*]}"
 
-echo "🧩 Generating .lstmf files (hybrid seg: ${BASE_LANGS[*]})..."
+###
+# Build or locate target traineddata early so we can use ckb for LSTMF generation as fallback
+###
+ensure_target_traineddata() {
+  # Choose or build a ckb traineddata to provide unicharset/recoder
+  local target=""
+  # Allow forcing a minimal rebuild from GT regardless of existing ckb models
+  local force_minimal="${FORCE_MINIMAL:-0}"
+  if [ "$force_minimal" = "1" ]; then
+    echo "FORCE_MINIMAL=1 requested; skipping existing ckb models and building minimal from GT..." 1>&2
+  fi
+  # 0) Highest priority: explicit custom override in repo root
+  if [ "$force_minimal" != "1" ] && [ -f "$WIN_TESSDATA/ckb_custom.traineddata" ]; then target="$WIN_TESSDATA/ckb_custom.traineddata"; fi
+  # 1) Next: repo root tessdata (if user dropped one there)
+  if [ "$force_minimal" != "1" ] && [ -z "$target" ] && [ -f "$WIN_TESSDATA/ckb.traineddata" ]; then target="$WIN_TESSDATA/ckb.traineddata"; fi
+  # 2) Prefer existing best/fast/system ckb models before building a minimal one
+  if [ "$force_minimal" != "1" ] && [ -z "$target" ]; then
+    for d in "$WIN_TESSDATA_BEST" "$TESSDATA_BEST_DIR" "$WIN_TESSDATA_FAST" "$TESSDATA_FAST_DIR" "$TESSDATA_DIR"; do
+      if [ -f "$d/ckb.traineddata" ]; then target="$d/ckb.traineddata"; break; fi
+    done
+  fi
+  if [ -n "$target" ] && combine_tessdata -d "$target" >/dev/null 2>&1; then echo "$target"; return 0; fi
+
+  echo "� Building minimal $LANG.traineddata (unicharset + recoder) from GT..." 1>&2
+  LNX_TMP_DIR="/tmp/tess_ckb_build"; rm -rf "$LNX_TMP_DIR"; mkdir -p "$LNX_TMP_DIR"
+  rm -f "$LNX_TMP_DIR/unicharset" "$LNX_TMP_DIR/all.box"
+  # Aggregate all .box files to avoid Arg list too long
+  find "$GT_DIR" -maxdepth 1 -type f -name '*.box' -print0 | xargs -0 cat -- > "$LNX_TMP_DIR/all.box"
+  if [ ! -s "$LNX_TMP_DIR/all.box" ]; then echo "❌ No .box files found in $GT_DIR"; return 1; fi
+  # Extract unicharset in the temp folder to ensure predictable output path
+  ( cd "$LNX_TMP_DIR" && unicharset_extractor "$LNX_TMP_DIR/all.box" )
+  mv -f "$LNX_TMP_DIR/unicharset" "$LNX_TMP_DIR/unicharset" 2>/dev/null || true
+  rm -f "$LNX_TMP_DIR/all.box"
+  # Set properties using script_dir assets (best-effort)
+  set_unicharset_properties -U "$LNX_TMP_DIR/unicharset" -O "$LNX_TMP_DIR/unicharset" --script_dir="$SCRIPT_DIR" || true
+  # Build words list from corpus/GT and filter to allowed charset using Python
+  cat /dev/null > "$LNX_TMP_DIR/words.raw"
+  if [ -f "$WORK_DIR/corpus/ckb.training_text" ]; then cat "$WORK_DIR/corpus/ckb.training_text" >> "$LNX_TMP_DIR/words.raw"; fi
+  if [ -f "$WORK_DIR/corpus/ckb.training_text.final" ]; then cat "$WORK_DIR/corpus/ckb.training_text.final" >> "$LNX_TMP_DIR/words.raw"; fi
+  cat "$GT_DIR"/*.gt.txt 2>/dev/null >> "$LNX_TMP_DIR/words.raw" || true
+  python3 - "$LNX_TMP_DIR" << 'PY'
+import sys, re, os
+tmp=sys.argv[1]
+u=os.path.join(tmp,'unicharset')
+allowed=set()
+with open(u,'r',encoding='utf-8',errors='ignore') as f:
+    lines=f.read().splitlines()
+for i,l in enumerate(lines):
+    if i==0: continue
+    ch=l.split(' ')[0]
+    if ch!='NULL':
+        allowed.add(ch)
+def ok(word):
+    return all(c in allowed for c in word)
+wr=os.path.join(tmp,'words.raw')
+out=os.path.join(tmp,'words.txt')
+freq=os.path.join(tmp,'freq_words.txt')
+counts={}
+with open(wr,'r',encoding='utf-8',errors='ignore') as f:
+  for token in re.split(r"\s+", f.read()):
+    t=token.strip()
+    if not t: continue
+    if not ok(t): continue
+    counts[t]=counts.get(t,0)+1
+with open(out,'w',encoding='utf-8') as g:
+  for t in counts.keys():
+    g.write(t+"\n")
+with open(freq,'w',encoding='utf-8') as g:
+  for t,c in sorted(counts.items(), key=lambda kv:(-kv[1], kv[0])):
+    g.write(t+"\n")
+if os.path.getsize(out)==0:
+  with open(out,'w',encoding='utf-8') as g:
+    g.write("کورد\nکوردی\nدەنگ\n")
+PY
+  # Numbers and punctuation filtered to allowed charset to prevent DAWG build errors
+  python3 - "$LNX_TMP_DIR" << 'PY'
+import os, sys
+tmp=sys.argv[1]
+u=os.path.join(tmp,'unicharset')
+allowed=set()
+with open(u,'r',encoding='utf-8',errors='ignore') as f:
+    for i,l in enumerate(f.read().splitlines()):
+        if i==0: continue
+        ch=l.split(' ')[0]
+        if ch!='NULL': allowed.add(ch)
+arabic_digits="٠١٢٣٤٥٦٧٨٩"
+ascii_digits="0123456789"
+base_puncs="،؛:؟«»-()٪"
+extra=os.environ.get('PUNCS_EXTRA','')
+digits=arabic_digits+(ascii_digits if os.environ.get('LATIN_DIGITS','0')=='1' else '')
+nums=[c for c in digits if c in allowed]
+puncs=[c for c in (base_puncs+extra) if c in allowed]
+with open(os.path.join(tmp,'numbers.txt'),'w',encoding='utf-8') as f:
+    if nums:
+        f.write(''.join(sorted(set(nums), key=nums.index))+'\n')
+with open(os.path.join(tmp,'puncs.txt'),'w',encoding='utf-8') as f:
+  # Ensure non-empty puncs list for combine_lang_model; fallback to a minimal Arabic punctuation set
+  if puncs:
+    f.write(''.join(sorted(set(puncs), key=puncs.index))+'\n')
+  else:
+    f.write('،٪؛\n')
+PY
+  # Combine to traineddata (use frequency DAWGs if available)
+  NUMBERS_OPT=""; [ -s "$LNX_TMP_DIR/numbers.txt" ] && NUMBERS_OPT="--numbers $LNX_TMP_DIR/numbers.txt"
+  PUNCS_OPT=""; [ -s "$LNX_TMP_DIR/puncs.txt" ] && PUNCS_OPT="--puncs $LNX_TMP_DIR/puncs.txt"
+  combine_lang_model \
+    --input_unicharset "$LNX_TMP_DIR/unicharset" \
+    --output_dir "$LNX_TMP_DIR" \
+    --script_dir "$SCRIPT_DIR" \
+    --lang "$LANG" \
+    --lang_is_rtl \
+    --pass_through_recoder \
+    --version_str ckb_minimal \
+    --words "$LNX_TMP_DIR/words.txt" \
+    ${NUMBERS_OPT} \
+    ${PUNCS_OPT} \
+    $( [ -s "$LNX_TMP_DIR/freq_words.txt" ] && echo --freq_input "$LNX_TMP_DIR/freq_words.txt" ) || true
+  # Handle outputs written either directly to output_dir or inside a lang subfolder
+  if [ -f "$LNX_TMP_DIR/$LANG.traineddata" ]; then
+    echo "$LNX_TMP_DIR/$LANG.traineddata"; return 0
+  fi
+  if [ -f "$LNX_TMP_DIR/$LANG/$LANG.traineddata" ]; then
+    cp -f "$LNX_TMP_DIR/$LANG/$LANG.traineddata" "$LNX_TMP_DIR/$LANG.traineddata" 2>/dev/null || true
+    echo "$LNX_TMP_DIR/$LANG.traineddata"; return 0
+  fi
+  echo "❌ Failed to build minimal $LANG.traineddata"; return 1
+}
+
+TARGET_TRAINEDDATA="$(ensure_target_traineddata)" || { echo "❌ No target traineddata available"; exit 1; }
+echo "Using target traineddata: $TARGET_TRAINEDDATA"
+
+echo "�🧩 Generating .lstmf files (hybrid seg: ${BASE_LANGS[*]} + ckb-fallback)..."
 LSTMF_LOG="$OUT_DIR/lstmf_build.log"; : > "$LSTMF_LOG"
 # Allow OEM/PSM overrides via env (defaults align with earlier behavior)
 OEM="${OEM:-1}"
@@ -233,23 +364,32 @@ while IFS= read -r -d '' tif_norm; do
   fi
 done < <(find "$GT_DIR" -maxdepth 1 -type f -name '*.tif' -print0)
 LSTMF_COUNT=0
+SEG_LANGS=("${BASE_LANGS[@]}")
+# If we have a target ckb traineddata, also try a ckb segmenter which has the exact recoder we need
+if [ -f "$TARGET_TRAINEDDATA" ]; then SEG_LANGS+=(ckb); fi
+CKB_MODEL_DIR=$(dirname "$TARGET_TRAINEDDATA")
 while IFS= read -r -d '' tif; do
   base=$(basename "$tif" .tif)
   gt_txt="$GT_DIR/$base.gt.txt"
   [ -f "$gt_txt" ] || { echo "⚠️  Missing $base.gt.txt"; continue; }
-  for B in "${BASE_LANGS[@]}"; do
-    MODEL_PATH=""; [ "$B" = fas ] && MODEL_PATH="$fas_path" || MODEL_PATH="$ara_path"
-    if [ "$B" = eng ]; then MODEL_PATH="$eng_path"; fi
-    MODEL_DIR=$(dirname "$MODEL_PATH")
+  for B in "${SEG_LANGS[@]}"; do
+    MODEL_PATH=""; MODEL_DIR=""
+    case "$B" in
+      fas) MODEL_PATH="$fas_path"; MODEL_DIR=$(dirname "$MODEL_PATH");;
+      ara) MODEL_PATH="$ara_path"; MODEL_DIR=$(dirname "$MODEL_PATH");;
+      eng) MODEL_PATH="$eng_path"; MODEL_DIR=$(dirname "$MODEL_PATH");;
+      ckb) MODEL_PATH="$TARGET_TRAINEDDATA"; MODEL_DIR="$CKB_MODEL_DIR";;
+    esac
+    [ -n "$MODEL_DIR" ] || continue
     # Ensure matching GT for suffixed output base
     cp -f "$gt_txt" "$GT_DIR/$base-$B.gt.txt"
     echo "Creating LSTMF: $base (seg=$B)"
     {
       echo "---- $(date -Iseconds) : $base (seg=$B) ----"
       echo "CMD: tesseract --tessdata-dir '$MODEL_DIR' '$tif' '$base-$B' -l '$B' --oem $OEM --psm $PSM '$CONFIG_LSTM'"
-        tesseract --tessdata-dir "$MODEL_DIR" "$tif" "$base-$B" -l "$B" --oem "$OEM" --psm "$PSM" "$CONFIG_LSTM" 2>&1 || true
+      tesseract --tessdata-dir "$MODEL_DIR" "$tif" "$base-$B" -l "$B" --oem "$OEM" --psm "$PSM" "$CONFIG_LSTM" 2>&1 || true
     } >> "$LSTMF_LOG"
-    if [ -f "$GT_DIR/$base-$B.lstmf" ]; then mv -f "$GT_DIR/$base-$B.lstmf" "$TMP_DIR/"; LSTMF_COUNT=$((LSTMF_COUNT+1)); else echo "⚠️  Missing $base-$B.lstmf"; fi
+    if [ -f "$GT_DIR/$base-$B.lstmf" ]; then mv -f "$GT_DIR/$base-$B.lstmf" "$TMP_DIR/"; LSTMF_COUNT=$((LSTMF_COUNT+1)); break; else echo "⚠️  Missing $base-$B.lstmf"; fi
     rm -f "$GT_DIR/$base-$B.gt.txt" 2>/dev/null || true
   done
 done < <(find "$GT_DIR" -maxdepth 1 -type f -name '*.tif' -print0)
@@ -277,7 +417,7 @@ else
 fi
 EVAL_COUNT=$(wc -l < list.eval | tr -d ' ')
 
-ensure_target_traineddata() {
+ensure_target_traineddata_legacy() {
   # Choose or build a ckb traineddata to provide unicharset/recoder
   local target=""
   # Allow forcing a minimal rebuild from GT regardless of existing ckb models
@@ -401,9 +541,6 @@ PY
   fi
   echo "❌ Failed to build minimal $LANG.traineddata"; return 1
 }
-
-TARGET_TRAINEDDATA="$(ensure_target_traineddata)" || { echo "❌ No target traineddata available"; exit 1; }
-echo "Using target traineddata: $TARGET_TRAINEDDATA"
 
 for START_BASE in "${BASE_LANGS[@]}"; do
   echo "🔨 Extracting starter LSTM from $START_BASE.traineddata..."
