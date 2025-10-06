@@ -1,18 +1,4 @@
 
-بەروار: ٢٠٢٥/١٠/٠٤، 04/10/2025، 2025-10-04، کاتژمێر: ١٤:٣٠، 2:30 PM
-ژمارەی تەلەفۆن: +964 750 123 4567، (0750) 123-4567
-پۆستی ئەلیکترۆنی: name@example.com، info@kurdistan.gov.krd
-ناونیشان: کوردستان، هەولێر، سەردەمی ١٠٠ مەتر، ژمارە ١٢٣
-پارە: ١٢٣٬٤٥٠ دینار، 123,450 IQD، $1,234.50
-
-http://example.com، https://gov.krd/ministry, www.wiki.krd
-C:\\Users\\Name\\Documents\\file.txt، /home/user/data.csv
-
-نەوشیروان مستەفا، جەلال طالبانی، مسعود بارزانی
-هەولێر، سلێمانی، کەرکووک، دهۆک، هەڵەبجە
-
-سازمانە نێودەوڵەتییەکان (UN)، یەکێتیی نەتەوەییەکان (EU)، ناوچەی بازرگانی (Zakho Free Zone)
-
 ئینتەرنێت Internet، کۆمپیوتەر Computer، فایل File، فۆڵدەر Folder.
 بەرنامە Software، سیستەم System، نێتوۆرک Network، سێرڤەر Server.
 ئیمەیڵ e-mail، وێبسایت website، لینک link، داونلۆد download.

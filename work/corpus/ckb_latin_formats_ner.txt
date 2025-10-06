@@ -1,10 +1,10 @@
 # Formats, named entities, and structured text in Sorani Latin
 # Dates, times, phone numbers, emails, URLs, currency, addresses
 
-Berwar: 2025/10/04, 04/10/2025, 2025-10-04, katjimêr: 14:30, 2:30 PM
-Jimarê telefon: +964 750 123 4567, (0750) 123-4567
-Postê elektronî: name@example.com, info@kurdistan.gov.krd
-Navnîşan: Kurdistan, Hewlêr, Serdemî 100 metr, jimare 123
+Berwar: 2025/10/04, 04/10/2025, 2025-10-04, katjimer: 14:30, 2:30 PM
+Jimare telefon: +964 750 123 4567, (0750) 123-4567
+Poste elektroni: name@example.com, info@kurdistan.gov.krd
+Navnisan: Kurdistan, Hewler, Serdemi 100 metr, jimare 123
 Para: 123,450 IQD, $1,234.50
 
 # URLs and file paths
@@ -12,8 +12,8 @@ http://example.com, https://gov.krd/ministry, www.wiki.krd
 C:\\Users\\Name\\Documents\\file.txt, /home/user/data.csv
 
 # Names and locations
-Nechirvan Mistefa, Celal Talebanî, Mesûd Barzanî
-Hewlêr, Silêmanî, Kerkûk, Duhok, Helebce
+Nechirvan Mistefa, Celal Talebani, Mesud Barzani
+Hewler, Silemani, Kerkuk, Duhok, Helebce
 
 # Organizations and acronyms
-Sazmanên navneteweyî (UN), Yekêtî Neteweyan (EU), Navçeya Bazirgani (Zakho Free Zone)
+Sazmanen navneteweyi (UN), Yeketi Neteweyan (EU), Navceya Bazirgani (Zakho Free Zone)

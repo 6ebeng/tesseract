@@ -1,0 +1,177 @@
+# Enhanced Kurdish Latin script sentences
+# Based on Hawar Latin alphabet for Kurdish
+
+# Basic sentences
+Em li Kurdistane dijin.
+Zimane me Kurdi ye.
+Kurdistan welate me ye.
+Gel u gisti Kurd in.
+Ziman u cand giring in.
+
+# Common phrases with special Latin characters
+Ci ye? Cima? Ciqas? Cawa? Cend?
+Sev u roj, bihez u behez, sin u sor.
+Rega bere gund direwe.
+Ava Ze Guran ji ciyaye de te.
+Berf li ser ciyayan dikeve.
+Kulilk u bar li baxcan diruwe.
+
+# Names and places in Latin script
+Hewler, Silemani, Dihok, Kerkuk, Helebce, Zaxo, Soran, Koya.
+Bexda, Taran, Enqere, Dimisq, Beyrut, Aman, Kuweyt.
+Emerika, Ingiltera, Feransa, Almaniya, Tirkiye, Iran.
+Ewropa, Asya, Efriqa, Emerika, Awistraliya.
+
+# Kurdish vocabulary with circumflex letters (E, I, U)
+Beri, pesi, pasi, deri, tegihistin, hevi, reya.
+Dirok, ditin, diwar, dil, disan, diyar, piroz.
+Ru, ruber, rumet, run, rupel, pirtuk, kulilk.
+Sin, sir, siret, res, spi, sor, zer, kesk, qehweyi.
+
+# Special double letters (RR, LL, XX represented temporarily)
+Ŕeng (for řeng), ŕast (for řast), ŕoja (for řoja).
+Guĺ (for guł), geĺ (for geł), miĺet (for miłet).
+Ẍelk (for xelk - though x is rare), meẍsus (for mexsus).
+
+# Numbers and dates in Latin
+Yek, du, se, car, penc, ses, heft, hest, neh, deh.
+Yanzde, dwanzde, sezde, carde, pazde, sanzde.
+Bist, si, cil, penci, sest, hefte, heste, nehe, sed.
+Hezar, milyon, milyar.
+
+# Time expressions
+Niha, icar, e care, du care, bere, pase, pesu, du.
+Sibe, eware, sev, roj, nivro, berf, bahar, havin, payiz, zivistan.
+
+# Family and social
+Bav, de, bira, xwisk, kak, xal, mam, heval, dost.
+Malbat, hez, hezkiri, pire, zarok, kurr, kec, jin, mer.
+
+# Education and knowledge
+Zanist, zanyari, perwerde, dibistan, zaningeha, mamoste.
+Xwendin, nivisandin, hin bun, fer bun, dersim, pirtuk.
+
+# Work and occupations
+Kar, xebat, pise, berpirsiyar, karker, fermander, duktur.
+Pispore, mamoste, wekil, qezaye, niviskar, honer.
+
+# Nature and environment
+Ciya, dest, rubar, av, daristan, bax, gulzar, kelge.
+Asiman, heyv, ster, tav, ba, barane, berf, hewl.
+
+# Food and drink
+Nan, av, cay, qehwe, birinc, gost, penir, mewe, sebze.
+Xwarin, vexwarin, tije, vali, sirin, tilx, tur, sor.
+
+# Colors and properties
+Res, sipi, sor, zer, sin, kesk, qehweyi, pemeyi, narinci.
+Girs, zirav, bilind, nizim, fireh, teng, qul, tevahi.
+
+# Verbs in different tenses
+Dikim, diki, dike, dikin, dikin.
+Kirim, kiri, kir, kirin, kirin.
+Bikim, biki, bike, bikin, bikin.
+Heye, hebu, dibe, bibe.
+Dibejim, dibeji, dibeje, dibejin, dibejin.
+Gotim, goti, got, gotin, gotin.
+
+# Questions and answers
+Ki? Ci? Key? Ku? Cawa? Cima? Cend? Kam?
+Kiye? Ciye? Keye? Kuye? Cawaye? Cimaye? Cende?
+
+# Negation and affirmation
+Na, nexer, ere, bele, rast e, drust e, xelet e.
+Nine, ne, nebu, nabe, nake, nacim, naxwim.
+
+# Conjunctions
+U, we, yan, ya, le, her cend, li ber wan.
+Ji ber, ji bo, bi, pe, li, de, ku, eger.
+
+# Common expressions
+Silav, bi xer hatin, serkefti bin, spas, zor spas.
+Bibore, ji kerema xwe, bi rez, roja te bas.
+Evara te xwes, seva te xwes, sala te piroz.
+
+# Demonstratives and pronouns
+Ez, tu, ew, em, hun, wan.
+Ev, we, eve, weye, evan, wenan.
+Hic, hemu, her, gis, kes, tist.
+Xwe, xwem, xwet, xweya, xweman, xwetan.
+
+# Intensifiers
+Gelek, pir, zede, kem, bas, xirab, mezin, picuk.
+Bastir, bastirin, xirabir, xirabirin, mezintir, picuktir.
+
+# Formal and literary
+Sa'ir, helbestvan, niviskar, cirok, roman, helbest.
+Rojname, kovar, televizyon, radyo, cavderi, ragihandin.
+
+# Technology
+Komputer, mobil, interenet, e-mail, websayt, bernameye.
+Fayl, folder, dawinlod, upload, sistem, network.
+
+# Medical and health
+Nexwesxane, klinik, bijisk, derman, dermankirin, nexwes.
+Ser, cav, guh, poz, dev, diran, ziman, mil, dest.
+Tenduristi, can, rews, xwes, xirab, birindar, sikesti.
+
+# Legal and government
+Hikumet, pereleman, dadge, yasa, biryar, ferman.
+Serok, wezir, aza, nunere, berpirsiyar, birevebir.
+Wezarete, bireveberi, bes, oda, ofis, helibjardin.
+
+# Economy and business
+Abori, bazirgani, pere, dinar, dolar, yuro, bank.
+Hesab, standin, dan, qerd, kirin, firotin, bazar, dukan.
+Karxane, berhem, berhem anin, firman, muce, xilas.
+
+# Culture and tradition
+Cand, kultur, dirok, mirath, nubar, civak, gel.
+Newroz, eyd, cejin, dawet, zewac, serxana.
+
+# Sports
+Werzis, top, yari, tem, yarizan, meydan, pesbirke.
+Futbol, basketbol, voleybol, tenis, melavi, yekane.
+
+# Weather
+Kes u hewa, hewr, baran, berf, tav, roja, ba.
+Germ, sard, nerm, hisk, sil, ewir, birusk, birusker.
+
+# Nature and animals
+Sirust, xak, berd, dar, giya, cem, rubar, dol.
+Hesp, ker, manga, bizin, pezo, mi, dev, berx.
+Cucik, tistile, mari, masi, kew, piropitk.
+
+# Mathematical and scientific terms
+Matematik, fizik, kimya, biyoloji, erdnigari, dirok.
+Hejmar, nav, nav, tomar, pirsgirek, careseri.
+Cot, tak, yek, du, deh, sed, hezar, milyon.
+
+# Directional and spatial
+Jor, jer, pes, pas, rast, cep, nav, der, hun.
+Nezik, dur, ber, bin, ser, rex, nik, hemar.
+
+# Temporal expressions
+Iro, sibe, duh, isal, visal, dema, dem, meha.
+Demsala, sal, meh, hefteya, roj, seet, xuleke.
+
+# Emotional and psychological
+Kef, xwesi, dilgermi, dilsewat, tirs, ezeb, xem.
+Hevi, xewn, armanc, xwaztin, hez kirin, esq.
+
+# Abstract concepts
+Azadi, serbesti, maf, dadpeweri, asti, ser, tekosin.
+Rast, dorusti, pewisti, giringi, wate, mane, siret.
+
+# Infrastructure and urban
+Bajar, gund, rega, xani, avahi, pird, gisti.
+Otomobil, trene, firrokeye, kesti, palete, qetar.
+Pira, gewre, cade, kuca, dar, derzi, deri, pencere.
+
+# Measurement and quantity
+Pivan, heimar, qasi, mezinahi, direjahi, firehi, qulahi.
+Girani, sivik, pir, kem, ter, zeyde, hemu, gisti.
+
+# Materials and substances
+Kes, hesin, zer, ziv, kevire, suse, dare, cerm.
+Kani, xak, gila, awi, gazi, elektrik, enerji.
