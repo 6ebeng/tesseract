@@ -19,7 +19,7 @@ class KurdishCharacterFixer:
             '\u064A': '\u06CC',  # ي -> ی (FARSI YEH)
             '\u0649': '\u06D5',  # ى -> ە (AE) when misused
             '\u0629': '\u06D5',  # ة -> ە (AE)
-            '\u0647\u200C': '\u0647',  # ه‌ (with ZWNJ) -> ه
+            # NOTE: Removed ه‌ -> ه mapping - ZWNJ is essential!
         }
         # Persian digits -> Arabic-Indic digits (Sorani default)
         self.persian_digit_map = {
@@ -34,9 +34,11 @@ class KurdishCharacterFixer:
             '%': '٪',
         }
         # Characters to drop entirely
+        # NOTE: ZWNJ (U+200C) is ESSENTIAL for Kurdish - DO NOT drop it!
+        # It controls character joining and word boundaries in Arabic script.
         self.drop_chars = set([
             '\u0640',             # tatweel
-            '\u200C', '\u200D',  # ZWNJ, ZWJ
+            '\u200D',            # ZWJ (keep ZWNJ, remove ZWJ)
             '\u200E', '\u200F',  # LRM, RLM
             '\u202A', '\u202B', '\u202C', '\u202D', '\u202E', # bidi embeddings/override/PDF
         ])
