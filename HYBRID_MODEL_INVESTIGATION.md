@@ -10,19 +10,22 @@
 ### Problem with Single-Base Approach
 
 **Phase 5 Training Results:**
+
 - **Farsi base**: Training ran but produced identical model to Phase 3 (MD5: 9e7d9ee5e60ca0cc28f2c1e86f08e4e4)
+
   - Checkpoint: 25MB (created Oct 13, 13:55)
   - Finalized model: 3.1MB (identical to Phase 3)
   - BCER: 2.242 (from evaluation log)
   - **Accuracy**: 71.69% (no improvement)
 
 - **Arabic base**: Training succeeded, new model created
+
   - BCER: 1.502 (better convergence than Farsi)
   - Model size: 11.7MB
   - **Accuracy**: 65.39% (-6.3% vs Phase 4)
 
 - **English base**: Training succeeded
-  - Model size: 11.7MB  
+  - Model size: 11.7MB
   - **Accuracy**: 65.54% (-6.2% vs Phase 4)
 
 **Key Insight**: Farsi training appears broken (produces Phase 3 model despite new checkpoint), while Arabic trains but performs worse.
@@ -36,18 +39,21 @@
 Kurdish sits **linguistically between** Farsi and Arabic:
 
 **Similarities to Farsi:**
+
 - Both are **Indo-European languages** (Iranian branch)
 - Similar grammar structures
 - Shared vocabulary (40-50% cognates)
 - Similar word order (SOV)
 
 **Similarities to Arabic:**
+
 - Uses **Arabic script** (Perso-Arabic alphabet)
 - Shares Arabic loanwords (religion, administration)
 - Similar cursive writing style
 - RTL (right-to-left) text direction
 
 **Kurdish-Specific:**
+
 - Uses additional letters: ێ, ۆ, ڕ, ڵ, ڤ, و (with 3 sounds)
 - Unique ZWNJ usage patterns
 - Mix of Arabic and Latin script (Hawar dialect)
@@ -55,6 +61,7 @@ Kurdish sits **linguistically between** Farsi and Arabic:
 ### Hypothesis
 
 A **hybrid model** combining Arabic (script/visual features) + Farsi (linguistic/grammatical features) might:
+
 1. Leverage Arabic's script recognition
 2. Use Farsi's linguistic patterns
 3. Provide more robust character recognition
@@ -69,7 +76,7 @@ A **hybrid model** combining Arabic (script/visual features) + Farsi (linguistic
 for START_BASE in "${BASE_LANGS[@]}"; do  # BASE_LANGS=(fas ara eng)
   # Extract LSTM from base model
   combine_tessdata -e "$MODEL_PATH" "$TMP_DIR/$START_BASE.lstm"
-  
+
   # Train from single base
   lstmtraining \
     --continue_from "$TMP_DIR/$START_BASE.lstm" \
@@ -77,7 +84,7 @@ for START_BASE in "${BASE_LANGS[@]}"; do  # BASE_LANGS=(fas ara eng)
     --traineddata "$TARGET_TRAINEDDATA" \
     --model_output "$MODEL_PREFIX" \
     ...
-    
+
   # Finalize best/fast variants
   lstmtraining --stop_training --continue_from "$CHECKPOINT" ...
 done
@@ -87,6 +94,7 @@ pick_and_install()  # Chooses lowest CER model
 ```
 
 **Key Points:**
+
 1. **Sequential training**: Trains from each base separately
 2. **No built-in hybrid**: lstmtraining doesn't support multiple `--continue_from`
 3. **Selection, not combination**: Picks best single model, doesn't merge
@@ -116,11 +124,13 @@ This means training data **already has mixed segmentation**, but final training 
 **Concept**: Average LSTM weights from Arabic + Farsi models
 
 **Requirements:**
+
 - Extract LSTM networks from both models
 - Average weight matrices
 - Combine into single model
 
 **Status**: ❌ **Not supported**
+
 - `lstmtraining` has no `--average` or `--ensemble` option
 - Would require custom C++ code or Python manipulation of LSTM weights
 - Tesseract's LSTM format is proprietary (TTComp archive)
@@ -130,6 +140,7 @@ This means training data **already has mixed segmentation**, but final training 
 **Concept**: Use both Arabic and Farsi checkpoints during inference
 
 **Status**: ❌ **Not supported**
+
 - Tesseract OCR uses single model at runtime
 - No built-in ensemble prediction
 - Would require modifying Tesseract core code
@@ -139,6 +150,7 @@ This means training data **already has mixed segmentation**, but final training 
 **Concept**: Train from Farsi, then continue from that result using Arabic
 
 **Method:**
+
 ```bash
 # Stage 1: Train from Farsi
 lstmtraining --continue_from fas.lstm --traineddata ckb.traineddata \
@@ -152,6 +164,7 @@ lstmtraining --continue_from ckb_from_fas_checkpoint \
 ```
 
 **Status**: ⚠️ **Theoretically possible but problematic**
+
 - May confuse recoder (Farsi chars → Arabic chars)
 - Risk of catastrophic forgetting
 - No clear linguistic benefit
@@ -161,11 +174,13 @@ lstmtraining --continue_from ckb_from_fas_checkpoint \
 **Concept**: Use training data segmented by both bases
 
 **Current implementation:**
+
 - LSTMF files created using whichever base succeeds (hybrid segmentation)
 - Single base model used for final training
 - **Result**: Already happening!
 
 **Status**: ✅ **Already in use**
+
 - Phase 5 training used mixed Arabic/Farsi/CKB segmentation
 - This IS a form of hybrid approach at the data level
 
@@ -174,11 +189,13 @@ lstmtraining --continue_from ckb_from_fas_checkpoint \
 **Concept**: Create intermediate model trained on Arabic+Farsi+Kurdish corpus
 
 **Method:**
+
 1. Create multilingual corpus (Arabic + Farsi + Kurdish)
 2. Train from scratch on combined data
 3. Fine-tune on Kurdish-only data
 
 **Status**: ⏳ **Possible but time-intensive**
+
 - Requires Arabic and Farsi training data
 - Long training time (from scratch)
 - May not converge well (3 languages with different scripts)
@@ -188,6 +205,7 @@ lstmtraining --continue_from ckb_from_fas_checkpoint \
 **Concept**: Train using easier examples first, then harder ones
 
 **Method:**
+
 ```bash
 # Stage 1: Train on Phase 4 high-quality corpus (3,321 lines)
 # Result: Stable base model with good convergence
@@ -197,6 +215,7 @@ lstmtraining --continue_from ckb_from_fas_checkpoint \
 ```
 
 **Status**: ✅ **Feasible and research-backed**
+
 - Prevents corpus quality dilution
 - Allows evaluation at each step
 - Can stop when accuracy plateaus
@@ -220,6 +239,7 @@ ckb_from_fas_0.253_7369_66000.checkpoint  # Oct 11, BCER 0.253
 ### Test Plan
 
 1. **Test Phase 4 Farsi checkpoint** (BCER 0.195):
+
    ```bash
    lstmtraining --stop_training \
      --continue_from ckb_from_fas_0.195_8226_85300.checkpoint \
@@ -245,6 +265,7 @@ ckb_from_fas_0.253_7369_66000.checkpoint  # Oct 11, BCER 0.253
 1. **Already using hybrid segmentation**: Training data is already created using mixed Arabic/Farsi/CKB segmentation, so we're getting the benefit of hybrid data preparation.
 
 2. **No built-in hybrid training**: Tesseract doesn't support:
+
    - Model averaging
    - Ensemble prediction
    - Multi-base simultaneous training
@@ -256,11 +277,13 @@ ckb_from_fas_0.253_7369_66000.checkpoint  # Oct 11, BCER 0.253
 ### Real Problem: **Corpus Quality**, Not Base Model Choice
 
 The Phase 5 failure is due to:
+
 - ❌ Wikipedia corpus is lower quality (informal, varied)
 - ❌ ZWNJ density dropped from 9.46% → 6.79%
 - ❌ Dilution effect (55% of corpus is now lower-quality Wikipedia)
 
 **Not due to**:
+
 - ✅ Base model choice (Farsi vs Arabic)
 - ✅ Training approach (hybrid vs single-base)
 
@@ -271,6 +294,7 @@ The Phase 5 failure is due to:
 ### Option 1: **Fix Corpus Quality** ⭐ (Highest ROI)
 
 **Action**: Replace Wikipedia with high-quality sources
+
 - Kurdish news (Rudaw, BasNews, NRT)
 - Official documents
 - Published literature
@@ -280,6 +304,7 @@ The Phase 5 failure is due to:
 ### Option 2: **Debug Farsi Training Issue** 🔧 (Technical)
 
 **Action**: Investigate why Farsi checkpoint finalizes to Phase 3 model
+
 - Check if Phase 5 checkpoint actually trained on Phase 5 corpus
 - Verify checkpoint isn't restored from old Phase 3/4 checkpoint
 - Test Phase 4's best checkpoint (BCER 0.195) on Phase 5 corpus
@@ -289,6 +314,7 @@ The Phase 5 failure is due to:
 ### Option 3: **Curriculum Learning** 📚 (Incremental)
 
 **Action**: Keep Phase 4 base, add quality data gradually
+
 - Add 500 lines at a time
 - Train and evaluate after each addition
 - Stop when accuracy plateaus
@@ -298,6 +324,7 @@ The Phase 5 failure is due to:
 ### Option 4: **Accept 71.69%, Focus on ZWNJ Rules** 🎯 (Pragmatic)
 
 **Action**: Improve post-processing instead of base accuracy
+
 - Better ZWNJ insertion rules
 - Character confusion dictionary
 - Context-aware corrections
@@ -319,10 +346,12 @@ The Phase 5 failure is due to:
 **Recommended next steps:**
 
 1. **Immediate**: Debug why Farsi training produces Phase 3 model
+
    - Test Phase 4 Farsi checkpoint (BCER 0.195)
    - Verify Phase 5 corpus was actually used
 
 2. **Short-term**: Improve corpus quality (Option 1)
+
    - Replace Wikipedia with professional sources
    - Maintain 8-12% ZWNJ density
 

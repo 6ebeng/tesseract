@@ -11,6 +11,7 @@
 ### What We Have ✅
 
 **Best Model**: Phase 4 Farsi checkpoint
+
 - **Accuracy**: 72.19% (CER 0.2781)
 - **Improvement**: +0.5% from Phase 4 baseline
 - **Corpus**: 3,321 high-quality lines
@@ -20,6 +21,7 @@
 ### What We Learned ❌
 
 **Phase 5 Failed Because:**
+
 1. Wikipedia corpus too informal/varied (lower quality)
 2. ZWNJ density dropped to 6.79% (-28%)
 3. Dilution effect: 55% of corpus was low-quality Wikipedia
@@ -34,6 +36,7 @@
 **Gap**: 7.81-12.81 percentage points
 
 **Research-based estimates:**
+
 - 5,000 high-quality lines → 75-78% accuracy
 - 8,000 high-quality lines → 80-84% accuracy
 - 10,000+ high-quality lines → 85-90% accuracy
@@ -49,6 +52,7 @@
 **"Quality-First Incremental Growth"**
 
 Instead of mass-scraping Wikipedia (failed in Phase 5), we:
+
 1. Add small batches (500 lines) of HIGH-QUALITY text
 2. Train and evaluate after EACH batch
 3. Only keep batches that improve accuracy
@@ -70,6 +74,7 @@ Instead of mass-scraping Wikipedia (failed in Phase 5), we:
 **Rationale**: Professional journalism = formal, edited, consistent quality
 
 **Sources to scrape:**
+
 1. **Rudaw** (rudaw.net/sorani) - Major Kurdish news
 2. **BasNews** (basnews.com) - Independent news
 3. **NRT** (nrttv.com) - TV network news
@@ -79,6 +84,7 @@ Instead of mass-scraping Wikipedia (failed in Phase 5), we:
 **Target**: 2,000-3,000 lines from news articles
 
 **Quality filters:**
+
 - ZWNJ density: 8-12% (similar to Phase 4's 9.46%)
 - Sentence length: 10-25 words (formal style)
 - Kurdish script: >85% (minimal Latin mixing)
@@ -92,6 +98,7 @@ Instead of mass-scraping Wikipedia (failed in Phase 5), we:
 **Rationale**: Highest formality, consistent terminology
 
 **Sources:**
+
 1. **Kurdistan Regional Government** (gov.krd) - Official announcements
 2. **Kurdistan Parliament** - Legislative texts
 3. **Ministry websites** - Official communications
@@ -101,6 +108,7 @@ Instead of mass-scraping Wikipedia (failed in Phase 5), we:
 **Target**: 500-1,000 lines from official texts
 
 **Quality filters:**
+
 - ZWNJ density: 10-15% (formal documents have high ZWNJ usage)
 - Sentence length: 15-35 words (formal, complex)
 - Technical terminology: Legal, administrative, academic
@@ -113,6 +121,7 @@ Instead of mass-scraping Wikipedia (failed in Phase 5), we:
 **Rationale**: High-quality prose, diverse vocabulary
 
 **Sources:**
+
 1. **Classic literature** - Digitized Kurdish novels/poetry
 2. **Modern literature** - Contemporary Kurdish writers
 3. **Translated works** - High-quality translations into Kurdish
@@ -122,6 +131,7 @@ Instead of mass-scraping Wikipedia (failed in Phase 5), we:
 **Target**: 1,000-1,500 lines from literature
 
 **Quality filters:**
+
 - ZWNJ density: 6-10% (literature varies)
 - Sentence length: 8-30 words (narrative style)
 - Published works: Books, not blog posts
@@ -136,6 +146,7 @@ Instead of mass-scraping Wikipedia (failed in Phase 5), we:
 ### Step 1: Build Infrastructure (Day 1) 🛠️
 
 **Create scraping tools:**
+
 ```python
 # tools/scrape_kurdish_news.py
 # - Extract from Rudaw, BasNews, NRT
@@ -153,6 +164,7 @@ Instead of mass-scraping Wikipedia (failed in Phase 5), we:
 ```
 
 **Create evaluation pipeline:**
+
 ```bash
 # workflow/incremental_training.sh
 # 1. Backup current corpus (3,321 lines)
@@ -168,12 +180,14 @@ Instead of mass-scraping Wikipedia (failed in Phase 5), we:
 **Action**: Scrape 3 major news sites
 
 **Process:**
+
 1. **Rudaw**: Extract 1,000 articles → filter → 800 lines
 2. **BasNews**: Extract 800 articles → filter → 600 lines
 3. **NRT**: Extract 600 articles → filter → 400 lines
 4. **Total**: 1,800 lines (target 8-12% ZWNJ)
 
 **Quality check:**
+
 - Manual review of 50 random samples
 - Verify ZWNJ density in target range
 - Check for HTML artifacts, encoding issues
@@ -201,6 +215,7 @@ cd work && python3 tools/eval_real_cer.py
 ```
 
 **Decision criteria:**
+
 - **If accuracy ≥ 72.5%** (+0.31%): ✅ Keep batch, proceed to Batch 2
 - **If accuracy 72.0-72.4%**: ⚠️ Marginal, review quality, maybe keep
 - **If accuracy < 72.0%**: ❌ Discard batch, try different news source
@@ -215,6 +230,7 @@ cd work && python3 tools/eval_real_cer.py
 - **Batch 5**: 300 official + 200 literature → Target: 6,021 lines, 76-77% accuracy
 
 **Expected progress:**
+
 ```
 Batch 1 (3,821 lines): 72.5% (+0.31%)
 Batch 2 (4,321 lines): 73.5% (+1.31%)
@@ -228,6 +244,7 @@ Batch 5 (6,021 lines): 76.5% (+4.31%)
 **If Batch 5 reaches 76-77%:**
 
 Add 3-4 more batches focusing on official/literature:
+
 - **Batch 6**: 500 official documents → 6,521 lines, 77-78%
 - **Batch 7**: 500 literature → 7,021 lines, 78-79%
 - **Batch 8**: 500 mixed (news+official) → 7,521 lines, 79-80%
@@ -241,11 +258,13 @@ Add 3-4 more batches focusing on official/literature:
 
 1. **Generate fresh OCR** with 80% model
 2. **Apply improved ZWNJ rules**:
+
    - Pattern 1: Insert ZWNJ after ه + consonant
    - Pattern 2: Insert ZWNJ in common words (ئەوەی, دەبێ, etc.)
    - Pattern 3: Context-aware insertion (verb conjugations)
 
 3. **Measure ZWNJ recovery**:
+
    - **Target**: 60-75% recovery (vs 7.8% at 71.69%)
    - **Baseline**: 294 true ZWNJs in mgk.tif
 
@@ -263,11 +282,13 @@ Add 3-4 more batches focusing on official/literature:
 **Pivot to manual curation:**
 
 1. **Hire Kurdish speaker** (Upwork, Fiverr) - $50-100
+
    - Task: Manually type 2,000 high-quality Kurdish sentences
    - Requirements: Proper ZWNJ usage, formal style, diverse topics
    - Quality: 9-12% ZWNJ density, professional writing
 
 2. **Use GPT-4 generation** (experimental):
+
    - Prompt: "Generate formal Kurdish sentences with proper ZWNJ usage"
    - Filter: Only keep sentences with 8-12% ZWNJ
    - Verify: Manual review by Kurdish speaker
@@ -286,6 +307,7 @@ Add 3-4 more batches focusing on official/literature:
 ### Risk 1: News websites block scraping
 
 **Mitigation:**
+
 - Use respectful scraping (rate limiting, User-Agent)
 - Try RSS feeds first (official API-like)
 - Manual copy-paste if necessary (slower but reliable)
@@ -294,6 +316,7 @@ Add 3-4 more batches focusing on official/literature:
 ### Risk 2: Quality still insufficient
 
 **Mitigation:**
+
 - Stricter quality filters (10-12% ZWNJ only)
 - Manual review of every batch before adding
 - Create "gold standard" sample (100 perfect lines)
@@ -302,6 +325,7 @@ Add 3-4 more batches focusing on official/literature:
 ### Risk 3: Accuracy plateaus before 80%
 
 **Mitigation:**
+
 - Accept plateau level (e.g., 77-78%)
 - Try ZWNJ rules anyway (may work at 78%)
 - Focus on post-processing instead of base accuracy
@@ -310,6 +334,7 @@ Add 3-4 more batches focusing on official/literature:
 ### Risk 4: Training time too long
 
 **Mitigation:**
+
 - Use smaller batches (250 lines instead of 500)
 - Train only until convergence (early stopping)
 - Use fast evaluation (subset of test images)
@@ -322,18 +347,21 @@ Add 3-4 more batches focusing on official/literature:
 ### Phase 6 Success Criteria
 
 **Minimum (acceptable):**
+
 - ✅ Reach 75% accuracy (+2.81%)
 - ✅ Add 1,500+ high-quality lines
 - ✅ Maintain ZWNJ density 8-12%
 - ✅ Enable 40-50% ZWNJ recovery
 
 **Target (good):**
+
 - ✅ Reach 78% accuracy (+5.81%)
 - ✅ Add 3,000+ high-quality lines
 - ✅ Maintain ZWNJ density 9-12%
 - ✅ Enable 55-65% ZWNJ recovery
 
 **Stretch (excellent):**
+
 - ✅ Reach 80%+ accuracy (+7.81%+)
 - ✅ Add 5,000+ high-quality lines
 - ✅ Maintain ZWNJ density 9-12%
@@ -355,22 +383,26 @@ Add 3-4 more batches focusing on official/literature:
 ## Phase 6 Deliverables
 
 ### Code/Tools
+
 - `tools/scrape_kurdish_news.py` - News scraper
 - `tools/scrape_kurdish_official.py` - Official documents scraper
 - `tools/corpus_quality_checker.py` - Quality measurement
 - `workflow/incremental_training.sh` - Automated training pipeline
 
 ### Corpus Files
+
 - `corpus/kurdish_news.txt` - 1,800 news lines
 - `corpus/kurdish_official.txt` - 500-1,000 official lines
 - `corpus/kurdish_literature.txt` - 1,000-1,500 literature lines
 - `corpus/ckb_phase6.training_text` - Final Phase 6 corpus (7,500-8,000 lines)
 
 ### Models
+
 - `ckb_phase6_batch1.traineddata` through `ckb_phase6_batch9.traineddata`
 - `ckb_phase6_final.traineddata` - Best performing model (target 80%)
 
 ### Documentation
+
 - `PHASE6_PROGRESS.md` - Detailed progress tracking
 - `PHASE6_RESULTS.md` - Final results and analysis
 - `CORPUS_SOURCES.md` - Documentation of all sources used
@@ -382,6 +414,7 @@ Add 3-4 more batches focusing on official/literature:
 **Phase 6 Strategy**: Quality-first incremental expansion
 
 **Key differences from Phase 5:**
+
 - ✅ Professional sources (news, official, literature) NOT Wikipedia
 - ✅ Small batches (500 lines) with evaluation after each
 - ✅ Only keep batches that improve accuracy
