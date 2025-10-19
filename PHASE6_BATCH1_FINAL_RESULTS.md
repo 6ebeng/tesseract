@@ -9,11 +9,11 @@
 
 ### Both Training Attempts: **71.69% Accuracy (CER 0.2831)**
 
-| Attempt | Checkpoints | Farsi | Arabic | English | Result |
-|---------|-------------|-------|--------|---------|--------|
-| **Attempt 1** | 279 Phase 4 checkpoints present | 71.69% | 71.69% | 71.69% | ❌ No improvement |
-| **Attempt 2 (Fresh)** | 0 checkpoints - fresh training | **71.69%** | **71.69%** | **71.69%** | ❌ **No improvement** |
-| **Baseline (Phase 4)** | - | 71.69% | - | - | - |
+| Attempt                | Checkpoints                     | Farsi      | Arabic     | English    | Result                |
+| ---------------------- | ------------------------------- | ---------- | ---------- | ---------- | --------------------- |
+| **Attempt 1**          | 279 Phase 4 checkpoints present | 71.69%     | 71.69%     | 71.69%     | ❌ No improvement     |
+| **Attempt 2 (Fresh)**  | 0 checkpoints - fresh training  | **71.69%** | **71.69%** | **71.69%** | ❌ **No improvement** |
+| **Baseline (Phase 4)** | -                               | 71.69%     | -          | -          | -                     |
 
 **Improvement**: **0.00%** (both attempts identical)
 
@@ -42,13 +42,13 @@
 
 ### Data Analysis
 
-| Metric | Phase 4 | Batch 1 | Change |
-|--------|---------|---------|--------|
-| **Total lines** | 3,278 | 3,637 | +359 (+11%) |
-| **Source** | Wikipedia + mixed | Wikipedia (same!) | No change |
-| **ZWNJ density** | 8.15% | 8.25% | +0.1% (negligible) |
-| **Quality grade** | B (80/100) | B (85/100) | +5 pts |
-| **New patterns** | - | Minimal | Insufficient |
+| Metric            | Phase 4           | Batch 1           | Change             |
+| ----------------- | ----------------- | ----------------- | ------------------ |
+| **Total lines**   | 3,278             | 3,637             | +359 (+11%)        |
+| **Source**        | Wikipedia + mixed | Wikipedia (same!) | No change          |
+| **ZWNJ density**  | 8.15%             | 8.25%             | +0.1% (negligible) |
+| **Quality grade** | B (80/100)        | B (85/100)        | +5 pts             |
+| **New patterns**  | -                 | Minimal           | Insufficient       |
 
 ### Training Behavior (Both Identical)
 
@@ -113,6 +113,7 @@ Attempt 2 (fresh, no checkpoints):
 **What**: Collect 1,000-1,500 sentences from Kurdish news  
 **Sources**: Rudaw, BasNews, NRT, K24  
 **Why it will work**:
+
 - ✅ Different source (professional journalism vs encyclopedia)
 - ✅ Higher ZWNJ (10-12% in formal news vs 8% in Wikipedia)
 - ✅ Formal register (government/political language)
@@ -160,6 +161,7 @@ Attempt 2 (fresh, no checkpoints):
 **Recommended**: **Option A - Manual News Collection**
 
 **Reasoning**:
+
 1. ✅ Proven approach (professional journalism works for OCR)
 2. ✅ Guaranteed quality control
 3. ✅ High ZWNJ density in Kurdish news
@@ -185,6 +187,7 @@ Attempt 2 (fresh, no checkpoints):
 ## 📊 Success Criteria for Batch 2
 
 ### Corpus Requirements
+
 - ✅ **Source**: Professional news (NOT Wikipedia)
 - ✅ **Amount**: 1,000-1,500 sentences
 - ✅ **ZWNJ**: 10-12% density (vs Batch 1's 8.25%)
@@ -192,11 +195,13 @@ Attempt 2 (fresh, no checkpoints):
 - ✅ **Purity**: >90% Kurdish script
 
 ### Accuracy Targets
+
 - **Minimum success**: 72.0% (+0.3%) → Shows different source works
 - **Target**: 72.5-73.5% (+0.8-1.8%) → Meaningful improvement
 - **Excellent**: 74%+ (+2.3%+) → Breakthrough
 
 ### Decision Rules
+
 - **If ≥72.5%**: ✅ Continue with news collection (Batches 3-5)
 - **If 72.0-72.4%**: ⚠️ Review approach, possibly continue
 - **If <72.0%**: ❌ Try official documents or parallel corpus
@@ -219,11 +224,13 @@ This restores the best known checkpoint (72.19% with that specific test) for fut
 ## 📁 Files Created
 
 ### Analysis Documents
+
 - ✅ `PHASE6_BATCH1_RESULTS.md` - First attempt analysis
 - ✅ `PHASE6_BATCH1_FRESH_TRAINING.md` - Fresh training strategy
 - ✅ `PHASE6_BATCH1_FINAL_RESULTS.md` - This document (both attempts)
 
 ### Collection Infrastructure (Ready)
+
 - ✅ `work/corpus/kurdish_news_batch2.txt` - Empty, ready for collection
 - ✅ `BATCH2_QUICKSTART.md` - Step-by-step collection guide
 - ✅ `PHASE6_BATCH2_PLAN.md` - Detailed strategy
