@@ -32,7 +32,7 @@ class QC:
 class Scraper:
     def __init__(self):
         self.qc, self.sents = QC(), set()
-        self.st = {'k':{'a':0,'s':0},'r':{'a':0,'s':0}}
+        self.st = {'k':{'a':0,'s':0},'r':{'a':0,'s':0},'h':{'a':0,'s':0}}
         opts = Options()
         opts.add_argument('--headless')
         opts.add_argument('--no-sandbox')
@@ -76,6 +76,25 @@ class Scraper:
             res = []
             for p in ar.find_all(['p','div']):
                 t = ' '.join(p.get_text(separator=' ', strip=True).split())
+                if len(t)>50: res.extend(self.extr(t))
+            return res
+        except: return []
+    
+    def hart(self, u):
+        """Scrape Khak TV article - health/lifestyle content"""
+        try:
+            self.d.get(u); time.sleep(2)
+            so = BeautifulSoup(self.d.page_source, 'html.parser')
+            
+            # Khak uses .html-content div with <br> tags
+            ar = so.select_one('.html-content')
+            if not ar: return []
+            
+            # Get text and split by <br> tags
+            res = []
+            txt = ar.get_text(separator='\n', strip=True)
+            for line in txt.split('\n'):
+                t = ' '.join(line.strip().split())
                 if len(t)>50: res.extend(self.extr(t))
             return res
         except: return []
@@ -134,6 +153,35 @@ class Scraper:
         
         return list(li)[:100]  # Limit to 100
     
+    def findh(self):
+        """Find Khak TV health articles from multiple pages"""
+        li = set()
+        print('🔍 Loading Khak TV health section...')
+        
+        # Scrape pages 1-5 of health section (group=5)
+        for page in range(1, 6):
+            url = f'https://www.khaktv.net/article?group=5&page={page}'
+            try:
+                self.d.get(url); time.sleep(3)
+                so = BeautifulSoup(self.d.page_source, 'html.parser')
+                
+                # Find all article links in carousel
+                for a in so.find_all('a', href=True):
+                    h = a['href']
+                    if h.startswith('/article/') and h != '/article':
+                        # Extract article ID
+                        parts = h.split('/')
+                        if len(parts) >= 3 and parts[2].isdigit():
+                            u = f'https://www.khaktv.net{h}'
+                            li.add(u)
+                
+                print(f'  Page {page}/5: {len(li)} articles found')
+            except Exception as e:
+                print(f'  Page {page}/5 failed: {e}')
+                break
+        
+        return list(li)[:100]  # Limit to 100
+    
     def scrapek(self):
         print(f"\n{'='*70}\n📰 Scraping Kurdsat News\n{'='*70}\n")
         lk = self.findk()
@@ -151,6 +199,34 @@ class Scraper:
                 self.sents.update(new)
                 self.st['k']['s'] += len(new)
                 self.st['k']['a'] += 1
+                print(f'✅ {len(new)} (Total: {len(self.sents)})')
+            else:
+                print('⚠️')
+            
+            time.sleep(1)
+    
+    def scrapeh(self):
+        """Scrape Khak TV health articles"""
+        if len(self.sents) >= 1500:
+            print('\n✅ Already have 1500 sentences, skipping Khak TV')
+            return
+        
+        print(f"\n{'='*70}\n📰 Scraping Khak TV (Health)\n{'='*70}\n")
+        lh = self.findh()
+        print(f'\n✓ Found {len(lh)} Khak TV articles\n')
+        
+        for i, u in enumerate(lh, 1):
+            if len(self.sents) >= 1500:
+                print(f'\n🎯 Reached target of 1500 sentences!')
+                break
+            
+            print(f'📄 [{i}/{len(lh)}] {u[:65]}...', end=' ')
+            ss = self.hart(u)
+            if ss:
+                new = [x for x in ss if x not in self.sents]
+                self.sents.update(new)
+                self.st['h']['s'] += len(new)
+                self.st['h']['a'] += 1
                 print(f'✅ {len(new)} (Total: {len(self.sents)})')
             else:
                 print('⚠️')
@@ -191,6 +267,7 @@ class Scraper:
             f.write(f'# Total: {len(ss)} sentences\n')
             f.write(f'# Kurdsat: {self.st["k"]["s"]} from {self.st["k"]["a"]} articles\n')
             f.write(f'# Rudaw: {self.st["r"]["s"]} from {self.st["r"]["a"]} articles\n')
+            f.write(f'# Khak TV: {self.st["h"]["s"]} from {self.st["h"]["a"]} articles\n')
             f.write(f'# Quality: 10-25 words, 0-100% ZWNJ, >70% Kurdish purity\n')
             f.write(f'#\n\n')
             for s in ss: f.write(s + '\n')
@@ -200,6 +277,7 @@ class Scraper:
         print(f"\n{'='*70}\n📊 COLLECTION STATISTICS\n{'='*70}")
         print(f"Kurdsat: {self.st['k']['s']} sentences from {self.st['k']['a']} articles")
         print(f"Rudaw: {self.st['r']['s']} sentences from {self.st['r']['a']} articles")
+        print(f"Khak TV: {self.st['h']['s']} sentences from {self.st['h']['a']} articles")
         pct = len(self.sents)/15*100 if len(self.sents) < 1500 else 100.0
         print(f"Total: {len(self.sents)} unique sentences / 1500 target ({pct:.1f}%)")
         
@@ -220,6 +298,7 @@ if __name__ == '__main__':
     sc = Scraper()
     try:
         sc.scrapek()
+        sc.scrapeh()  # Add Khak TV health articles
         sc.scraper()
         sc.save()
         sc.stats()
