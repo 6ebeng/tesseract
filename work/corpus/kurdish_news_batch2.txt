@@ -1,0 +1,27 @@
+# Kurdish News Batch 2 - Manual Collection
+# Target: 1,000-1,500 sentences from professional Kurdish news
+# 
+# COLLECTION GUIDELINES:
+# ✅ One sentence per line
+# ✅ 10-25 words per sentence
+# ✅ Formal news language (not headlines, dates, or bylines)
+# ✅ High ZWNJ usage (10-12% target)
+# ✅ Remove this header when done
+#
+# SOURCES (in priority order):
+# 1. Rudaw (rudaw.net/sorani) - 400-600 sentences
+#    Focus: Politics, Kurdistan news, Business, Culture
+# 
+# 2. BasNews (basnews.com) - 300-400 sentences
+#    Focus: News, Economy, Society
+#
+# 3. NRT (nrttv.com) - 200-300 sentences
+#    Focus: News reports, Analysis
+#
+# 4. K24 (k24.tv) - 100-200 sentences (if needed)
+#    Focus: News articles
+#
+# QUICK CHECK: python3 tools/collection_assistant.py corpus/kurdish_news_batch2.txt
+#
+# ========== START ADDING SENTENCES BELOW THIS LINE ==========
+
