@@ -346,6 +346,98 @@ class ReliableKurdishScraper:
         except Exception as e:
             print(f"⚠️  Awene error: {e}")
     
+    def scrape_awene_specialized(self, articles_per_category=30):
+        """
+        Scrape Awene specialized categories
+        - Articles: General articles
+        - Culture: Literature, art, music
+        - Economy: Economic news and analysis
+        - Health: Health and medicine
+        - Multimedia: Multimedia content
+        """
+        categories = [
+            ('Articles', 'https://www.awene.com/articles'),
+            ('Culture', 'https://www.awene.com/culture'),
+            ('Economy', 'https://www.awene.com/aburi'),
+            ('Health', 'https://www.awene.com/health'),
+            ('Multimedia', 'https://www.awene.com/multimedia')
+        ]
+        
+        print(f"\n📚 Scraping Awene Specialized ({len(categories)} categories, {articles_per_category} articles each)...")
+        
+        try:
+            total_articles = 0
+            
+            for cat_name, url in categories:
+                print(f"\n   📂 Category: {cat_name}")
+                articles_found = 0
+                
+                try:
+                    self.driver.get(url)
+                    time.sleep(4)
+                    
+                    # Find all article links on category page
+                    all_links = self.driver.find_elements(By.TAG_NAME, 'a')
+                    
+                    article_links = []
+                    for link in all_links:
+                        href = link.get_attribute('href')
+                        text = link.text.strip()
+                        
+                        # Filter for article detail links with titles
+                        if href and 'detail?article=' in href and text and len(text) > 10:
+                            # Skip "درێژەی بابەت" (Read more) links
+                            if text != "درێژەی بابەت":
+                                article_links.append((text, href))
+                    
+                    # Deduplicate by URL
+                    seen_urls = set()
+                    unique_articles = []
+                    for text, href in article_links:
+                        if href not in seen_urls:
+                            seen_urls.add(href)
+                            unique_articles.append((text, href))
+                    
+                    print(f"      Found {len(unique_articles)} unique articles on category page")
+                    
+                    # Collect titles first
+                    for text, _ in unique_articles[:articles_per_category]:
+                        if self.qc.check(text):
+                            self.sentences.add(text)
+                            articles_found += 1
+                    
+                    # Visit article detail pages
+                    print(f"      Visiting top {min(articles_per_category, len(unique_articles))} articles...")
+                    for _, article_url in unique_articles[:articles_per_category]:
+                        try:
+                            self.driver.get(article_url)
+                            time.sleep(2)
+                            
+                            # Extract article content
+                            paragraphs = self.driver.find_elements(By.CSS_SELECTOR, ".viewdesc p")
+                            
+                            for p in paragraphs:
+                                text = p.text.strip()
+                                if text and self.qc.check(text):
+                                    self.sentences.add(text)
+                                    articles_found += 1
+                        except Exception as e:
+                            print(f"         Error visiting article: {e}")
+                            continue
+                    
+                    print(f"      ✅ {cat_name}: {articles_found} sentences")
+                    total_articles += articles_found
+                    
+                except Exception as e:
+                    print(f"      ⚠️  {cat_name} error: {e}")
+                    continue
+            
+            self.stats['awene_specialized'] = total_articles
+            print(f"\n✅ Awene Specialized: {total_articles} total sentences collected")
+        
+        except Exception as e:
+            print(f"⚠️  Awene Specialized error: {e}")
+    
     def scrape_kurdistan24_flaresolverr(self, pages=10):
         """Kurdistan24 - using FlareSolverr to bypass Cloudflare"""
         print(f"\n📰 Scraping Kurdistan24 ({pages} pages with FlareSolverr)...")
@@ -382,7 +474,7 @@ class ReliableKurdishScraper:
             try:
                 # Scrape list pages
                 for page in range(1, pages + 1):
-                    url = f'https://www.kurdistan24.net/ckb/list/country/%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86?page={page}'
+                    url = f'https://www.kurdistan24.net/ckb/list/category/9/%D8%B3%DB%8C%D8%A7%D8%B3%DB%8C?page={page}'
                     
                     # Get page through FlareSolverr
                     response = requests.post('http://localhost:8191/v1', json={
@@ -690,6 +782,116 @@ class ReliableKurdishScraper:
             print(f"⚠️  Xendan Specialized error: {e}")
             self.stats['xendan_specialized'] = 0
     
+    def scrape_sekokurd(self, clicks=10):
+        """
+        Scrape Sekokurd.org categories
+        - Articles: page_id=874 (film, politics, feminism, nationalism)
+        - Culture: page_id=1614 (art, music, poetry, literature)
+        """
+        print(f"\n📚 Scraping Sekokurd (Articles + Culture, {clicks} clicks each)...")
+        
+        categories = [
+            ('Articles', 'https://sekokurd.org/?page_id=874'),
+            ('Culture', 'https://sekokurd.org/?page_id=1614')
+        ]
+        
+        try:
+            articles_found = 0
+            
+            for cat_name, url in categories:
+                print(f"\n   {cat_name}...")
+                
+                try:
+                    self.driver.get(url)
+                    time.sleep(3)
+                    
+                    article_links = []
+                    
+                    # Click "Load More" button multiple times to load more articles
+                    for click in range(clicks):
+                        try:
+                            # Find and click "Load More" button
+                            load_more = self.driver.find_elements(By.CSS_SELECTOR, '.anwp-pg-load-more__btn')
+                            
+                            if load_more and len(load_more) > 0:
+                                self.driver.execute_script("arguments[0].scrollIntoView();", load_more[0])
+                                time.sleep(1)
+                                load_more[0].click()
+                                time.sleep(3)
+                            else:
+                                break
+                        
+                        except:
+                            break
+                    
+                    # Collect article titles and links
+                    titles = self.driver.find_elements(By.CSS_SELECTOR, '.anwp-pg-post-teaser__title a')
+                    
+                    for title in titles:
+                        text = title.text.strip()
+                        href = title.get_attribute('href')
+                        
+                        if text and self.qc.check(text):
+                            self.sentences.add(text)
+                            articles_found += 1
+                        
+                        if href and href not in article_links:
+                            article_links.append(href)
+                    
+                    print(f"      Found {len(article_links)} {cat_name.lower()} links")
+                    
+                    # Visit article detail pages (limit to 30 per category)
+                    for article_url in article_links[:30]:
+                        try:
+                            self.driver.get(article_url)
+                            time.sleep(2)
+                            
+                            # Get article title
+                            try:
+                                title_elem = self.driver.find_element(By.CSS_SELECTOR, '.wpr-post-title')
+                                title = title_elem.text.strip()
+                                if title and self.qc.check(title):
+                                    self.sentences.add(title)
+                                    articles_found += 1
+                            except:
+                                pass
+                            
+                            # Get article content
+                            try:
+                                content = self.driver.find_element(By.CSS_SELECTOR, '.wpr-post-content')
+                                paragraphs = content.find_elements(By.TAG_NAME, 'p')
+                                
+                                for p in paragraphs:
+                                    text = p.text.strip()
+                                    if len(text) < 20:
+                                        continue
+                                    
+                                    # Split into sentences
+                                    sents = re.split(r'[.؟!،]\s*', text)
+                                    for s in sents:
+                                        s = s.strip()
+                                        if s and self.qc.check(s):
+                                            self.sentences.add(s)
+                                            articles_found += 1
+                            except:
+                                pass
+                            
+                            time.sleep(1.5)
+                        
+                        except:
+                            continue
+                
+                except Exception as e:
+                    print(f"      ⚠️  {cat_name} error: {e}")
+                    continue
+            
+            self.stats['sekokurd'] = articles_found
+            print(f"✅ Sekokurd: {articles_found} sentences collected")
+        
+        except Exception as e:
+            print(f"⚠️  Sekokurd error: {e}")
+            self.stats['sekokurd'] = 0
+    
     def scrape_kurdsat_specialized(self, articles_per_category=20):
         """
         Scrape Kurdsat specialized categories
@@ -877,6 +1079,165 @@ class ReliableKurdishScraper:
             print(f"⚠️  Rudaw Specialized error: {e}")
             self.stats['rudaw_specialized'] = 0
     
+    def scrape_kurdistan24_specialized(self, pages_per_category=5):
+        """
+        Scrape Kurdistan24 specialized categories with FlareSolverr
+        - Economy: category/1
+        - Health: category/4
+        - Sport: category/14
+        - Culture: category/10
+        - Artistic: category/13
+        - Technology: category/7
+        - Social: category/11
+        """
+        print("\n🔍 Kurdistan24 Specialized (7 categories via FlareSolverr)...")
+        
+        categories = [
+            ('Economy', 'https://www.kurdistan24.net/ckb/list/category/1'),
+            ('Health', 'https://www.kurdistan24.net/ckb/list/category/4'),
+            ('Sport', 'https://www.kurdistan24.net/ckb/list/category/14'),
+            ('Culture', 'https://www.kurdistan24.net/ckb/list/category/10'),
+            ('Artistic', 'https://www.kurdistan24.net/ckb/list/category/13'),
+            ('Technology', 'https://www.kurdistan24.net/ckb/list/category/7'),
+            ('Social', 'https://www.kurdistan24.net/ckb/list/category/11')
+        ]
+        
+        try:
+            import requests
+            from bs4 import BeautifulSoup
+            
+            # Check if FlareSolverr is running
+            try:
+                requests.get('http://localhost:8191/', timeout=5)
+            except:
+                print("   ⚠️  FlareSolverr not running! Skipping K24 specialized")
+                self.stats['kurdistan24_specialized'] = 0
+                return
+            
+            # Create FlareSolverr session
+            session_response = requests.post('http://localhost:8191/v1', json={
+                "cmd": "sessions.create"
+            })
+            
+            if session_response.status_code != 200:
+                print("   ⚠️  Failed to create FlareSolverr session")
+                self.stats['kurdistan24_specialized'] = 0
+                return
+            
+            session_id = session_response.json().get('session')
+            print(f"   ✅ FlareSolverr session: {session_id}")
+            
+            total_found = 0
+            
+            try:
+                for cat_name, base_url in categories:
+                    print(f"   {cat_name}...")
+                    
+                    try:
+                        article_links = []
+                        
+                        # Scrape category list pages
+                        for page in range(1, pages_per_category + 1):
+                            url = f"{base_url}?page={page}" if page > 1 else base_url
+                            
+                            response = requests.post('http://localhost:8191/v1', json={
+                                "cmd": "request.get",
+                                "url": url,
+                                "session": session_id,
+                                "maxTimeout": 60000
+                            }, timeout=90)
+                            
+                            if response.status_code == 200 and response.json().get('status') == 'ok':
+                                html = response.json()['solution']['response']
+                                soup = BeautifulSoup(html, 'html.parser')
+                                
+                                # Extract h3 titles
+                                h3_titles = soup.find_all('h3')
+                                for h3 in h3_titles:
+                                    text = h3.get_text(strip=True)
+                                    if text and self.qc.check(text):
+                                        self.sentences.add(text)
+                                        total_found += 1
+                                
+                                # Collect article links
+                                links = soup.find_all('a', href=lambda x: x and '/ckb/story/' in x)
+                                for link in links:
+                                    href = link.get('href')
+                                    if href and href.startswith('http') and href not in article_links:
+                                        article_links.append(href)
+                                
+                                time.sleep(2)
+                            else:
+                                print(f"      ⚠️  Page {page} failed")
+                        
+                        print(f"      Found {len(article_links)} {cat_name.lower()} article links")
+                        
+                        # Visit article detail pages (limit to 10 per category)
+                        for article_url in article_links[:10]:
+                            try:
+                                response = requests.post('http://localhost:8191/v1', json={
+                                    "cmd": "request.get",
+                                    "url": article_url,
+                                    "session": session_id,
+                                    "maxTimeout": 60000
+                                }, timeout=90)
+                                
+                                if response.status_code == 200 and response.json().get('status') == 'ok':
+                                    html = response.json()['solution']['response']
+                                    soup = BeautifulSoup(html, 'html.parser')
+                                    
+                                    # Get article title
+                                    title = soup.find('h1')
+                                    if title:
+                                        text = title.get_text(strip=True)
+                                        if text and self.qc.check(text):
+                                            self.sentences.add(text)
+                                            total_found += 1
+                                    
+                                    # Get article content
+                                    content_div = soup.find('div', class_='reader-content')
+                                    if content_div:
+                                        paragraphs = content_div.find_all('p')
+                                        
+                                        for p in paragraphs:
+                                            text = p.get_text(strip=True)
+                                            if len(text) < 20:
+                                                continue
+                                            
+                                            # Split into sentences
+                                            sents = re.split(r'[.؟!،]\s*', text)
+                                            for s in sents:
+                                                s = s.strip()
+                                                if s and self.qc.check(s):
+                                                    self.sentences.add(s)
+                                                    total_found += 1
+                                    
+                                    time.sleep(2)
+                            
+                            except Exception as e:
+                                continue
+                    
+                    except Exception as e:
+                        print(f"      ⚠️  {cat_name} category error: {e}")
+                        continue
+            
+            finally:
+                # Destroy FlareSolverr session
+                try:
+                    requests.post('http://localhost:8191/v1', json={
+                        "cmd": "sessions.destroy",
+                        "session": session_id
+                    })
+                except:
+                    pass
+            
+            self.stats['kurdistan24_specialized'] = total_found
+            print(f"✅ Kurdistan24 Specialized: {total_found} sentences collected")
+        
+        except Exception as e:
+            print(f"⚠️  Kurdistan24 Specialized error: {e}")
+            self.stats['kurdistan24_specialized'] = 0
+    
     def save(self, output_file='corpus/kurdish_expanded_batch3.txt'):
         """Save results"""
         sorted_sents = sorted(self.sentences)
@@ -891,9 +1252,12 @@ class ReliableKurdishScraper:
             f.write(f"Awene: ~{self.stats['awene']} | ")
             f.write(f"Kurdistan24: ~{self.stats['kurdistan24']} | ")
             f.write(f"Xendan: ~{self.stats['xendan']} | ")
-            f.write(f"Kurdsat Special: ~{self.stats['kurdsat_specialized']} | ")
-            f.write(f"Xendan Special: ~{self.stats['xendan_specialized']} | ")
-            f.write(f"Rudaw Special: ~{self.stats['rudaw_specialized']}\n")
+            f.write(f"Sekokurd: ~{self.stats['sekokurd']} | ")
+            f.write(f"Kurdsat Spec: ~{self.stats['kurdsat_specialized']} | ")
+            f.write(f"Xendan Spec: ~{self.stats['xendan_specialized']} | ")
+            f.write(f"Rudaw Spec: ~{self.stats['rudaw_specialized']} | ")
+            f.write(f"K24 Spec: ~{self.stats['kurdistan24_specialized']} | ")
+            f.write(f"Awene Spec: ~{self.stats['awene_specialized']}\n")
             f.write("#\n")
             
             for sent in sorted_sents:
@@ -906,39 +1270,45 @@ class ReliableKurdishScraper:
 
 def main():
     print("="*70)
-    print("KURDISH CORPUS EXPANSION - BATCH 3 (11 SOURCES)")
-    print("Political + Sport + Economy + Health + Science + Technology + Culture")
+    print("KURDISH CORPUS EXPANSION - BATCH 3 (14 SOURCE GROUPS)")
+    print("Political + Sport + Economy + Health + Science + Tech + Culture + Art + Social + Academic + Multimedia")
     print("="*70)
     
     scraper = ReliableKurdishScraper()
     
     try:
-        # Scrape from all 11 source groups
+        # Scrape from all 14 source groups
         scraper.scrape_kurdsat_extended(clicks=30)      # 1. Batch 2 proven (political)
         scraper.scrape_rudaw_extended(scrolls=20)       # 2. Batch 2 proven (political)
         scraper.scrape_khak_extended(pages=10)          # 3. Batch 2 proven (political)
-        scraper.scrape_nrt_extended(clicks=15)          # 4. NEW! Major news (political)
-        scraper.scrape_awene_extended(pages=10)         # 5. NEW! Newspaper (political)
-        scraper.scrape_kurdistan24_flaresolverr(pages=10)  # 6. NEW! With FlareSolverr (political)
-        scraper.scrape_xendan_extended(pages=10)        # 7. NEW! News portal (political)
-        scraper.scrape_xendan_specialized(pages_per_category=5)  # 8. NEW! Sport+Economy+Tech
-        scraper.scrape_kurdsat_specialized(articles_per_category=20)  # 9. NEW! Health+Science+Tech
-        scraper.scrape_rudaw_specialized(scrolls_per_category=10)  # 10. NEW! Economy+Health+Sport+Culture
+        scraper.scrape_nrt_extended(clicks=15)          # 4. Major news (political)
+        scraper.scrape_awene_extended(pages=10)         # 5. Newspaper (political)
+        scraper.scrape_kurdistan24_flaresolverr(pages=10)  # 6. With FlareSolverr (political)
+        scraper.scrape_xendan_extended(pages=10)        # 7. News portal (political)
+        scraper.scrape_sekokurd(clicks=10)              # 8. Articles + Culture (academic)
+        scraper.scrape_xendan_specialized(pages_per_category=5)  # 9. Sport+Economy+Tech
+        scraper.scrape_kurdsat_specialized(articles_per_category=20)  # 10. Health+Science+Tech
+        scraper.scrape_rudaw_specialized(scrolls_per_category=10)  # 11. Economy+Health+Sport+Culture
+        scraper.scrape_kurdistan24_specialized(pages_per_category=5)  # 12. 7 categories via FlareSolverr
+        scraper.scrape_awene_specialized(articles_per_category=30)  # 13. NEW! 5 categories (Articles+Culture+Economy+Health+Multimedia)
         
         scraper.save()
         
         print("\n" + "="*70)
         print(f"✅ SUCCESS! Collected {len(scraper.sentences)} sentences")
-        print(f"   Kurdsat (political): {scraper.stats['kurdsat']}")
-        print(f"   Rudaw (political): {scraper.stats['rudaw']}")
-        print(f"   Khak TV: {scraper.stats['khak']}")
-        print(f"   NRT TV: {scraper.stats['nrt']}")
-        print(f"   Awene: {scraper.stats['awene']}")
-        print(f"   Kurdistan24: {scraper.stats['kurdistan24']}")
-        print(f"   Xendan (political): {scraper.stats['xendan']}")
-        print(f"   Xendan Specialized (S+E+T): {scraper.stats['xendan_specialized']}")
-        print(f"   Kurdsat Specialized (H+S+T): {scraper.stats['kurdsat_specialized']}")
-        print(f"   Rudaw Specialized (E+H+S+C): {scraper.stats['rudaw_specialized']}")
+        print(f"   Kurdsat (political): ~{scraper.stats['kurdsat']}")
+        print(f"   Rudaw (political): ~{scraper.stats['rudaw']}")
+        print(f"   Khak TV: ~{scraper.stats['khak']}")
+        print(f"   NRT TV: ~{scraper.stats['nrt']}")
+        print(f"   Awene (political): ~{scraper.stats['awene']}")
+        print(f"   Kurdistan24 (political): ~{scraper.stats['kurdistan24']}")
+        print(f"   Xendan (political): ~{scraper.stats['xendan']}")
+        print(f"   Sekokurd (articles+culture): ~{scraper.stats['sekokurd']}")
+        print(f"   Xendan Specialized (S+E+T): ~{scraper.stats['xendan_specialized']}")
+        print(f"   Kurdsat Specialized (H+S+T): ~{scraper.stats['kurdsat_specialized']}")
+        print(f"   Rudaw Specialized (E+H+S+C): ~{scraper.stats['rudaw_specialized']}")
+        print(f"   K24 Specialized (Ec+H+S+C+A+T+Soc): ~{scraper.stats['kurdistan24_specialized']}")
+        print(f"   Awene Specialized (Art+Cult+Eco+Health+MM): ~{scraper.stats['awene_specialized']}")
         print("="*70)
     
     finally:
