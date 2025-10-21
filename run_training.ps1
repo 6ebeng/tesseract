@@ -1,6 +1,6 @@
 param(
     [switch]$NoClear,
-    [ValidateSet('Clean', 'Generate', 'GenerateTrain', 'Train', 'SmokeTest', 'SmokeTestBest', 'SmokeTestFast', 'Bootstrap', 'BuildCorpus', 'Eval', 'All')]
+    [ValidateSet('Clean', 'Generate', 'GenerateTrain', 'Train', 'SmokeTest', 'SmokeTestBest', 'SmokeTestFast', 'Bootstrap', 'BuildCorpus', 'ExpandCorpus', 'Eval', 'All')]
     [string]$Mode = '',
     [switch]$Deep = $false,
     [string]$ImagePath = '',
@@ -282,6 +282,45 @@ function Invoke-BuildCorpus {
     }
 }
 
+function Invoke-ExpandCorpus {
+    Write-Host "`n╔══════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "║        KURDISH CORPUS EXPANSION - BATCH 3           ║" -ForegroundColor Cyan
+    Write-Host "╚══════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "This will scrape additional Kurdish news sources:" -ForegroundColor Yellow
+    Write-Host "  - NRT News (nrttv.com)" -ForegroundColor White
+    Write-Host "  - Awene News (awene.com)" -ForegroundColor White
+    Write-Host "  - BasNews (basnews.com/ku)" -ForegroundColor White
+    Write-Host "Target: 3,000+ new high-quality sentences" -ForegroundColor Yellow
+    Write-Host ""
+    
+    $timeout = 3600  # 1 hour timeout
+    Write-Host "Running corpus expansion (timeout: ${timeout}s)..." -ForegroundColor Yellow
+    wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; timeout $timeout python3 tools/expand_corpus_batch3_reliable.py"; $code = $LASTEXITCODE
+    
+    if ($code -eq 124) { 
+        Write-Host "⚠️  Scraping timed out after ${timeout}s. Partial results may be saved." -ForegroundColor DarkYellow
+    }
+    elseif ($code -ne 0) { 
+        throw "Corpus expansion failed (exit $code)." 
+    }
+    
+    # Check if file was created
+    $outputFile = Join-Path $projectRootWin "work\corpus\kurdish_expanded_batch3.txt"
+    if (Test-Path $outputFile) {
+        Write-Host "`n✅ Corpus expansion complete!" -ForegroundColor Green
+        Write-Host "New corpus saved to: work/corpus/kurdish_expanded_batch3.txt" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Next steps:" -ForegroundColor Yellow
+        Write-Host "  1. Review quality: corpus/kurdish_expanded_batch3.txt" -ForegroundColor White
+        Write-Host "  2. Combine with existing: corpus/ckb_phase6_batch2.training_text" -ForegroundColor White
+        Write-Host "  3. Run: .\run_training.ps1 -Mode GenerateTrain" -ForegroundColor White
+    }
+    else {
+        Write-Host "⚠️  No output file created. Check for errors above." -ForegroundColor DarkYellow
+    }
+}
+
 function Invoke-EvalReal {
     Write-Host "`nEvaluating real-world CER..." -ForegroundColor Yellow
     $psmArg = ''
@@ -424,6 +463,9 @@ if ($Mode) {
         }
         'BuildCorpus' {
             try { Invoke-BuildCorpus; Write-Host "`nDone." -ForegroundColor Green; exit 0 } catch { Write-Host $_ -ForegroundColor Red; exit 1 }
+        }
+        'ExpandCorpus' {
+            try { Invoke-ExpandCorpus; Write-Host "`nDone." -ForegroundColor Green; exit 0 } catch { Write-Host $_ -ForegroundColor Red; exit 1 }
         }
         'Generate' {
             try {
