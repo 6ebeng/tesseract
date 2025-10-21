@@ -6,14 +6,14 @@ All 6 sources are integrated and tested:
 
 ### Sources Overview
 
-| # | Source | Method | Expected | Status |
-|---|--------|--------|----------|--------|
-| 1 | **Kurdsat** | 30 clicks | ~1,000 sentences | ✅ Batch 2 proven |
-| 2 | **Rudaw** | 20 scrolls | ~1,000 sentences | ✅ Batch 2 proven |
-| 3 | **Khak TV** | 10 pages | ~500 sentences | ✅ Batch 2 proven |
-| 4 | **NRT TV** | 15 clicks + 50 articles | ~1,000 sentences | ✅ NEW - Tested |
-| 5 | **Awene** | 10 pages + 50 articles | ~700 sentences | ✅ NEW - Tested |
-| 6 | **Kurdistan24** | 10 pages (FlareSolverr) | ~800 sentences | ✅ NEW - Tested |
+| #   | Source          | Method                  | Expected         | Status            |
+| --- | --------------- | ----------------------- | ---------------- | ----------------- |
+| 1   | **Kurdsat**     | 30 clicks               | ~1,000 sentences | ✅ Batch 2 proven |
+| 2   | **Rudaw**       | 20 scrolls              | ~1,000 sentences | ✅ Batch 2 proven |
+| 3   | **Khak TV**     | 10 pages                | ~500 sentences   | ✅ Batch 2 proven |
+| 4   | **NRT TV**      | 15 clicks + 50 articles | ~1,000 sentences | ✅ NEW - Tested   |
+| 5   | **Awene**       | 10 pages + 50 articles  | ~700 sentences   | ✅ NEW - Tested   |
+| 6   | **Kurdistan24** | 10 pages (FlareSolverr) | ~800 sentences   | ✅ NEW - Tested   |
 
 **Total Expected: 5,000+ new sentences**
 
@@ -22,11 +22,13 @@ All 6 sources are integrated and tested:
 ## 📊 Impact
 
 ### Current State
+
 - **Current corpus**: 4,686 sentences
 - **Current accuracy**: 76.90% average on modern news
 - **Industry minimum**: 10,000 sentences for good LSTM OCR
 
 ### After Batch 3
+
 - **New corpus**: 9,700+ sentences (107% increase!)
 - **Expected accuracy**: 80%+ (improved generalization)
 - **Coverage**: 97% of industry minimum (10K)
@@ -44,6 +46,7 @@ wsl -d Ubuntu -- sudo docker start flaresolverr
 Wait 5 seconds for FlareSolverr to be ready.
 
 **Verify it's running:**
+
 ```powershell
 wsl -d Ubuntu -- sudo docker ps | grep flaresolverr
 ```
@@ -55,6 +58,7 @@ wsl -d Ubuntu -- sudo docker ps | grep flaresolverr
 ```
 
 **What happens:**
+
 1. Initializes Selenium browser
 2. Scrapes Kurdsat (10-15 min)
 3. Scrapes Rudaw (8-12 min)
@@ -85,6 +89,7 @@ wsl -d Ubuntu -- bash -c "cd /mnt/c/tesseract/work && cat corpus/ckb_phase6_batc
 ```
 
 **Verify combined corpus:**
+
 ```powershell
 wsl -d Ubuntu -- wc -l /mnt/c/tesseract/work/corpus/ckb_phase6_batch3.training_text
 ```
@@ -112,6 +117,7 @@ wsl -d Ubuntu -- bash -c "cd /mnt/c/tesseract/work && cp corpus/ckb_phase6_batch
 ```
 
 **Check results:**
+
 ```powershell
 wsl -d Ubuntu -- cat /mnt/c/tesseract/work/output/real_metrics.csv
 ```
@@ -120,14 +126,14 @@ wsl -d Ubuntu -- cat /mnt/c/tesseract/work/output/real_metrics.csv
 
 ## 📈 Expected Accuracy Improvement
 
-| Image | Batch 2 (4,686) | Batch 3 Target (9,700+) | Improvement |
-|-------|-----------------|-------------------------|-------------|
-| kurdsat2 | 73.38% | **76%+** | +2.6% |
-| kurdsat3 | 73.77% | **76%+** | +2.2% |
-| rudaw1 | 78.28% | **80%+** | +1.7% |
-| rudaw2 | 82.17% | **84%+** | +1.8% |
-| mgk | 71.69% | **74%+** | +2.3% |
-| **AVERAGE** | **76.90%** | **80%+** | **+3.1%** |
+| Image       | Batch 2 (4,686) | Batch 3 Target (9,700+) | Improvement |
+| ----------- | --------------- | ----------------------- | ----------- |
+| kurdsat2    | 73.38%          | **76%+**                | +2.6%       |
+| kurdsat3    | 73.77%          | **76%+**                | +2.2%       |
+| rudaw1      | 78.28%          | **80%+**                | +1.7%       |
+| rudaw2      | 82.17%          | **84%+**                | +1.8%       |
+| mgk         | 71.69%          | **74%+**                | +2.3%       |
+| **AVERAGE** | **76.90%**      | **80%+**                | **+3.1%**   |
 
 ---
 
@@ -149,6 +155,7 @@ wsl -d Ubuntu -- sudo docker restart flaresolverr
 ### Issue: Kurdistan24 skipped
 
 If you see "FlareSolverr not running! Skipping Kurdistan24":
+
 - Start FlareSolverr: `sudo docker start flaresolverr`
 - Wait 10 seconds
 - The script will continue with other 5 sources
@@ -157,6 +164,7 @@ If you see "FlareSolverr not running! Skipping Kurdistan24":
 ### Issue: Slow scraping
 
 This is normal! Web scraping takes time:
+
 - Each source has delays to avoid rate limiting
 - FlareSolverr adds 10-15 seconds per page (solving Cloudflare)
 - Total 50-90 minutes is expected
@@ -164,6 +172,7 @@ This is normal! Web scraping takes time:
 ### Issue: Collection interrupted
 
 The scraper saves progress. If interrupted:
+
 1. Check what was collected so far
 2. Re-run `.\run_training.ps1 -Mode ExpandCorpus`
 3. It will start from scratch (safe to do)
@@ -186,10 +195,12 @@ The scraper saves progress. If interrupted:
 After training with Batch 3 corpus:
 
 ✅ **Must have:**
+
 - Average accuracy ≥ 80%
 - All images improved by at least +2%
 
 ✅ **Nice to have:**
+
 - Average accuracy ≥ 82%
 - Best image ≥ 85%
 - Worst image ≥ 75%

@@ -17,6 +17,7 @@ chmod +x install_flaresolverr.sh
 ```
 
 **What it does:**
+
 - ✅ Installs Docker on WSL Ubuntu
 - ✅ Pulls FlareSolverr Docker image
 - ✅ Starts FlareSolverr container on port 8191
@@ -62,6 +63,7 @@ python3 tools/test_k24_flaresolverr.py
 ```
 
 **What it tests:**
+
 - ✅ FlareSolverr connection
 - ✅ Cloudflare bypass
 - ✅ Article list extraction
@@ -106,6 +108,7 @@ sudo docker restart flaresolverr
 2. **Scraper → FlareSolverr → Cloudflare** ✅ Bypassed
 
 FlareSolverr:
+
 - Uses real browser (Chromium)
 - Solves JavaScript challenges
 - Handles CAPTCHAs automatically
@@ -184,6 +187,7 @@ cd /mnt/c/tesseract/work/tools
 ## Next Steps
 
 After successful test:
+
 1. ✅ FlareSolverr running
 2. ✅ Test script passes
 3. → Add Kurdistan24 to main scraper

@@ -18,11 +18,13 @@
 ### Batch 3 Plan: Expand Training Data 107%
 
 **Current Corpus:**
+
 - Phase 4 (Wikipedia): 3,321 sentences
 - Batch 2 (News): 1,408 sentences (Kurdsat, Rudaw, Khak TV)
 - **Total: 4,686 sentences**
 
 **Batch 3 Target (6 sources):**
+
 - Kurdsat: ~1,000 sentences (30 clicks, 2x Batch 2)
 - Rudaw: ~1,000 sentences (20 scrolls, 2x Batch 2)
 - Khak TV: ~500 sentences (10 pages, 2x Batch 2)
@@ -40,11 +42,13 @@
 ### Step 1: Corpus Expansion ✅ Ready
 
 **Command:**
+
 ```powershell
 .\run_training.ps1 -Mode ExpandCorpus
 ```
 
 **What it does:**
+
 - Scrapes Kurdsat (30 clicks, 2x more than Batch 2)
 - Scrapes Rudaw (20 scrolls, 2x more than Batch 2)
 - Scrapes Khak TV (10 pages, 2x more than Batch 2)
@@ -56,6 +60,7 @@
 - Saves to `work/corpus/kurdish_expanded_batch3.txt`
 
 **Prerequisites:**
+
 - FlareSolverr running: `sudo docker start flaresolverr`
 
 **Estimated time:** 50-90 minutes  
@@ -64,6 +69,7 @@
 ### Step 2: Corpus Combination
 
 **Manual steps:**
+
 ```powershell
 # In WSL/Ubuntu
 cd /mnt/c/tesseract/work
@@ -84,11 +90,13 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 ### Step 3: Retrain Model
 
 **Command:**
+
 ```powershell
 .\run_training.ps1 -Mode GenerateTrain
 ```
 
 **What it does:**
+
 - Generates training images from 7,500+ sentences
 - Trains 3 new models (fas, ara, eng bases)
 - Takes ~8-12 hours (overnight)
@@ -96,11 +104,13 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 ### Step 4: Validate Results
 
 **Command:**
+
 ```powershell
 .\run_training.ps1 -Mode Eval -EvalPSMs "6,11,7,13"
 ```
 
 **What to expect:**
+
 - Test on all 5 images (4 news + mgk.tif)
 - Compare Batch 3 vs Batch 2
 - **Target: 80%+ average** (currently 76.90%)
@@ -111,19 +121,21 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 
 ### Conservative Estimate
 
-| Metric | Current (Batch 2) | Expected (Batch 3) | Gain |
-|--------|-------------------|-------------------|------|
-| **Average Accuracy** | 76.90% | 79-80% | +2-3% |
-| **Best Case** | 82.17% | 84-85% | +2% |
-| **Worst Case** | 71.69% | 74-76% | +3-5% |
+| Metric               | Current (Batch 2) | Expected (Batch 3) | Gain  |
+| -------------------- | ----------------- | ------------------ | ----- |
+| **Average Accuracy** | 76.90%            | 79-80%             | +2-3% |
+| **Best Case**        | 82.17%            | 84-85%             | +2%   |
+| **Worst Case**       | 71.69%            | 74-76%             | +3-5% |
 
 ### Why This Works
 
 1. **More examples = Better generalization**
+
    - Current: 4,686 sentences
    - Batch 3: 7,500+ sentences (60% increase)
 
 2. **Diverse news sources**
+
    - Current: 3 sources (Kurdsat, Rudaw, Khak TV)
    - Batch 3: 6 sources (+ NRT, Awene, BasNews)
    - Different writing styles, vocabulary, topics
@@ -142,12 +154,14 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 ### Collect Traditional Kurdish Texts
 
 **Sources:**
+
 - Kurdish religious texts (Quran translations, Islamic books)
 - Classical Kurdish literature
 - Historical documents
 - Traditional poetry
 
 **Characteristics:**
+
 - High ZWNJ density (8-12%)
 - Formal language
 - Dense paragraphs
@@ -155,6 +169,7 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 **Target:** Improve mgk.tif from 72% to 76%+
 
 **Benefit:** Two specialized models
+
 - Model 1 (Batch 3): Modern news (80%+)
 - Model 2 (Batch 4): Traditional texts (76%+)
 
@@ -164,24 +179,24 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 
 ### Batch 3 Execution
 
-| Step | Duration | When |
-|------|----------|------|
-| **Corpus Expansion** | 1 hour | Now |
-| **Quality Review** | 30 min | After scraping |
-| **Corpus Combination** | 15 min | After review |
-| **Training** | 8-12 hours | Overnight |
-| **Evaluation** | 30 min | Next morning |
-| **Total** | **~14 hours** | **24-36 hours wall time** |
+| Step                   | Duration      | When                      |
+| ---------------------- | ------------- | ------------------------- |
+| **Corpus Expansion**   | 1 hour        | Now                       |
+| **Quality Review**     | 30 min        | After scraping            |
+| **Corpus Combination** | 15 min        | After review              |
+| **Training**           | 8-12 hours    | Overnight                 |
+| **Evaluation**         | 30 min        | Next morning              |
+| **Total**              | **~14 hours** | **24-36 hours wall time** |
 
 ### Batch 4 (If Needed)
 
-| Step | Duration | When |
-|------|----------|------|
-| **Manual collection** | 2-4 hours | After Batch 3 results |
-| **Corpus preparation** | 1 hour | Same day |
-| **Training** | 8-12 hours | Overnight |
-| **Evaluation** | 30 min | Next morning |
-| **Total** | **~14 hours** | **24-36 hours wall time** |
+| Step                   | Duration      | When                      |
+| ---------------------- | ------------- | ------------------------- |
+| **Manual collection**  | 2-4 hours     | After Batch 3 results     |
+| **Corpus preparation** | 1 hour        | Same day                  |
+| **Training**           | 8-12 hours    | Overnight                 |
+| **Evaluation**         | 30 min        | Next morning              |
+| **Total**              | **~14 hours** | **24-36 hours wall time** |
 
 ---
 
@@ -191,6 +206,7 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 
 **Current:** Default Tesseract LSTM settings  
 **Possible:**
+
 - Increase `--max_iterations` (default: ~10K, try 20K)
 - Adjust learning rate
 - Modify layer architecture
@@ -202,6 +218,7 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 
 **Current:** 9 Noto Naskh Arabic variants  
 **Possible:**
+
 - Add more Arabic fonts (Traditional, Diwani, Kufi)
 - Add bold/italic variants
 - Mix fonts in same training image
@@ -213,6 +230,7 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 
 **Current:** Clean rendered text only  
 **Possible:**
+
 - Add noise/blur
 - Rotation/skew
 - Compression artifacts
@@ -227,16 +245,17 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 
 ### Batch 3 Goals
 
-| Metric | Target | Stretch Goal |
-|--------|--------|--------------|
-| **Average Accuracy** | **80%+** | **82%+** |
-| **Modern News** | **80-85%** | **85%+** |
-| **Traditional Text** | **74%+** | **76%+** |
-| **Training Corpus** | **7,500+** | **10,000+** |
+| Metric               | Target     | Stretch Goal |
+| -------------------- | ---------- | ------------ |
+| **Average Accuracy** | **80%+**   | **82%+**     |
+| **Modern News**      | **80-85%** | **85%+**     |
+| **Traditional Text** | **74%+**   | **76%+**     |
+| **Training Corpus**  | **7,500+** | **10,000+**  |
 
 ### Validation
 
 **Must improve on ALL test images:**
+
 - ✅ kurdsat2: 73.38% → 76%+
 - ✅ kurdsat3: 73.77% → 76%+
 - ✅ rudaw1: 78.28% → 80%+
@@ -252,6 +271,7 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 ### Risk 1: Scraping Fails
 
 **Mitigation:**
+
 - Timeout: 1 hour (saves partial results)
 - Multiple sources (if one fails, others succeed)
 - Quality filtering (only accept good sentences)
@@ -259,6 +279,7 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 ### Risk 2: Low Quality Data
 
 **Mitigation:**
+
 - Quality checker: 10-30 words, >70% Kurdish purity
 - Manual review before combining
 - Can discard bad sources
@@ -266,6 +287,7 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 ### Risk 3: No Improvement
 
 **Mitigation:**
+
 - Keep Batch 2 model (76.90% is good)
 - Try Batch 4 (traditional texts)
 - Try technical improvements (fonts, augmentation)
@@ -273,6 +295,7 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 ### Risk 4: Training Time
 
 **Mitigation:**
+
 - Run overnight
 - Can pause/resume if needed
 - ~12 hours should be sufficient
@@ -326,6 +349,7 @@ wsl -d Ubuntu -- bash -lc "cd /mnt/c/tesseract/work && cp corpus/ckb_phase6_batc
 ## Next Steps
 
 **Run this command to start:**
+
 ```powershell
 .\run_training.ps1 -Mode ExpandCorpus
 ```
@@ -340,4 +364,3 @@ After collection completes, review the file and proceed with combining and train
 **Status:** Ready to execute  
 **Expected outcome:** 80%+ accuracy (from current 76.90%)  
 **Timeline:** 24-36 hours total
-

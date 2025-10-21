@@ -330,7 +330,7 @@ function Invoke-EvalReal {
     }
     $lexArg = if ($EvalUseGTLexicon) { ' --gt-lexicon' } else { '' }
     $prepArg = if ($EvalPrep) { " --prep '$(Escape-ShellSingleQuotes $EvalPrep)'" } else { '' }
-    $oemArg = if ($OEM -in 1,2,3) { " --oem '$OEM'" } else { '' }
+    $oemArg = if ($OEM -in 1, 2, 3) { " --oem '$OEM'" } else { '' }
     $hocrArg = if ($EvalHOCRLines) { ' --hocr-lines' } else { '' }
     $hocrPsmArg = if ($EvalHOCRLines -and $EvalHOCRPSM) { " --hocr-psm '$EvalHOCRPSM'" } else { '' }
     $uwCorpusArg = if ($EvalUserWordsCorpus) { ' --user-words-corpus' } else { '' }

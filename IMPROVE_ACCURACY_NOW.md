@@ -1,6 +1,7 @@
 # Ready to Improve Accuracy to 80%+
 
 ## Current Status
+
 - **Batch 2 Model:** 76.90% average accuracy on modern Kurdish news
 - **Training Data:** 4,686 sentences (too few for optimal performance)
 - **Target:** 80-85% accuracy
@@ -10,11 +11,13 @@
 ### Why More Data = Better Accuracy
 
 **Industry Best Practice:**
+
 - Good OCR: 10,000-20,000 sentences
 - Current: 4,686 sentences (**47% of minimum**)
 - Batch 3 Target: 8,000+ sentences (**80% of minimum**)
 
 **Expected Improvement:**
+
 - Current: 76.90% average
 - **Batch 3 Target: 80%+ average** (+3-4%)
 
@@ -27,6 +30,7 @@
 ```
 
 **What it does:**
+
 1. Scrapes 3,500+ new Kurdish sentences
 2. From 4 proven sources: Kurdsat, Rudaw, Khak TV, **NRT TV** (new!)
 3. Quality filtered (10-30 words, >70% Kurdish)
@@ -84,23 +88,25 @@ wsl -d Ubuntu -- bash -c "cd /mnt/c/tesseract/work && cp corpus/ckb_phase6_batch
 ## Expected Results
 
 ### Before (Batch 2)
-| Image | Accuracy | Type |
-|-------|----------|------|
-| rudaw2 | 82.17% | Short news |
-| rudaw1 | 78.28% | Mixed news |
-| kurdsat3 | 73.77% | Political |
-| kurdsat2 | 73.38% | Political |
-| mgk | 71.69% | Traditional |
+
+| Image       | Accuracy   | Type            |
+| ----------- | ---------- | --------------- |
+| rudaw2      | 82.17%     | Short news      |
+| rudaw1      | 78.28%     | Mixed news      |
+| kurdsat3    | 73.77%     | Political       |
+| kurdsat2    | 73.38%     | Political       |
+| mgk         | 71.69%     | Traditional     |
 | **AVERAGE** | **76.90%** | **Modern news** |
 
 ### After (Batch 3 - Expected)
-| Image | Accuracy | Gain | Type |
-|-------|----------|------|------|
-| rudaw2 | **84-85%** | +2-3% | Short news |
-| rudaw1 | **80-81%** | +2-3% | Mixed news |
-| kurdsat3 | **76-77%** | +2-3% | Political |
-| kurdsat2 | **76-77%** | +2-3% | Political |
-| mgk | **74-76%** | +3-5% | Traditional |
+
+| Image       | Accuracy   | Gain      | Type            |
+| ----------- | ---------- | --------- | --------------- |
+| rudaw2      | **84-85%** | +2-3%     | Short news      |
+| rudaw1      | **80-81%** | +2-3%     | Mixed news      |
+| kurdsat3    | **76-77%** | +2-3%     | Political       |
+| kurdsat2    | **76-77%** | +2-3%     | Political       |
+| mgk         | **74-76%** | +3-5%     | Traditional     |
 | **AVERAGE** | **80-82%** | **+3-5%** | **Modern news** |
 
 ---
@@ -108,11 +114,13 @@ wsl -d Ubuntu -- bash -c "cd /mnt/c/tesseract/work && cp corpus/ckb_phase6_batch
 ## Why This Will Work
 
 1. **60% More Training Data**
+
    - Current: 4,686 sentences
    - Batch 3: ~7,500 sentences
    - Closer to industry minimum (10K)
 
 2. **Same Proven Sources**
+
    - Kurdsat: Worked in Batch 2 ✅
    - Rudaw: Worked in Batch 2 ✅
    - Khak TV: Worked in Batch 2 ✅
@@ -130,11 +138,13 @@ wsl -d Ubuntu -- bash -c "cd /mnt/c/tesseract/work && cp corpus/ckb_phase6_batch
 ### Backup Plan: Batch 4 (Traditional Texts)
 
 **Collect:**
+
 - Kurdish religious texts
 - Classical literature
 - Historical documents
 
 **Benefit:**
+
 - Improve mgk.tif from 72% to 76%+
 - Two specialized models (modern + traditional)
 
@@ -144,13 +154,13 @@ wsl -d Ubuntu -- bash -c "cd /mnt/c/tesseract/work && cp corpus/ckb_phase6_batch
 
 ## Timeline
 
-| Step | Duration | When |
-|------|----------|------|
-| **Collection** | 30-60 min | Now |
-| **Review & Combine** | 3 min | After collection |
-| **Training** | 8-12 hours | Tonight (overnight) |
-| **Validation** | 15 min | Tomorrow morning |
-| **Total** | ~12 hours | 24 hours wall time |
+| Step                 | Duration   | When                |
+| -------------------- | ---------- | ------------------- |
+| **Collection**       | 30-60 min  | Now                 |
+| **Review & Combine** | 3 min      | After collection    |
+| **Training**         | 8-12 hours | Tonight (overnight) |
+| **Validation**       | 15 min     | Tomorrow morning    |
+| **Total**            | ~12 hours  | 24 hours wall time  |
 
 ---
 
@@ -168,4 +178,3 @@ Then follow the steps above after completion!
 **Method:** More training data  
 **Timeline:** 24 hours  
 **Risk:** Low (proven approach)
-
