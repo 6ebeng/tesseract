@@ -463,6 +463,420 @@ class ReliableKurdishScraper:
             print(f"⚠️  Kurdistan24 error: {e}")
             self.stats['kurdistan24'] = 0
     
+    def scrape_xendan_extended(self, pages=10):
+        """
+        Scrape xendan.org Kurdish news
+        Uses Selenium (no Cloudflare protection)
+        Source: https://www.xendan.org/babetakan?babet=1&title=کوردستان
+        """
+        print("\n🔍 Xendan.org (NEW! Kurdish news portal)...")
+        
+        try:
+            articles_found = 0
+            article_links = []
+            
+            # Category page with Kurdistan news
+            base_url = "https://www.xendan.org/babetakan?babet=1&title=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86"
+            
+            # Scrape article list pages
+            for page in range(1, pages + 1):
+                try:
+                    print(f"   Page {page}...")
+                    self.driver.get(base_url)
+                    time.sleep(3)
+                    
+                    # Find article titles and links
+                    # HTML: <li><a href="..."><div class="card-small"><h2>TITLE</h2>
+                    cards = self.driver.find_elements(By.CSS_SELECTOR, '.card-small')
+                    
+                    for card in cards:
+                        try:
+                            # Get link from parent <a>
+                            link_elem = card.find_element(By.XPATH, '..')
+                            link = link_elem.get_attribute('href')
+                            
+                            # Get title
+                            title_elem = card.find_element(By.CSS_SELECTOR, 'h2')
+                            title = title_elem.text.strip()
+                            
+                            # Add title if quality
+                            if title and self.qc.check(title):
+                                self.sentences.add(title)
+                                articles_found += 1
+                            
+                            # Store link for detail scraping
+                            if link and link not in article_links:
+                                article_links.append(link)
+                        except:
+                            continue
+                    
+                    # Try to click "دواتر" (next) button
+                    # HTML: <a class="nextbutton" href="javascript:__doPostBack(...)">دواتر</a>
+                    try:
+                        next_btn = self.driver.find_element(By.CSS_SELECTOR, 'a.nextbutton')
+                        if next_btn.text == 'دواتر':  # "Next" in Kurdish
+                            self.driver.execute_script("arguments[0].click();", next_btn)
+                            time.sleep(2)
+                    except:
+                        print(f"   ⚠️  No next button found, stopping at page {page}")
+                        break
+                
+                except Exception as e:
+                    print(f"   ⚠️  Page {page} failed: {e}")
+            
+            print(f"   Found {len(article_links)} articles, visiting top 50...")
+            
+            # Visit article detail pages
+            for link in article_links[:50]:
+                try:
+                    self.driver.get(link)
+                    time.sleep(2)
+                    
+                    # Get article title
+                    # HTML: <div class="detail-top"><h1>TITLE</h1>
+                    try:
+                        title_elem = self.driver.find_element(By.CSS_SELECTOR, '.detail-top h1')
+                        title = title_elem.text.strip()
+                        if title and self.qc.check(title):
+                            self.sentences.add(title)
+                            articles_found += 1
+                    except:
+                        pass
+                    
+                    # Get article body paragraphs
+                    # HTML: <div class="detail-big-text-p"><p>...</p>
+                    paragraphs = self.driver.find_elements(By.CSS_SELECTOR, '.detail-big-text-p p')
+                    
+                    for p in paragraphs:
+                        text = p.text.strip()
+                        
+                        # Skip very short or metadata lines
+                        if len(text) < 20:
+                            continue
+                        
+                        # Split into sentences
+                        sents = re.split(r'[.؟!،]\s*', text)
+                        for s in sents:
+                            s = s.strip()
+                            if s and self.qc.check(s):
+                                self.sentences.add(s)
+                                articles_found += 1
+                    
+                    time.sleep(1.5)
+                
+                except Exception as e:
+                    continue
+            
+            self.stats['xendan'] = articles_found
+            print(f"✅ Xendan: {articles_found} sentences collected")
+        
+        except Exception as e:
+            print(f"⚠️  Xendan error: {e}")
+            self.stats['xendan'] = 0
+    
+    def scrape_xendan_specialized(self, pages_per_category=5):
+        """
+        Scrape Xendan specialized categories
+        - Sport: /Sport/babetakan?babet=20
+        - Economy: /babetakan?babet=8
+        - Technology: /babetakan?babet=7
+        """
+        print("\n🔍 Xendan Specialized (Sport, Economy, Tech)...")
+        
+        categories = [
+            ('Sport', 'https://www.xendan.org/Sport/babetakan?babet=20'),
+            ('Economy', 'https://www.xendan.org/babetakan?babet=8'),
+            ('Technology', 'https://www.xendan.org/babetakan?babet=7')
+        ]
+        
+        try:
+            total_found = 0
+            
+            for cat_name, base_url in categories:
+                print(f"   {cat_name}...")
+                
+                try:
+                    article_links = []
+                    
+                    # Scrape pages
+                    for page in range(1, pages_per_category + 1):
+                        try:
+                            self.driver.get(base_url)
+                            time.sleep(2)
+                            
+                            # Find titles and links
+                            cards = self.driver.find_elements(By.CSS_SELECTOR, '.card-small')
+                            
+                            for card in cards:
+                                try:
+                                    # Get link
+                                    link_elem = card.find_element(By.XPATH, '..')
+                                    link = link_elem.get_attribute('href')
+                                    
+                                    # Get title
+                                    title_elem = card.find_element(By.CSS_SELECTOR, 'h2')
+                                    title = title_elem.text.strip()
+                                    
+                                    # Add title if quality
+                                    if title and self.qc.check(title):
+                                        self.sentences.add(title)
+                                        total_found += 1
+                                    
+                                    # Store link
+                                    if link and link not in article_links:
+                                        article_links.append(link)
+                                except:
+                                    continue
+                            
+                            # Try next page button
+                            try:
+                                next_btn = self.driver.find_element(By.CSS_SELECTOR, 'a.nextbutton')
+                                if next_btn.text == 'دواتر':
+                                    self.driver.execute_script("arguments[0].click();", next_btn)
+                                    time.sleep(2)
+                            except:
+                                break
+                        
+                        except Exception as e:
+                            break
+                    
+                    print(f"      Found {len(article_links)} {cat_name.lower()} articles")
+                    
+                    # Visit article detail pages (limit to 20 per category)
+                    for link in article_links[:20]:
+                        try:
+                            self.driver.get(link)
+                            time.sleep(2)
+                            
+                            # Get title
+                            try:
+                                title_elem = self.driver.find_element(By.CSS_SELECTOR, '.detail-top h1')
+                                title = title_elem.text.strip()
+                                if title and self.qc.check(title):
+                                    self.sentences.add(title)
+                                    total_found += 1
+                            except:
+                                pass
+                            
+                            # Get paragraphs
+                            paragraphs = self.driver.find_elements(By.CSS_SELECTOR, '.detail-big-text-p p')
+                            
+                            for p in paragraphs:
+                                text = p.text.strip()
+                                if len(text) < 20:
+                                    continue
+                                
+                                # Split into sentences
+                                sents = re.split(r'[.؟!،]\s*', text)
+                                for s in sents:
+                                    s = s.strip()
+                                    if s and self.qc.check(s):
+                                        self.sentences.add(s)
+                                        total_found += 1
+                            
+                            time.sleep(1.5)
+                        
+                        except:
+                            continue
+                
+                except Exception as e:
+                    print(f"      ⚠️  {cat_name} category error: {e}")
+                    continue
+            
+            self.stats['xendan_specialized'] = total_found
+            print(f"✅ Xendan Specialized: {total_found} sentences collected")
+        
+        except Exception as e:
+            print(f"⚠️  Xendan Specialized error: {e}")
+            self.stats['xendan_specialized'] = 0
+    
+    def scrape_kurdsat_specialized(self, articles_per_category=20):
+        """
+        Scrape Kurdsat specialized categories
+        - Health: categories/8
+        - Science: categories/16
+        - Technology: categories/9
+        """
+        print("\n🔍 Kurdsat Specialized (Health, Science, Tech)...")
+        
+        categories = [
+            ('Health', 'https://kurdsat.tv/ckb/categories/8'),
+            ('Science', 'https://kurdsat.tv/ckb/categories/16'),
+            ('Technology', 'https://kurdsat.tv/ckb/categories/9')
+        ]
+        
+        try:
+            total_found = 0
+            
+            for cat_name, url in categories:
+                print(f"   {cat_name}...")
+                
+                try:
+                    self.driver.get(url)
+                    time.sleep(3)
+                    
+                    # Find all article links
+                    all_links = self.driver.find_elements(By.TAG_NAME, 'a')
+                    article_links = []
+                    
+                    for link in all_links:
+                        href = link.get_attribute('href')
+                        if href and '/articles/' in href and href not in article_links:
+                            article_links.append(href)
+                    
+                    print(f"      Found {len(article_links)} {cat_name.lower()} articles")
+                    
+                    # Visit article pages
+                    for article_url in article_links[:articles_per_category]:
+                        try:
+                            self.driver.get(article_url)
+                            time.sleep(2)
+                            
+                            # Get title
+                            try:
+                                title_elem = self.driver.find_element(By.TAG_NAME, 'h1')
+                                title = title_elem.text.strip()
+                                if title and self.qc.check(title):
+                                    self.sentences.add(title)
+                                    total_found += 1
+                            except:
+                                pass
+                            
+                            # Get paragraphs
+                            try:
+                                paragraphs = self.driver.find_elements(By.TAG_NAME, 'p')
+                                for p in paragraphs:
+                                    text = p.text.strip()
+                                    if len(text) < 20:
+                                        continue
+                                    
+                                    # Split into sentences
+                                    sents = re.split(r'[.؟!،]\s*', text)
+                                    for s in sents:
+                                        s = s.strip()
+                                        if s and self.qc.check(s):
+                                            self.sentences.add(s)
+                                            total_found += 1
+                            except:
+                                pass
+                            
+                            time.sleep(1)
+                        
+                        except:
+                            continue
+                
+                except Exception as e:
+                    print(f"      ⚠️  {cat_name} category error: {e}")
+                    continue
+            
+            self.stats['kurdsat_specialized'] = total_found
+            print(f"✅ Kurdsat Specialized: {total_found} sentences collected")
+        
+        except Exception as e:
+            print(f"⚠️  Kurdsat Specialized error: {e}")
+            self.stats['kurdsat_specialized'] = 0
+    
+    def scrape_rudaw_specialized(self, scrolls_per_category=10):
+        """
+        Scrape Rudaw specialized categories
+        - Economy: CategoryID=412626
+        - Health: CategoryID=412631
+        - Sport: CategoryID=412632
+        - Culture: CategoryID=414583
+        """
+        print("\n🔍 Rudaw Specialized (Economy, Health, Sport, Culture)...")
+        
+        categories = [
+            ('Economy', 'https://www.rudaw.net/sorani/news?CategoryID=412626'),
+            ('Health', 'https://www.rudaw.net/sorani/news?CategoryID=412631'),
+            ('Sport', 'https://www.rudaw.net/sorani/news?CategoryID=412632'),
+            ('Culture', 'https://www.rudaw.net/sorani/news?CategoryID=414583')
+        ]
+        
+        try:
+            total_found = 0
+            
+            for cat_name, url in categories:
+                print(f"   {cat_name}...")
+                
+                try:
+                    self.driver.get(url)
+                    time.sleep(3)
+                    
+                    # Scroll to load more articles (same as main Rudaw)
+                    for scroll in range(scrolls_per_category):
+                        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                        time.sleep(2)
+                    
+                    # Find article titles (h3 elements)
+                    titles = self.driver.find_elements(By.TAG_NAME, 'h3')
+                    
+                    for title in titles:
+                        text = title.text.strip()
+                        if text and self.qc.check(text):
+                            self.sentences.add(text)
+                            total_found += 1
+                    
+                    # Try to get article links for detail scraping
+                    links = self.driver.find_elements(By.CSS_SELECTOR, 'a[href*="/sorani/"]')
+                    article_links = []
+                    
+                    for link in links:
+                        href = link.get_attribute('href')
+                        if href and '/sorani/' in href and 'CategoryID' not in href:
+                            if href not in article_links:
+                                article_links.append(href)
+                    
+                    print(f"      Found {len(article_links)} {cat_name.lower()} articles")
+                    
+                    # Visit article detail pages (limit to 15 per category)
+                    for article_url in article_links[:15]:
+                        try:
+                            self.driver.get(article_url)
+                            time.sleep(2)
+                            
+                            # Get article title
+                            try:
+                                title_elem = self.driver.find_element(By.TAG_NAME, 'h1')
+                                title = title_elem.text.strip()
+                                if title and self.qc.check(title):
+                                    self.sentences.add(title)
+                                    total_found += 1
+                            except:
+                                pass
+                            
+                            # Get paragraphs
+                            paragraphs = self.driver.find_elements(By.TAG_NAME, 'p')
+                            
+                            for p in paragraphs:
+                                text = p.text.strip()
+                                if len(text) < 20:
+                                    continue
+                                
+                                # Split into sentences
+                                sents = re.split(r'[.؟!،]\s*', text)
+                                for s in sents:
+                                    s = s.strip()
+                                    if s and self.qc.check(s):
+                                        self.sentences.add(s)
+                                        total_found += 1
+                            
+                            time.sleep(1)
+                        
+                        except:
+                            continue
+                
+                except Exception as e:
+                    print(f"      ⚠️  {cat_name} category error: {e}")
+                    continue
+            
+            self.stats['rudaw_specialized'] = total_found
+            print(f"✅ Rudaw Specialized: {total_found} sentences collected")
+        
+        except Exception as e:
+            print(f"⚠️  Rudaw Specialized error: {e}")
+            self.stats['rudaw_specialized'] = 0
+    
     def save(self, output_file='corpus/kurdish_expanded_batch3.txt'):
         """Save results"""
         sorted_sents = sorted(self.sentences)
@@ -475,7 +889,11 @@ class ReliableKurdishScraper:
             f.write(f"Khak TV: ~{self.stats['khak']} | ")
             f.write(f"NRT TV: ~{self.stats['nrt']} | ")
             f.write(f"Awene: ~{self.stats['awene']} | ")
-            f.write(f"Kurdistan24: ~{self.stats['kurdistan24']}\n")
+            f.write(f"Kurdistan24: ~{self.stats['kurdistan24']} | ")
+            f.write(f"Xendan: ~{self.stats['xendan']} | ")
+            f.write(f"Kurdsat Special: ~{self.stats['kurdsat_specialized']} | ")
+            f.write(f"Xendan Special: ~{self.stats['xendan_specialized']} | ")
+            f.write(f"Rudaw Special: ~{self.stats['rudaw_specialized']}\n")
             f.write("#\n")
             
             for sent in sorted_sents:
@@ -488,31 +906,39 @@ class ReliableKurdishScraper:
 
 def main():
     print("="*70)
-    print("KURDISH CORPUS EXPANSION - BATCH 3 (6 SOURCES)")
-    print("Proven sources + NEW: NRT TV, Awene, Kurdistan24")
+    print("KURDISH CORPUS EXPANSION - BATCH 3 (11 SOURCES)")
+    print("Political + Sport + Economy + Health + Science + Technology + Culture")
     print("="*70)
     
     scraper = ReliableKurdishScraper()
     
     try:
-        # Scrape from all 6 sources
-        scraper.scrape_kurdsat_extended(clicks=30)      # 1. Batch 2 proven
-        scraper.scrape_rudaw_extended(scrolls=20)       # 2. Batch 2 proven
-        scraper.scrape_khak_extended(pages=10)          # 3. Batch 2 proven
-        scraper.scrape_nrt_extended(clicks=15)          # 4. NEW! Major news
-        scraper.scrape_awene_extended(pages=10)         # 5. NEW! Newspaper
-        scraper.scrape_kurdistan24_flaresolverr(pages=10)  # 6. NEW! With FlareSolverr
+        # Scrape from all 11 source groups
+        scraper.scrape_kurdsat_extended(clicks=30)      # 1. Batch 2 proven (political)
+        scraper.scrape_rudaw_extended(scrolls=20)       # 2. Batch 2 proven (political)
+        scraper.scrape_khak_extended(pages=10)          # 3. Batch 2 proven (political)
+        scraper.scrape_nrt_extended(clicks=15)          # 4. NEW! Major news (political)
+        scraper.scrape_awene_extended(pages=10)         # 5. NEW! Newspaper (political)
+        scraper.scrape_kurdistan24_flaresolverr(pages=10)  # 6. NEW! With FlareSolverr (political)
+        scraper.scrape_xendan_extended(pages=10)        # 7. NEW! News portal (political)
+        scraper.scrape_xendan_specialized(pages_per_category=5)  # 8. NEW! Sport+Economy+Tech
+        scraper.scrape_kurdsat_specialized(articles_per_category=20)  # 9. NEW! Health+Science+Tech
+        scraper.scrape_rudaw_specialized(scrolls_per_category=10)  # 10. NEW! Economy+Health+Sport+Culture
         
         scraper.save()
         
         print("\n" + "="*70)
         print(f"✅ SUCCESS! Collected {len(scraper.sentences)} sentences")
-        print(f"   Kurdsat: {scraper.stats['kurdsat']}")
-        print(f"   Rudaw: {scraper.stats['rudaw']}")
+        print(f"   Kurdsat (political): {scraper.stats['kurdsat']}")
+        print(f"   Rudaw (political): {scraper.stats['rudaw']}")
         print(f"   Khak TV: {scraper.stats['khak']}")
         print(f"   NRT TV: {scraper.stats['nrt']}")
         print(f"   Awene: {scraper.stats['awene']}")
         print(f"   Kurdistan24: {scraper.stats['kurdistan24']}")
+        print(f"   Xendan (political): {scraper.stats['xendan']}")
+        print(f"   Xendan Specialized (S+E+T): {scraper.stats['xendan_specialized']}")
+        print(f"   Kurdsat Specialized (H+S+T): {scraper.stats['kurdsat_specialized']}")
+        print(f"   Rudaw Specialized (E+H+S+C): {scraper.stats['rudaw_specialized']}")
         print("="*70)
     
     finally:

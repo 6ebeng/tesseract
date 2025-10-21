@@ -2,20 +2,25 @@
 
 ## ✅ Setup Complete!
 
-All 6 sources are integrated and tested:
+All 8 source groups integrated and tested (7 political + 1 specialized):
 
 ### Sources Overview
 
-| #   | Source          | Method                  | Expected         | Status            |
-| --- | --------------- | ----------------------- | ---------------- | ----------------- |
-| 1   | **Kurdsat**     | 30 clicks               | ~1,000 sentences | ✅ Batch 2 proven |
-| 2   | **Rudaw**       | 20 scrolls              | ~1,000 sentences | ✅ Batch 2 proven |
-| 3   | **Khak TV**     | 10 pages                | ~500 sentences   | ✅ Batch 2 proven |
-| 4   | **NRT TV**      | 15 clicks + 50 articles | ~1,000 sentences | ✅ NEW - Tested   |
-| 5   | **Awene**       | 10 pages + 50 articles  | ~700 sentences   | ✅ NEW - Tested   |
-| 6   | **Kurdistan24** | 10 pages (FlareSolverr) | ~800 sentences   | ✅ NEW - Tested   |
+| #   | Source                   | Method                  | Expected         | Status            |
+| --- | ------------------------ | ----------------------- | ---------------- | ----------------- |
+| 1   | **Kurdsat (Political)**  | 30 clicks               | ~1,000 sentences | ✅ Batch 2 proven |
+| 2   | **Rudaw**                | 20 scrolls              | ~1,000 sentences | ✅ Batch 2 proven |
+| 3   | **Khak TV**              | 10 pages                | ~500 sentences   | ✅ Batch 2 proven |
+| 4   | **NRT TV**               | 15 clicks + 50 articles | ~1,000 sentences | ✅ NEW - Tested   |
+| 5   | **Awene**                | 10 pages + 50 articles  | ~700 sentences   | ✅ NEW - Tested   |
+| 6   | **Kurdistan24**          | 10 pages (FlareSolverr) | ~800 sentences   | ✅ NEW - Tested   |
+| 7   | **Xendan**               | 10 pages + 50 articles  | ~700 sentences   | ✅ NEW - Tested   |
+| 8   | **Kurdsat Specialized:** | 60 articles (20 each)   | ~600 sentences   | ✅ NEW - Tested   |
+|     | → Health (cat/8)         | Medical terms           | ~200 sentences   | ✅ Verified       |
+|     | → Science (cat/16)       | Scientific terms        | ~200 sentences   | ✅ Verified       |
+|     | → Technology (cat/9)     | Tech vocabulary         | ~200 sentences   | ✅ Verified       |
 
-**Total Expected: 5,000+ new sentences**
+**Total Expected: 6,300+ new sentences**
 
 ---
 
@@ -29,9 +34,11 @@ All 6 sources are integrated and tested:
 
 ### After Batch 3
 
-- **New corpus**: 9,700+ sentences (107% increase!)
-- **Expected accuracy**: 80%+ (improved generalization)
-- **Coverage**: 97% of industry minimum (10K)
+- **New corpus**: 11,000+ sentences (135% increase!)
+- **Expected accuracy**: 80-82%+ (improved generalization)
+- **Coverage**: 110% of industry minimum (10K) ✅
+- **8 source groups**: Maximum diversity (political + health + science + tech)
+- **Vocabulary**: Medical, scientific, and technical terms added
 
 ---
 
@@ -60,17 +67,19 @@ wsl -d Ubuntu -- sudo docker ps | grep flaresolverr
 **What happens:**
 
 1. Initializes Selenium browser
-2. Scrapes Kurdsat (10-15 min)
+2. Scrapes Kurdsat political (10-15 min)
 3. Scrapes Rudaw (8-12 min)
 4. Scrapes Khak TV (5-8 min)
 5. Scrapes NRT TV (10-15 min)
 6. Scrapes Awene (8-12 min)
 7. Scrapes Kurdistan24 via FlareSolverr (12-18 min)
-8. Auto-deduplicates
-9. Quality filters (10-30 words, >70% Kurdish)
-10. Saves to: `work/corpus/kurdish_expanded_batch3.txt`
+8. Scrapes Xendan (8-12 min)
+9. Scrapes Kurdsat Specialized: Health + Science + Tech (10-15 min)
+10. Auto-deduplicates
+11. Quality filters (10-30 words, >70% Kurdish)
+12. Saves to: `work/corpus/kurdish_expanded_batch3.txt`
 
-**Total time: 50-90 minutes**
+**Total time: 70-110 minutes**
 
 ### Step 3: Review Results
 
@@ -94,7 +103,7 @@ wsl -d Ubuntu -- bash -c "cd /mnt/c/tesseract/work && cat corpus/ckb_phase6_batc
 wsl -d Ubuntu -- wc -l /mnt/c/tesseract/work/corpus/ckb_phase6_batch3.training_text
 ```
 
-**Expected: ~9,700 lines**
+**Expected: ~11,000 lines**
 
 ### Step 5: Activate for Training
 

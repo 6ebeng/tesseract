@@ -15,7 +15,7 @@
 3. **Current: 4,686 sentences** = Too few for optimal performance
 4. **Best practice: 10-20K sentences** for production-quality OCR
 
-### Batch 3 Plan: Expand Training Data 107%
+### Batch 3 Plan: Expand Training Data 122%
 
 **Current Corpus:**
 
@@ -23,7 +23,7 @@
 - Batch 2 (News): 1,408 sentences (Kurdsat, Rudaw, Khak TV)
 - **Total: 4,686 sentences**
 
-**Batch 3 Target (6 sources):**
+**Batch 3 Target (7 sources):**
 
 - Kurdsat: ~1,000 sentences (30 clicks, 2x Batch 2)
 - Rudaw: ~1,000 sentences (20 scrolls, 2x Batch 2)
@@ -31,9 +31,11 @@
 - **NRT TV: ~1,000 sentences (NEW! 15 clicks + 50 articles)**
 - **Awene: ~700 sentences (NEW! 10 pages + 50 articles)**
 - **Kurdistan24: ~800 sentences (NEW! 10 pages via FlareSolverr)**
-- **New Total: 5,000+ sentences**
+- **Xendan: ~700 sentences (NEW! 10 pages + 50 articles)**
+- **New Total: 5,700+ sentences**
 
-**Combined Total: 9,700+ sentences (107% increase!)**
+**Combined Total: 10,400+ sentences (122% increase!)**
+**Industry Standard: 104% of 10K minimum ✅**
 
 ---
 
@@ -55,6 +57,7 @@
 - **Scrapes NRT TV (NEW! 15 clicks + 50 article visits)**
 - **Scrapes Awene (NEW! 10 pages + 50 articles)**
 - **Scrapes Kurdistan24 (NEW! 10 pages via FlareSolverr)**
+- **Scrapes Xendan (NEW! 10 pages + 50 articles)**
 - Quality filtering (10-30 words, >70% Kurdish purity)
 - Auto-deduplication
 - Saves to `work/corpus/kurdish_expanded_batch3.txt`
@@ -63,8 +66,8 @@
 
 - FlareSolverr running: `sudo docker start flaresolverr`
 
-**Estimated time:** 50-90 minutes  
-**Expected output:** 5,000+ new sentences
+**Estimated time:** 60-100 minutes  
+**Expected output:** 5,700+ new sentences
 
 ### Step 2: Corpus Combination
 
@@ -97,7 +100,7 @@ cp corpus/ckb_phase6_batch3.training_text corpus/ckb.training_text
 
 **What it does:**
 
-- Generates training images from 7,500+ sentences
+- Generates training images from 10,400+ sentences
 - Trains 3 new models (fas, ara, eng bases)
 - Takes ~8-12 hours (overnight)
 
