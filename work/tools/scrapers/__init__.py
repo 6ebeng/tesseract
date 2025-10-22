@@ -15,6 +15,7 @@ from .sekokurd_scraper import SekokurdScraper
 from .govkrd_scraper import GovKrdScraper
 from .sharpress_scraper import SharpressScraper
 from .lvinpress_scraper import LvinpressScraper
+from .balinde_scraper import BalindeScraper
 
 __all__ = [
     'BaseScraper',
@@ -30,6 +31,7 @@ __all__ = [
     'GovKrdScraper',
     'SharpressScraper',
     'LvinpressScraper',
+    'BalindeScraper',
 ]
 
 __version__ = '2.0.0'

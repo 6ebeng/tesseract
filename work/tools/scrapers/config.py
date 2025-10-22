@@ -68,6 +68,12 @@ SCRAPER_CONFIGS = {
         'political': {'pages': 10},
         'specialized': {'pages': 5},
         'categories': ['Social Media', 'Opinion']
+    },
+    'balinde': {
+        'enabled': True,
+        'political': None,  # No political content - poetry/literature site
+        'specialized': {'pages': 10},
+        'categories': ['Kurdish Poetry', 'Articles']
     }
 }
 
