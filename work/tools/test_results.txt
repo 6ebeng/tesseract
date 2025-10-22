@@ -1,0 +1,215 @@
+======================================================================
+KURDISH NEWS SCRAPER VERIFICATION TOOL
+Testing all scrapers with minimal parameters
+======================================================================
+
+======================================================================
+Testing Kurdsat
+======================================================================
+
+🧪 Testing Political Scraping...
+
+📰 Scraping Kurdsat Political (3 clicks)...
+   Stopped at click 1 (button not available)
+   Found 24 article links
+✅ Kurdsat Political: 3 sentences from 1 articles
+   ✅ SUCCESS: 3 sentences in 15.1s
+   📄 Sample sentences:
+      1. ناوبراو راشیگەیاند، کردنەوەی ئاسمانی تورکیا بەڕووی سلێمانیدا پەیوەندییەکانی نێوا...
+      2. قوباد تاڵەبانی، جێگری سەرۆک وەزیران لە هەولێر پێشوازیکرد لە ئانل بۆرا ئینان، باڵ...
+      3. قوباد تاڵيبانی ئاماژەی بەوەشکرد، ئەم هەڵبژاردنە بە تایبەت بۆ هاووڵاتییانی هەرێمی...
+
+🧪 Testing Specialized Scraping...
+
+📚 Scraping Kurdsat Specialized (3 categories, 5 articles each)...
+
+   📂 Category: Health
+      ✅ Health: 0 sentences from 0 articles
+
+   📂 Category: Science
+      ✅ Science: 0 sentences from 0 articles
+
+   📂 Category: Technology
+      ✅ Technology: 0 sentences from 0 articles
+
+✅ Kurdsat Specialized: 0 total sentences
+   ⚠️  WARNING: No sentences collected
+
+======================================================================
+Testing Rudaw
+======================================================================
+
+🧪 Testing Political Scraping...
+
+📰 Scraping Rudaw Political (3 scrolls)...
+   Found 120 article links
+✅ Rudaw Political: 0 sentences from 1 articles
+   ⚠️  WARNING: No sentences collected
+
+🧪 Testing Specialized Scraping...
+
+📚 Scraping Rudaw Specialized (4 categories, 0 scrolls each)...
+
+   📂 Category: Economy
+      ✅ Economy: 0 sentences from 1 articles
+
+   📂 Category: Health
+      ✅ Health: 0 sentences from 0 articles
+
+   📂 Category: Sport
+      ✅ Sport: 0 sentences from 0 articles
+
+   📂 Category: Culture
+      ✅ Culture: 0 sentences from 1 articles
+
+✅ Rudaw Specialized: 0 total sentences
+   ⚠️  WARNING: No sentences collected
+
+======================================================================
+Testing Khak
+======================================================================
+
+🧪 Testing Political Scraping...
+
+📰 Scraping Khak Political (2 pages)...
+   Page 1/2: 2 total sentences
+   Page 2/2: 4 total sentences
+✅ Khak Political: 4 sentences
+   ✅ SUCCESS: 4 sentences in 25.6s
+   📄 Sample sentences:
+      1. جێی باسه‌، له‌وڵاته‌ ئه‌وروپیه‌كاندا هه‌ر له‌ئێستاوه‌ له‌ڕێگای ئینته‌رنێته‌وه‌ د...
+      2. ده‌شڵێن كه‌ نموونه‌یه‌كی گونجاوه‌ بۆ لابردنی په‌ڵه‌و ره‌نگی جیاواز له‌سه‌ر ددانه...
+
+======================================================================
+Testing NRT
+======================================================================
+
+🧪 Testing Political Scraping...
+
+📰 Scraping NRT Political (3 clicks)...
+   Found 610 article links, visiting top 50...
+✅ NRT Political: 37 sentences from 1 articles
+   ✅ SUCCESS: 37 sentences in 20.1s
+   📄 Sample sentences:
+      1. سەرۆکی لیستی نەوەی نوێ لە سلێمانی وەڵامی مەسعود بارزانی دایەوە...
+      2. لە سنووری پارێزگای هەولێر لەسەر رێگای بالیسان – شکارتە، رووداوێکی هاتووچۆ لەنێوا...
+      3. سەرۆك وەزیرانی عێراق چەند بڕیارێك لە بەرژەوەندی ئەو گەنجانە دەردەكات، كە كاری گە...
+
+======================================================================
+Testing Awene
+======================================================================
+
+🧪 Testing Political Scraping...
+
+📰 Scraping Awene Political (2 pages)...
+   Page 1/2: 28 sentences
+   Page 2/2: 57 sentences
+   Visiting top 10 articles...
+✅ Awene Political: 81 sentences
+   ✅ SUCCESS: 81 sentences in 33.9s
+   📄 Sample sentences:
+      1. عێراق و ئێران جه‌خت له‌ راگرتنی سه‌رجه‌م چالاكییه‌ سه‌ربازی و سیاسییه‌كانی حزبه‌...
+      2. نێچیرڤان بارزانی بۆ شاندێكی باڵای عێراق: پێویستمان به‌هاوكاری هاوپه‌یمانان هه‌یه...
+      3. سروه‌ عه‌بدولواحید: ره‌زامه‌ندیمان له‌ سودانی‌ وه‌رگرتوه‌ بۆ خه‌رجكردنی‌ 100 هه‌...
+
+🧪 Testing Specialized Scraping...
+
+📚 Scraping Awene Specialized (5 categories, 5 articles each)...
+
+   📂 Category: Articles
+      Found 0 unique articles
+      Visiting top 0 articles...
+      ✅ Articles: 0 sentences
+
+   📂 Category: Culture
+      Found 75 unique articles
+      Visiting top 5 articles...
+      ✅ Culture: 16 sentences
+
+   📂 Category: Economy
+      Found 76 unique articles
+      Visiting top 5 articles...
+      ✅ Economy: 4 sentences
+
+   📂 Category: Health
+      Found 75 unique articles
+      Visiting top 5 articles...
+      ✅ Health: 5 sentences
+
+   📂 Category: Multimedia
+      Found 75 unique articles
+      Visiting top 5 articles...
+      ✅ Multimedia: 7 sentences
+
+✅ Awene Specialized: 32 total sentences
+   ✅ SUCCESS: 32 sentences in 132.1s
+
+======================================================================
+Testing Kurdistan24
+======================================================================
+
+🧪 Testing Political Scraping...
+
+📰 Scraping Kurdistan24 Political (2 pages with FlareSolverr)...
+   ✅ FlareSolverr session: k24_session_1761062882
+   Page 1/2: 9 sentences
+   Page 2/2: 15 sentences
+   Visiting top 50 articles...
+✅ Kurdistan24 Political: 110 sentences
+   ✅ SUCCESS: 110 sentences in 131.8s
+   📄 Sample sentences:
+      1. لیوا محەممەد پاکپوور، ڕاشیگەیاند، ئەمەریکا و ئیسرائیل پشتیان بە سیستەمەکانی بەرگ...
+      2. لە کۆبوونەوەکەدا، هەردوو لا ڕێگاکانی پێشخستنی پلانی ترەمپ، پەیوەندییەکانی نێوان ...
+      3. هەروەها ئاماژەی بەوەدا "ئەو کۆبوونەوە نێودەوڵەتییە گەورەیەی میسر بە ئامادەبوونی ...
+
+🧪 Testing Specialized Scraping...
+   ❌ FAILED: Kurdistan24Scraper.scrape_specialized() got an unexpected keyword argument 'articles_per_category'
+
+======================================================================
+Testing Xendan
+======================================================================
+
+🧪 Testing Political Scraping...
+
+📰 Scraping Xendan Political (2 pages)...
+   Found 22 articles, visiting top 50...
+✅ Xendan Political: 164 sentences
+   ✅ SUCCESS: 164 sentences in 78.7s
+   📄 Sample sentences:
+      1. مارك ساڤایا له‌ پۆستێكیدا له‌ تۆڕی كۆمه‌ڵایه‌تی ئینستاگرام سه‌باره‌ت به‌ ده‌ستنی...
+      2. بونی كاره‌بای 24 كاژتژمێری به‌هۆی "یه‌كێتییه‌وه‌"یه‌ كه‌ چوار ساڵ له‌مه‌وبه‌ر به...
+      3. بانکێکی حکومی سەر بە وەزارەتی دارایی و ئابوری حکومەتی هەرێمی کوردستانە و لەلایەن...
+
+🧪 Testing Specialized Scraping...
+   ❌ FAILED: XendanScraper.scrape_specialized() got an unexpected keyword argument 'articles_per_category'
+
+======================================================================
+Testing Sekokurd
+======================================================================
+
+🧪 Testing Specialized Scraping...
+   ❌ FAILED: SekokurdScraper.scrape_specialized() got an unexpected keyword argument 'articles_per_category'
+
+======================================================================
+TEST SUMMARY
+======================================================================
+
+Scraper              Political       Specialized     Status
+----------------------------------------------------------------------
+Kurdsat              ✅ 3            ❌ 0            ✅ WORKING
+Rudaw                ❌ 0            ❌ 0            ❌ BROKEN
+Khak                 ✅ 4            ❌ 0            ✅ WORKING
+NRT                  ✅ 37           ❌ 0            ✅ WORKING
+Awene                ✅ 81           ✅ 32           ✅ WORKING
+Kurdistan24          ✅ 110          ❌ 0            ✅ WORKING
+Xendan               ✅ 164          ❌ 0            ✅ WORKING
+Sekokurd             ❌ 0            ❌ 0            ❌ BROKEN
+
+======================================================================
+Overall: 6/8 scrapers working (75%)
+======================================================================
+
+⚠️  FAILED SCRAPERS:
+   ❌ Rudaw: No sentences found
+   ❌ Sekokurd: None
+
