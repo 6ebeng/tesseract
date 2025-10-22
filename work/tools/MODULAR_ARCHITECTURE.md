@@ -24,21 +24,25 @@ tools/
 ## 🎯 Design Principles
 
 ### 1. **Modularity**
+
 - Each news source has its own scraper class
 - Scrapers inherit from `BaseScraper` base class
 - Easy to add, remove, or modify individual scrapers
 
 ### 2. **Maintainability**
+
 - Clear separation of concerns
 - Configuration separated from code
 - Reusable utility functions in base class
 
 ### 3. **Testability**
+
 - `test_scrapers.py` verifies each scraper independently
 - Quick identification of broken scrapers
 - Sample output for verification
 
 ### 4. **Extensibility**
+
 - Abstract base class defines interface
 - Easy to add new scrapers following the pattern
 - Plugin-like architecture
@@ -64,6 +68,7 @@ class BaseScraper(ABC):
 ### SimpleQC Class
 
 Quality control for Kurdish text:
+
 - Word count validation (10-30 words)
 - Kurdish character ratio check (>70%)
 - Filters out non-Kurdish content
@@ -71,6 +76,7 @@ Quality control for Kurdish text:
 ### Configuration
 
 Centralized in `scrapers/config.py`:
+
 - Scraper enable/disable flags
 - Parameters for each scraper
 - Quality control settings
@@ -91,37 +97,37 @@ class NewSourceScraper(BaseScraper):
     def __init__(self):
         super().__init__("NewSource")
         self.base_url = "https://newsource.com"
-    
+
     def scrape_political(self, pages=10):
         """Scrape political news"""
         print(f"\n📰 Scraping {self.name} Political ({pages} pages)...")
-        
+
         try:
             self.init_driver()
             articles_found = 0
-            
+
             for page in range(1, pages + 1):
                 url = f"{self.base_url}/news?page={page}"
                 if not self.safe_get(url):
                     continue
-                
+
                 # Extract content
                 titles = self.driver.find_elements(By.CSS_SELECTOR, "h2.title a")
                 for title in titles:
                     text = title.text.strip()
                     if self.add_sentence(text):
                         articles_found += 1
-                
+
                 print(f"   Page {page}/{pages}: {articles_found} sentences")
-            
+
             self.stats['political'] = articles_found
             print(f"✅ {self.name}: {articles_found} sentences")
             return articles_found
-        
+
         except Exception as e:
             print(f"⚠️  {self.name} error: {e}")
             return 0
-    
+
     def scrape_specialized(self, articles_per_category=20):
         """Scrape specialized categories (optional)"""
         # Implementation here
@@ -183,6 +189,7 @@ wsl -d Ubuntu -- python3 /mnt/c/tesseract/work/tools/test_scrapers.py
 ### Full Test (All Scrapers)
 
 Once all scrapers are implemented:
+
 ```bash
 wsl -d Ubuntu -- timeout 600 python3 /mnt/c/tesseract/work/tools/test_scrapers.py
 ```
@@ -274,6 +281,7 @@ TOTAL           3500         2100         21750      8400.5
 ### Scraper Not Working?
 
 1. **Run test script first**:
+
    ```bash
    wsl -d Ubuntu -- python3 /mnt/c/tesseract/work/tools/test_scrapers.py
    ```
@@ -281,6 +289,7 @@ TOTAL           3500         2100         21750      8400.5
 2. **Check error messages** in test output
 
 3. **Disable problematic scraper** in `config.py`:
+
    ```python
    'problematic_source': {
        'enabled': False,  # Temporarily disable
@@ -294,35 +303,37 @@ TOTAL           3500         2100         21750      8400.5
 
 ### Common Issues
 
-| Issue | Solution |
-|-------|----------|
-| Selector not found | Update CSS selectors in scraper |
-| Timeout errors | Increase `PAGE_LOAD_TIMEOUT` in config |
-| Cloudflare blocking | Use FlareSolverr (see Kurdistan24 example) |
-| Quality check failing | Adjust `QC_SETTINGS` in config |
-| Memory issues | Reduce batch sizes in config |
+| Issue                 | Solution                                   |
+| --------------------- | ------------------------------------------ |
+| Selector not found    | Update CSS selectors in scraper            |
+| Timeout errors        | Increase `PAGE_LOAD_TIMEOUT` in config     |
+| Cloudflare blocking   | Use FlareSolverr (see Kurdistan24 example) |
+| Quality check failing | Adjust `QC_SETTINGS` in config             |
+| Memory issues         | Reduce batch sizes in config               |
 
 ## 📊 Advantages Over Monolithic Script
 
-| Aspect | Monolithic (Old) | Modular (New) |
-|--------|------------------|---------------|
-| **File Size** | 1,300+ lines | ~200 lines per scraper |
-| **Testing** | Test entire script | Test each scraper individually |
-| **Debugging** | Hard to isolate issues | Easy to identify broken scraper |
-| **Maintenance** | Change affects everything | Change isolated to one scraper |
-| **Adding Sources** | Modify large file | Create new small file |
-| **Collaboration** | Merge conflicts | Work on separate scrapers |
-| **Reusability** | Copy-paste code | Import and extend base class |
+| Aspect             | Monolithic (Old)          | Modular (New)                   |
+| ------------------ | ------------------------- | ------------------------------- |
+| **File Size**      | 1,300+ lines              | ~200 lines per scraper          |
+| **Testing**        | Test entire script        | Test each scraper individually  |
+| **Debugging**      | Hard to isolate issues    | Easy to identify broken scraper |
+| **Maintenance**    | Change affects everything | Change isolated to one scraper  |
+| **Adding Sources** | Modify large file         | Create new small file           |
+| **Collaboration**  | Merge conflicts           | Work on separate scrapers       |
+| **Reusability**    | Copy-paste code           | Import and extend base class    |
 
 ## 🎯 Migration Path
 
 ### Phase 1: Create Base Structure ✅
+
 - [x] Base scraper class
 - [x] Configuration system
 - [x] Test framework
 - [x] Orchestrator
 
 ### Phase 2: Migrate Existing Scrapers
+
 - [x] Kurdsat (example completed)
 - [ ] Rudaw
 - [ ] Khak TV
@@ -333,12 +344,14 @@ TOTAL           3500         2100         21750      8400.5
 - [ ] Sekokurd
 
 ### Phase 3: Testing & Validation
+
 - [ ] Test all scrapers individually
 - [ ] Run full collection
 - [ ] Compare output with legacy script
 - [ ] Verify sentence counts
 
 ### Phase 4: Deprecate Legacy
+
 - [ ] Mark `expand_corpus_batch3_reliable.py` as deprecated
 - [ ] Update PowerShell script to use modular version
 - [ ] Archive legacy code
@@ -356,6 +369,7 @@ To complete the migration, create these scrapers following the Kurdsat example:
 7. **SekokurdScraper** - `scrapers/sekokurd_scraper.py`
 
 Each scraper should:
+
 - Inherit from `BaseScraper`
 - Implement `scrape_political()`
 - Optionally implement `scrape_specialized()`

@@ -1,6 +1,7 @@
 # 🚀 Quick Reference - Modular Corpus Expansion
 
 ## 📋 File Structure
+
 ```
 tools/
 ├── scrapers/              # Package
@@ -15,17 +16,20 @@ tools/
 ## ⚡ Quick Commands
 
 ### Test Scrapers (2 min)
+
 ```bash
 wsl -d Ubuntu -- python3 /mnt/c/tesseract/work/tools/test_scrapers.py
 ```
 
 ### Run Collection (140 min)
+
 ```bash
 wsl -d Ubuntu -- sudo docker start flaresolverr
 wsl -d Ubuntu -- python3 /mnt/c/tesseract/work/tools/expand_corpus_modular.py
 ```
 
 ### Validate Syntax
+
 ```bash
 wsl -d Ubuntu -- bash -lc "cd /mnt/c/tesseract/work/tools && python3 -m py_compile scrapers/*.py *.py"
 ```
@@ -35,11 +39,12 @@ wsl -d Ubuntu -- bash -lc "cd /mnt/c/tesseract/work/tools && python3 -m py_compi
 **Framework**: ✅ Complete  
 **Scrapers**: 1/8 done (Kurdsat working)  
 **Test Tool**: ✅ Working  
-**Docs**: ✅ Complete  
+**Docs**: ✅ Complete
 
 ## 📝 TODO
 
 Migrate 7 scrapers from `expand_corpus_batch3_reliable.py`:
+
 - [ ] Rudaw (lines 115-158)
 - [ ] Khak (lines 159-199)
 - [ ] NRT (lines 200-291)

@@ -7,6 +7,7 @@ Fixed ugly Selenium stacktraces across LvinPress and Sharpress scrapers by imple
 ## Changes Made
 
 ### 1. **BaseScraper (`base_scraper.py`)**
+
 Added `clean_error()` static method to extract concise error messages:
 
 ```python
@@ -15,7 +16,7 @@ def clean_error(exception):
     """Extract clean, concise error message from exception"""
     error_str = str(exception)
     first_line = error_str.split('\n')[0]
-    
+
     # Simplify common Selenium errors
     if 'no such element' in first_line.lower():
         return "Element not found"
@@ -34,6 +35,7 @@ def clean_error(exception):
 ### 2. **LvinPress Scraper (`lvinpress_scraper.py`)**
 
 **Before:**
+
 ```python
 except Exception as e:
     print(f"      ⚠️  Content extraction failed: {e}")
@@ -41,6 +43,7 @@ except Exception as e:
 ```
 
 **After:**
+
 ```python
 except Exception as e:
     print(f"      ⚠️  {self.clean_error(e)} (skipped)")
@@ -50,6 +53,7 @@ except Exception as e:
 ### 3. **Sharpress Scraper (`sharpress_scraper.py`)**
 
 **Before:**
+
 ```python
 except Exception as e:
     print(f"      Error on page {page}: {e}")
@@ -57,6 +61,7 @@ except Exception as e:
 ```
 
 **After:**
+
 ```python
 except Exception as e:
     print(f"      ⚠️  Page {page}: {self.clean_error(e)}")
@@ -66,6 +71,7 @@ except Exception as e:
 ## Before vs After
 
 ### Before (Ugly):
+
 ```
    [1/5] https://lvinpress.com/video/7431
       ⚠️  Content extraction failed: Message: no such element: Unable to locate element: {"method":"css selector","selector":"h1.elementor-heading-title"}
@@ -81,6 +87,7 @@ Stacktrace:
 ```
 
 ### After (Clean):
+
 ```
    [1/5] https://lvinpress.com/video/7431
       ⚠️  Element not found (skipped)
@@ -103,6 +110,7 @@ except Exception as e:
 ```
 
 Instead of:
+
 ```python
 except Exception as e:
     print(f"⚠️  Error: {e}")
@@ -111,6 +119,7 @@ except Exception as e:
 ## Testing
 
 Tested with:
+
 - LvinPress scraper (video articles triggering element not found)
 - Sharpress scraper (pagination errors)
 - Manual error injection

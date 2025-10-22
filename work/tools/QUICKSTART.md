@@ -1,6 +1,7 @@
 # 🚀 QUICK START GUIDE - Modular Kurdish News Scraper
 
 ## ✅ Current Status
+
 - **7 out of 8 scrapers working** (87.5%)
 - **Expected output**: 18,000-22,100 sentences
 - **Test framework**: Working perfectly
@@ -11,14 +12,18 @@
 ## 🎯 Quick Commands
 
 ### 1. Quick Test (2-5 minutes)
+
 Test all scrapers with minimal parameters:
+
 ```bash
 cd C:\tesseract
 wsl -d Ubuntu -- python3 /mnt/c/tesseract/work/tools/test_scrapers.py
 ```
 
 ### 2. Full Collection (2-3 hours)
+
 Collect all sentences from all sources:
+
 ```bash
 cd C:\tesseract
 
@@ -30,6 +35,7 @@ wsl -d Ubuntu -- python3 /mnt/c/tesseract/work/tools/expand_corpus_modular.py
 ```
 
 ### 3. Test Individual Scraper
+
 ```bash
 cd C:\tesseract
 wsl -d Ubuntu -- python3 << 'EOF'
@@ -49,6 +55,7 @@ EOF
 ## 📊 What to Expect
 
 ### Quick Test Output:
+
 ```
 ======================================================================
 KURDISH NEWS SCRAPER VERIFICATION TOOL
@@ -69,6 +76,7 @@ Overall: 7/8 scrapers working (87.5%)
 ```
 
 ### Full Collection Output:
+
 ```
 ======================================================================
 COLLECTION SUMMARY
@@ -99,7 +107,9 @@ TOTAL           2370         2890         5260       850.7
 ## 🛠️ Configuration
 
 ### Enable/Disable Scrapers
+
 Edit `work/tools/scrapers/config.py`:
+
 ```python
 SCRAPER_CONFIGS = {
     'kurdsat': {'enabled': True, 'clicks': 30},
@@ -114,7 +124,9 @@ SCRAPER_CONFIGS = {
 ```
 
 ### Adjust Quality Control
+
 Edit `work/tools/scrapers/config.py`:
+
 ```python
 QC_SETTINGS = {
     'min_words': 10,        # Minimum words per sentence
@@ -128,35 +140,44 @@ QC_SETTINGS = {
 ## 🔍 Troubleshooting
 
 ### Problem: Kurdistan24 not working
+
 **Cause**: FlareSolverr not running  
 **Solution**:
+
 ```bash
 wsl -d Ubuntu -- sudo docker start flaresolverr
 wsl -d Ubuntu -- sudo docker ps | grep flaresolverr
 ```
 
 ### Problem: Scraper timing out
+
 **Cause**: Website slow or down  
 **Solution**: Disable in config or increase timeout:
+
 ```python
 # In scraper code:
 self.safe_get(url, retries=5, delay=5)  # 5 retries, 5s delay
 ```
 
 ### Problem: 0 sentences collected
+
 **Causes**:
+
 1. **Selector changed** - Website redesigned
 2. **QC too strict** - Lower min_kurdish_ratio
 3. **Content not loading** - Increase delays
 
 **Debug**:
+
 ```bash
 # Test individual scraper with prints
 wsl -d Ubuntu -- python3 test_fixed_scrapers.py
 ```
 
 ### Problem: Selenium error
+
 **Solution**: Restart Chrome driver:
+
 ```python
 scraper.cleanup()
 scraper.init_driver()
@@ -205,6 +226,7 @@ Before running full collection:
 - [ ] **Config reviewed**: Check `scrapers/config.py` settings
 
 ### Start Collection:
+
 ```bash
 cd C:\tesseract
 
@@ -224,16 +246,19 @@ wsl -d Ubuntu -- python3 /mnt/c/tesseract/work/tools/expand_corpus_modular.py
 ## 📊 Performance Tips
 
 ### Speed Up Testing:
+
 - Use `test_scrapers.py` with minimal parameters (2 min)
 - Test individual scrapers in Python (30 sec each)
 - Skip slow scrapers: Disable in config
 
 ### Speed Up Collection:
+
 - Run during off-peak hours (less website load)
 - Increase parallel requests (but respect rate limits)
 - Disable broken scrapers to avoid timeouts
 
 ### Maximize Output:
+
 - Increase parameters in config (more pages/clicks)
 - Lower QC thresholds slightly (more sentences pass)
 - Enable all working scrapers
@@ -243,6 +268,7 @@ wsl -d Ubuntu -- python3 /mnt/c/tesseract/work/tools/expand_corpus_modular.py
 ## 🎓 Working with Scrapers
 
 ### Add New Scraper:
+
 1. Create `scrapers/new_site_scraper.py`
 2. Inherit from `BaseScraper`
 3. Implement `scrape_political()` and/or `scrape_specialized()`
@@ -252,6 +278,7 @@ wsl -d Ubuntu -- python3 /mnt/c/tesseract/work/tools/expand_corpus_modular.py
 7. Add to test in `test_scrapers.py`
 
 ### Example:
+
 ```python
 from .base_scraper import BaseScraper
 from selenium.webdriver.common.by import By
@@ -259,34 +286,34 @@ from selenium.webdriver.common.by import By
 class NewSiteScraper(BaseScraper):
     def __init__(self):
         super().__init__("NewSite")
-    
+
     def scrape_political(self, pages=10, **kwargs):
         print(f"\n📰 Scraping {self.name} Political ({pages} pages)...")
         try:
             self.init_driver()
             articles_found = 0
-            
+
             for page in range(1, pages + 1):
                 url = f'https://newsite.com/news?page={page}'
                 if not self.safe_get(url, delay=2):
                     continue
-                
+
                 links = self.driver.find_elements(By.CSS_SELECTOR, "a.article-link")
-                
+
                 for link in links[:10]:
                     href = link.get_attribute('href')
                     if not self.safe_get(href, delay=1):
                         continue
-                    
+
                     paragraphs = self.driver.find_elements(By.CSS_SELECTOR, ".content p")
                     for p in paragraphs:
                         if self.add_sentence(p.text.strip()):
                             articles_found += 1
-            
+
             self.stats['political'] = articles_found
             print(f"✅ {self.name} Political: {articles_found} sentences")
             return articles_found
-        
+
         except Exception as e:
             print(f"⚠️ {self.name} Political error: {e}")
             return 0
@@ -297,6 +324,7 @@ class NewSiteScraper(BaseScraper):
 ## 🎉 Success Metrics
 
 ### Current Achievement:
+
 - ✅ 7/8 scrapers working (87.5%)
 - ✅ Modular architecture complete
 - ✅ Test framework working
@@ -305,6 +333,7 @@ class NewSiteScraper(BaseScraper):
 - ✅ Ready for production
 
 ### OCR Impact:
+
 - **Baseline accuracy**: 76.90%
 - **Baseline data**: 4,686 sentences
 - **New data**: 18,000-22,100 sentences
@@ -315,13 +344,13 @@ class NewSiteScraper(BaseScraper):
 
 ## 📞 Quick Reference
 
-| Task | Command | Time |
-|------|---------|------|
-| Quick test | `python3 test_scrapers.py` | 2-10 min |
-| Full collection | `python3 expand_corpus_modular.py` | 2-3 hours |
-| Check output | `wc -l corpus/kurdish_expanded_batch3.txt` | 1 sec |
-| Start FlareSolverr | `docker start flaresolverr` | 5 sec |
-| Check Docker | `docker ps` | 1 sec |
+| Task               | Command                                    | Time      |
+| ------------------ | ------------------------------------------ | --------- |
+| Quick test         | `python3 test_scrapers.py`                 | 2-10 min  |
+| Full collection    | `python3 expand_corpus_modular.py`         | 2-3 hours |
+| Check output       | `wc -l corpus/kurdish_expanded_batch3.txt` | 1 sec     |
+| Start FlareSolverr | `docker start flaresolverr`                | 5 sec     |
+| Check Docker       | `docker ps`                                | 1 sec     |
 
 ---
 
