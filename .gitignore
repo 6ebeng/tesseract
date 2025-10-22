@@ -246,6 +246,26 @@ cmake_install.cmake
 *.md.tmp
 
 # ===========================================
+# PYTHON
+# ===========================================
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# ===========================================
 # CUSTOM IGNORES FOR THIS PROJECT
 # ===========================================
 

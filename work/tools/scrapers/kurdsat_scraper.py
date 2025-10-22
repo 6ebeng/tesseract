@@ -92,15 +92,16 @@ class KurdsatScraper(BaseScraper):
     
     def scrape_specialized(self, articles_per_category=20):
         """
-        Scrape specialized categories: Health, Science, Technology
+        Scrape specialized categories: Health, Science, Technology, Opinion
         Note: May be slow due to page load times, but functional
         """
-        print(f"\n📚 Scraping {self.name} Specialized (3 categories, {articles_per_category} articles each)...")
+        print(f"\n📚 Scraping {self.name} Specialized (4 categories, {articles_per_category} articles each)...")
         
         categories = [
             ('Health', 'https://kurdsat.tv/ckb/categories/8'),
             ('Science', 'https://kurdsat.tv/ckb/categories/16'),
-            ('Technology', 'https://kurdsat.tv/ckb/categories/9')
+            ('Technology', 'https://kurdsat.tv/ckb/categories/9'),
+            ('Opinion', 'https://news.kurdsat.tv/ckb/opinions?page=1')
         ]
         
         try:
@@ -115,14 +116,18 @@ class KurdsatScraper(BaseScraper):
                     if not self.safe_get(url, delay=3):
                         continue
                     
-                    # Find all article links (look for /articles/ pattern)
+                    # Find all article links - different patterns for different categories
                     all_links = self.driver.find_elements(By.TAG_NAME, 'a')
                     article_links = []
                     
                     for link_elem in all_links:
                         href = link_elem.get_attribute('href')
-                        if href and '/articles/' in href and href not in article_links:
-                            article_links.append(href)
+                        if href:
+                            # Opinion articles use /opinions/ pattern, others use /articles/
+                            if cat_name == 'Opinion' and '/opinions/' in href and href not in article_links:
+                                article_links.append(href)
+                            elif cat_name != 'Opinion' and '/articles/' in href and href not in article_links:
+                                article_links.append(href)
                     
                     print(f"      Found {len(article_links)} {cat_name.lower()} article links")
                     
@@ -145,10 +150,24 @@ class KurdsatScraper(BaseScraper):
                                 if self.add_sentence(title):
                                     cat_found += 1
                             except:
-                                pass
+                                # Opinion articles have h2.article-title
+                                try:
+                                    title_elem = self.driver.find_element(By.CSS_SELECTOR, 'h2.article-title')
+                                    title = title_elem.text.strip()
+                                    if self.add_sentence(title):
+                                        cat_found += 1
+                                except:
+                                    pass
                             
-                            # Extract paragraphs
-                            paragraphs = self.driver.find_elements(By.TAG_NAME, 'p')
+                            # Extract paragraphs - Opinion articles use .article-body
+                            if cat_name == 'Opinion':
+                                try:
+                                    article_body = self.driver.find_element(By.CSS_SELECTOR, 'div.article-body')
+                                    paragraphs = article_body.find_elements(By.TAG_NAME, 'p')
+                                except:
+                                    paragraphs = self.driver.find_elements(By.TAG_NAME, 'p')
+                            else:
+                                paragraphs = self.driver.find_elements(By.TAG_NAME, 'p')
                             
                             for p in paragraphs:
                                 text = p.text.strip()

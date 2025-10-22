@@ -8,7 +8,7 @@ SCRAPER_CONFIGS = {
         'enabled': True,
         'political': {'clicks': 30},  # Re-enabled with proper button click fix
         'specialized': {'articles_per_category': 20},  # Re-enabled
-        'categories': ['Health', 'Science', 'Technology']
+        'categories': ['Health', 'Science', 'Technology', 'Opinion']
     },
     'rudaw': {
         'enabled': True,  # FIXED - using .content div selector with sentence splitting
@@ -37,7 +37,7 @@ SCRAPER_CONFIGS = {
         'enabled': True,
         'political': {'pages': 10},
         'specialized': {'pages_per_category': 5},
-        'categories': ['Economy', 'Culture', 'Artistic', 'Social', 'Health', 'Science-Technology'],
+        'categories': ['Economy', 'Culture', 'Artistic', 'Social', 'Health', 'Science-Technology', 'Opinion', 'Interview'],
         'requires_flaresolverr': True
     },
     'xendan': {

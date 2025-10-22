@@ -167,7 +167,7 @@ class Kurdistan24Scraper(BaseScraper):
         if articles_per_category is not None:
             pages_per_category = max(1, articles_per_category // 10)  # Convert articles to pages
         
-        print(f"\n📚 Scraping {self.name} Specialized (6 categories, {pages_per_category} pages each with FlareSolverr)...")
+        print(f"\n📚 Scraping {self.name} Specialized (8 categories, {pages_per_category} pages each with FlareSolverr)...")
         
         categories = [
             ('Economy', 'https://www.kurdistan24.net/ckb/list/category/12'),
@@ -175,7 +175,9 @@ class Kurdistan24Scraper(BaseScraper):
             ('Artistic', 'https://www.kurdistan24.net/ckb/list/category/13'),
             ('Social', 'https://www.kurdistan24.net/ckb/list/category/11'),
             ('Health', 'https://www.kurdistan24.net/ckb/category/4/%D8%AA%DB%95%D9%86%D8%AF%D8%B1%D9%88%D8%B3%D8%AA%DB%8C'),
-            ('Science-Technology', 'https://www.kurdistan24.net/ckb/category/7/%D8%B2%D8%A7%D9%86%D8%B3%D8%AA%20%D9%88%20%D8%AA%DB%95%DA%A9%D9%86%DB%95%D9%84%DB%86%DA%98%DB%8C%D8%A7')
+            ('Science-Technology', 'https://www.kurdistan24.net/ckb/category/7/%D8%B2%D8%A7%D9%86%D8%B3%D8%AA%20%D9%88%20%D8%AA%DB%95%DA%A9%D9%86%DB%95%D9%84%DB%86%DA%98%DB%8C%D8%A7'),
+            ('Opinion', 'https://www.kurdistan24.net/ckb/list/opinions/%D9%88%D8%AA%D8%A7%D8%B1'),
+            ('Interview', 'https://www.kurdistan24.net/ckb/list/type/3/%D9%87%DB%95%DA%A4%D9%BE%DB%95%DB%8C%DA%A4%DB%8C%D9%86')
         ]
         
         try:
@@ -229,8 +231,8 @@ class Kurdistan24Scraper(BaseScraper):
                                 if self.add_sentence(text):
                                     cat_found += 1
                             
-                            # Collect article links
-                            links = soup.find_all('a', href=lambda x: x and '/ckb/story/' in x)
+                            # Collect article links - handle both /story/ and /opinion/ URLs
+                            links = soup.find_all('a', href=lambda x: x and ('/ckb/story/' in x or '/ckb/opinion/' in x))
                             for link in links:
                                 href = link.get('href')
                                 if href and href.startswith('http') and href not in article_links:
