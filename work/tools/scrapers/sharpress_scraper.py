@@ -22,7 +22,17 @@ class SharpressScraper(BaseScraper):
         # Kurdistan political news category
         category_url = "https://www.sharpress.net/all-hawal.aspx?Cor=Herem&Nawnishan=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86"
         
-        return self._scrape_category("Kurdistan", category_url, pages)
+        try:
+            result = self._scrape_category("Kurdistan", category_url, pages)
+            return result
+        finally:
+            # Ensure driver is closed after political scraping
+            if hasattr(self, 'driver') and self.driver is not None:
+                try:
+                    self.driver.quit()
+                    self.driver = None
+                except:
+                    pass
     
     def scrape_specialized(self, pages=3, articles_per_category=None, **kwargs):
         """
@@ -55,6 +65,15 @@ class SharpressScraper(BaseScraper):
             
             for cat_name, url in categories:
                 print(f"\n   📂 Category: {cat_name}")
+                
+                # Close any existing driver before starting new category
+                if hasattr(self, 'driver') and self.driver is not None:
+                    try:
+                        self.driver.quit()
+                        self.driver = None
+                    except:
+                        pass
+                
                 cat_found = self._scrape_category(cat_name, url, pages)
                 total_found += cat_found
                 print(f"      ✅ {cat_name}: {cat_found} sentences")
@@ -66,6 +85,14 @@ class SharpressScraper(BaseScraper):
         except Exception as e:
             print(f"⚠️  {self.name} Specialized error: {e}")
             return 0
+        finally:
+            # Ensure driver is closed after specialized scraping
+            if hasattr(self, 'driver') and self.driver is not None:
+                try:
+                    self.driver.quit()
+                    self.driver = None
+                except:
+                    pass
     
     def _scrape_category(self, cat_name, base_url, pages):
         """Helper method to scrape a category with pagination - uses fresh browser for each page"""
@@ -79,6 +106,8 @@ class SharpressScraper(BaseScraper):
                 if hasattr(self, 'driver') and self.driver is not None:
                     try:
                         self.driver.quit()
+                        self.driver = None
+                        time.sleep(1)  # Wait for driver to fully terminate
                     except:
                         pass
                 
