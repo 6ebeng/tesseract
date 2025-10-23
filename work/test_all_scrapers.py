@@ -230,7 +230,14 @@ def main():
     
     for i, result in enumerate(results, 1):
         status = "✅" if result['success'] else "❌"
-        print(f"{i:2d}. {status} {result['name']:15s} - {result['sentences']:5d} sentences in {result['time']:5.1f}s")
+        # Handle both int and list for sentence count
+        sentence_count = result['sentences']
+        if isinstance(sentence_count, list):
+            if sentence_count and isinstance(sentence_count[0], str):
+                sentence_count = len(sentence_count)
+            else:
+                sentence_count = sum(sentence_count)
+        print(f"{i:2d}. {status} {result['name']:15s} - {sentence_count:5d} sentences in {result['time']:5.1f}s")
         if not result['success']:
             print(f"     Error: {result.get('error', 'Unknown')[:70]}")
     
