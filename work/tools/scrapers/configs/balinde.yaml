@@ -1,0 +1,34 @@
+# Balinde Configuration
+# Status: ⚠️ NEEDS SELECTOR FIX
+# Last Updated: 2025-10-24
+
+name: 'Balinde'
+base_url: 'https://balinde.com'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Universal pagination
+pagination:
+  type: 'url_template'  # Path-based pagination
+  pages: 3
+  delay: 2
+  page_param: null  # Using path-based URL template instead
+
+selectors:
+  article_list: 'div.cards a.card'
+  article_title: ['h1', 'h2', '.title']
+  article_body: ['div.poet-timeline p', 'div.poet-timeline', '.entry-content p', 'p']  # Poetry content
+
+wait:
+  selector: null
+  timeout: 2
+
+categories:
+  kurdish_poetry:
+    url: 'https://balinde.com/category/kurdishpoem/page/{page}/'
+  
+  articles:
+    url: 'https://balinde.com/category/wtar/page/{page}/'

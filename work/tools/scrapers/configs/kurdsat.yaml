@@ -1,0 +1,64 @@
+# Kurdsat TV Configuration
+# Status: ✅ TESTED - WORKING
+# Last Updated: 2025-10-24
+
+name: 'Kurdsat TV'
+base_url: 'https://kurdsat.tv'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb', 'ar']
+
+# Universal pagination settings (applied to all categories unless overridden)
+pagination:
+  type: 'pagination'
+  pages: 3
+  delay: 2
+
+# Selectors for finding articles and extracting content
+selectors:
+  # Article list: Find all article links on collection page
+  article_list: 'a[href*="/articles/"]'  # Health, science, tech use /articles/
+  
+  # Article detail page
+  article_title: ['h1', 'h2.article-title', 'h2']
+  article_body: ['div.article-body p', '.article-body p', '.content p', 'p']
+
+# Wait strategy: Use selector to wait for page load, fallback to manual delay
+wait:
+  selector: null  # No specific selector, use manual delay
+  timeout: 3
+
+# Categories (inherit pagination and selectors unless overridden)
+categories:
+  # News: Override to use click load more pagination
+  news:
+    url: 'https://kurdsat.tv/ckb/news'
+    pagination:  # Override pagination for this category
+      type: 'click_load_more'
+      clicks: 5
+      load_more_button: '//button[contains(text(), "زیاتر ببینە")]'  # XPath selector
+    selectors:
+      article_list: 'a[href*="/ckb/news/"]'  # Override selector
+  
+  # Health: Uses universal pagination (pagination, 3 pages)
+  health:
+    url: 'https://kurdsat.tv/ckb/categories/8'
+  
+  # Science: Uses universal pagination
+  science:
+    url: 'https://kurdsat.tv/ckb/categories/16'
+  
+  # Technology: Uses universal pagination
+  technology:
+    url: 'https://kurdsat.tv/ckb/categories/9'
+  
+  # Opinion: Override pages and selectors
+  opinion:
+    url: 'https://news.kurdsat.tv/ckb/opinions'
+    pagination:
+      pages: 5  # Override: more pages
+    selectors:
+      article_list: 'a[href*="/opinions/"]'
+      article_title: ['h2.article-title', 'h1', 'h2']

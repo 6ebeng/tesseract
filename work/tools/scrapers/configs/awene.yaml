@@ -1,0 +1,41 @@
+# Awene Newspaper Configuration
+# Status: ⚠️ NEEDS SELECTOR FIX
+# Last Updated: 2025-10-24
+
+name: 'Awene'
+base_url: 'https://www.awene.com'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Universal pagination
+pagination:
+  type: 'url_template'  # URLs use page parameter
+  pages: 5
+  delay: 2
+  page_param: 'page'  # Append ?page=N or &page=N
+
+selectors:
+  article_list: '.newstopsumbtitle a'
+  article_title: ['h1', 'h2', '.title']
+  article_body: ['.viewdesc p', 'p']  # Merged
+
+wait:
+  selector: null
+  timeout: 2
+
+categories:
+  politics:
+    url: 'https://www.awene.com/part?section=2'
+  
+  culture:
+    url: 'https://www.awene.com/culture'
+    pagination:
+      pages: 3
+  
+  economy:
+    url: 'https://www.awene.com/aburi'
+    pagination:
+      pages: 3

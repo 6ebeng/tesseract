@@ -1,0 +1,494 @@
+# Web Scraper Configuration - ALL 12 WEBSITES
+# YAML-based configuration for complete migration
+# Generated: 2025-10-23
+
+# ============================================================================
+# KURDSAT TV (✅ TESTED - WORKING)
+# ============================================================================
+kurdsat:
+  name: 'Kurdsat TV'
+  base_url: 'https://kurdsat.tv'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb', 'ar']
+  
+  selectors:
+    article_list: 'a[href*="/ckb/news/"]'
+    article_link: 'a'
+    article_title: ['h1', 'h2.article-title', 'h2']
+    article_content: '.article-body'
+    article_paragraphs: ['div.article-body p', '.article-body p', '.content p', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 3
+  
+  categories:
+    news:
+      enabled: true
+      type: 'click_load_more'
+      url: 'https://kurdsat.tv/ckb/news'
+      clicks: 5
+      load_more_button:
+        type: 'xpath'
+        value: '//button[contains(text(), "زیاتر ببینە")]'
+    
+    health:
+      enabled: true
+      type: 'pagination'
+      url: 'https://kurdsat.tv/ckb/categories/8'
+      pages: 3
+    
+    science:
+      enabled: true
+      type: 'pagination'
+      url: 'https://kurdsat.tv/ckb/categories/16'
+      pages: 3
+    
+    technology:
+      enabled: true
+      type: 'pagination'
+      url: 'https://kurdsat.tv/ckb/categories/9'
+      pages: 3
+    
+    opinion:
+      enabled: true
+      type: 'pagination'
+      url: 'https://news.kurdsat.tv/ckb/opinions?page=1'
+      pages: 3
+      selectors:
+        article_list: 'a[href*="/opinions/"]'
+        article_title: ['h2.article-title', 'h1', 'h2']
+
+
+# ============================================================================
+# NRT - Nalia Radio & TV (✅ TESTED - WORKING)
+# ============================================================================
+nrt:
+  name: 'NRT News'
+  base_url: 'https://www.nrttv.com'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb', 'ar']
+  
+  selectors:
+    article_list: 'a[href*="detail/"]'
+    article_link: 'a'
+    article_title: ['h2.Name', 'h1', 'h2']
+    article_description: 'p.de'
+    article_content: 'div[style*="font-size:16px"]'
+    article_paragraphs: ['div[style*="font-size:16px"] p', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 3
+  
+  categories:
+    kurdistan:
+      enabled: true
+      type: 'click_load_more'
+      url: 'https://www.nrttv.com/Search.aspx?Keyword=&CatID=11'
+      clicks: 5
+      load_more_button:
+        type: 'id'
+        value: 'loadMore'
+    
+    world:
+      enabled: true
+      type: 'click_load_more'
+      url: 'https://www.nrttv.com/Search.aspx?Keyword=&CatID=12'
+      clicks: 5
+      load_more_button:
+        type: 'id'
+        value: 'loadMore'
+
+
+# ============================================================================
+# RUDAW (Infinite Scroll)
+# ============================================================================
+rudaw:
+  name: 'Rudaw News'
+  base_url: 'https://www.rudaw.net'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb', 'ar']
+  
+  selectors:
+    article_list: 'a[href*="/sorani/"]'
+    article_title: ['h1', 'h2', '.article-title']
+    article_content: '.content'
+    article_paragraphs: ['.content div', '.content p', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 2
+  
+  categories:
+    kurdistan:
+      enabled: true
+      type: 'infinite_scroll'
+      url: 'https://www.rudaw.net/sorani/kurdistan'
+      scrolls: 20
+    
+    culture:
+      enabled: true
+      type: 'infinite_scroll'
+      url: 'https://www.rudaw.net/sorani/news?CategoryID=412631'
+      scrolls: 20
+    
+    business:
+      enabled: true
+      type: 'infinite_scroll'
+      url: 'https://www.rudaw.net/sorani/business'
+      scrolls: 20
+
+
+# ============================================================================
+# KHAK TV
+# ============================================================================
+khak:
+  name: 'Khak TV'
+  base_url: 'https://www.khaktv.net'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb']
+  
+  selectors:
+    article_list: 'a[href*="/article/"]'
+    article_title: ['h1', 'h2', '.title']
+    article_content: '.html-content'
+    article_paragraphs: ['.html-content p', '.content p', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 2
+  
+  categories:
+    politics:
+      enabled: true
+      type: 'pagination'
+      url: 'https://www.khaktv.net/article?group=5&page={page}'
+      pages: 5
+      page_param: 'page'
+    
+    culture:
+      enabled: true
+      type: 'pagination'
+      url: 'https://www.khaktv.net/article?group=6&page={page}'
+      pages: 5
+      page_param: 'page'
+
+
+# ============================================================================
+# AWENE (Newspaper)
+# ============================================================================
+awene:
+  name: 'Awene'
+  base_url: 'https://www.awene.com'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb']
+  
+  selectors:
+    article_list: '.newstopsumbtitle a'
+    article_title: ['h1', 'h2', '.title']
+    article_content: '.viewdesc'
+    article_paragraphs: ['.viewdesc p', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 2
+  
+  categories:
+    politics:
+      enabled: true
+      type: 'pagination'
+      url: 'https://www.awene.com/part?section=2&page={page}'
+      pages: 5
+      page_param: 'page'
+    
+    culture:
+      enabled: true
+      type: 'pagination'
+      url: 'https://www.awene.com/culture?page={page}'
+      pages: 3
+      page_param: 'page'
+    
+    economy:
+      enabled: true
+      type: 'pagination'
+      url: 'https://www.awene.com/aburi?page={page}'
+      pages: 3
+      page_param: 'page'
+
+
+# ============================================================================
+# KURDISTAN24
+# ============================================================================
+kurdistan24:
+  name: 'Kurdistan 24'
+  base_url: 'https://www.kurdistan24.net'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb']
+  
+  selectors:
+    article_list: 'a[href*="/ckb/"]'
+    article_title: ['h1', 'h2', '.article-title']
+    article_content: '.article-content'
+    article_paragraphs: ['.article-content p', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 2
+  
+  categories:
+    health:
+      enabled: true
+      type: 'pagination'
+      url: 'https://www.kurdistan24.net/ckb/category/4/%D8%AA%DB%95%D9%86%D8%AF%D8%B1%D9%88%D8%B3%D8%AA%DB%8C?page={page}'
+      pages: 3
+      page_param: 'page'
+    
+    economy:
+      enabled: true
+      type: 'pagination'
+      url: 'https://www.kurdistan24.net/ckb/list/category/9?page={page}'
+      pages: 3
+      page_param: 'page'
+
+
+# ============================================================================
+# XENDAN
+# ============================================================================
+xendan:
+  name: 'Xendan'
+  base_url: 'https://www.xendan.org'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb']
+  
+  selectors:
+    article_list: '.card-small'
+    article_link: 'a'
+    article_title: ['.detail-top h1', 'h1', 'h2']
+    article_content: '.detail-big-text-p'
+    article_paragraphs: ['.detail-big-text-p p', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 2
+  
+  categories:
+    kurdistan:
+      enabled: true
+      type: 'pagination'
+      url: 'https://www.xendan.org/babetakan?babet=1&title=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86&page={page}'
+      pages: 5
+      page_param: 'page'
+      next_button: 'a.nextbutton'
+    
+    culture:
+      enabled: true
+      type: 'pagination'
+      url: 'https://www.xendan.org/babetakan?babet=8&page={page}'
+      pages: 3
+      page_param: 'page'
+    
+    sports:
+      enabled: true
+      type: 'pagination'
+      url: 'https://www.xendan.org/babetakan?babet=7&page={page}'
+      pages: 3
+      page_param: 'page'
+
+
+# ============================================================================
+# SEKOKURD (Literary/Cultural)
+# ============================================================================
+sekokurd:
+  name: 'Sekokurd'
+  base_url: 'https://sekokurd.org'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb']
+  
+  selectors:
+    article_list: '.anwp-pg-post-teaser__title a'
+    article_title: ['.wpr-post-title', 'h1', 'h2']
+    article_content: '.wpr-post-content'
+    article_paragraphs: ['.wpr-post-content p', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 2
+  
+  categories:
+    literature:
+      enabled: true
+      type: 'click_load_more'
+      url: 'https://sekokurd.org/?page_id=874'
+      clicks: 10
+      load_more_button:
+        type: 'css'
+        value: '.anwp-pg-load-more__btn'
+    
+    analysis:
+      enabled: true
+      type: 'click_load_more'
+      url: 'https://sekokurd.org/?page_id=1614'
+      clicks: 10
+      load_more_button:
+        type: 'css'
+        value: '.anwp-pg-load-more__btn'
+
+
+# ============================================================================
+# GOVKRD (Kurdistan Regional Government)
+# ============================================================================
+govkrd:
+  name: 'Kurdistan Regional Government'
+  base_url: 'https://gov.krd'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb']
+  
+  selectors:
+    article_list: 'div.item a[href*="/ka/"]'
+    article_title: ['h1.heading.main', 'h1', 'h2']
+    article_content: 'div.right-col'
+    article_paragraphs: ['div.right-col p', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 2
+  
+  categories:
+    activities:
+      enabled: true
+      type: 'pagination'
+      url: 'https://gov.krd/ka/activities/?p={page}'
+      pages: 5
+      page_param: 'p'
+
+
+# ============================================================================
+# SHARPRESS
+# ============================================================================
+sharpress:
+  name: 'Sharpress'
+  base_url: 'https://www.sharpress.net'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb']
+  
+  selectors:
+    article_list: 'div.more-news-page ul li a, div.birura-page ul li a'
+    article_title: ['h1.detail-title', 'h1', 'h2']
+    article_content: 'div.detail-content'
+    article_paragraphs: ['div.detail-big div.detail-content', 'div.detail-content', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 2
+  
+  categories:
+    kurdistan:
+      enabled: true
+      type: 'click_load_more'
+      url: 'https://www.sharpress.net/all-hawal.aspx?Cor=Herem&Nawnishan=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86'
+      clicks: 5
+      load_more_button:
+        type: 'css'
+        value: 'a.numericbutton'
+    
+    culture:
+      enabled: true
+      type: 'click_load_more'
+      url: 'https://www.sharpress.net/all-hawal.aspx?Cor=K%C3%BClt%C3%BCr&Nawnishan=%DA%A9%D9%88%D9%84%D8%AA%D9%88%D9%88%D8%B1'
+      clicks: 5
+      load_more_button:
+        type: 'css'
+        value: 'a.numericbutton'
+
+
+# ============================================================================
+# LVINPRESS
+# ============================================================================
+lvinpress:
+  name: 'Lvinpress'
+  base_url: 'https://lvinpress.com'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb']
+  
+  selectors:
+    article_list: 'article.elementor-post h3.elementor-post__title a'
+    article_title: ['h1.elementor-heading-title', 'h2.elementor-heading-title', 'h1', 'h2']
+    article_content: 'div.elementor-widget-theme-post-content'
+    article_paragraphs: ['div.elementor-widget-theme-post-content div.elementor-widget-container', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 2
+  
+  categories:
+    all:
+      enabled: true
+      type: 'pagination'
+      url: 'https://lvinpress.com/page/{page}'
+      pages: 3
+      page_param: 'page'
+
+
+# ============================================================================
+# BALINDE
+# ============================================================================
+balinde:
+  name: 'Balinde'
+  base_url: 'https://balinde.com'
+  enabled: true
+  
+  language_detection:
+    enabled: true
+    filter: ['ckb']
+  
+  selectors:
+    article_list: 'div.cards a.card'
+    article_title: ['h1', 'h2', '.title']
+    article_content: 'div.poet-timeline'
+    article_paragraphs: ['div.poet-timeline p', 'p']
+  
+  wait:
+    type: 'manual'
+    seconds: 2
+  
+  categories:
+    all:
+      enabled: true
+      type: 'pagination'
+      url: 'https://balinde.com/?page={page}'
+      pages: 3
+      page_param: 'page'

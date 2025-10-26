@@ -1,0 +1,61 @@
+# Minimal Configuration Example
+# Demonstrates maximum simplicity with intelligent defaults
+# Last Updated: 2025-10-24
+
+name: 'Minimal News Site'
+base_url: 'https://example.com'
+
+# Website-level defaults (all categories inherit these)
+defaults:
+  type: 'pagination'        # All categories use pagination by default
+  pages: 5                  # All categories scrape 5 pages by default
+  delay: 2                  # 2 seconds delay between requests
+
+# Default selectors (all categories inherit these)
+selectors:
+  article_list: 'article a'
+  article_title: ['h1', 'h2']
+  article_paragraphs: ['.content p', 'p']
+
+# Default wait (all categories inherit this)
+wait:
+  type: 'manual'
+  seconds: 2
+
+# Categories: Only specify URL for standard categories!
+categories:
+  # Minimal: Just URL (inherits everything else)
+  politics:
+    url: 'https://example.com/politics'
+    # ✅ Enabled by default (enabled: true)
+    # ✅ Uses pagination (type: pagination)
+    # ✅ Scrapes 5 pages (pages: 5)
+    # ✅ Uses website selectors
+    # ✅ Uses website wait strategy
+    # ✅ 2 second delay
+  
+  # Also minimal
+  sports:
+    url: 'https://example.com/sports'
+    # Same as politics - all defaults applied
+  
+  # Override just one thing: more pages
+  economy:
+    url: 'https://example.com/economy'
+    pages: 10  # Everything else inherited
+  
+  # Override pagination type only
+  breaking:
+    url: 'https://example.com/breaking'
+    type: 'infinite_scroll'
+    scrolls: 20
+  
+  # Explicitly disabled
+  archive:
+    url: 'https://example.com/archive'
+    enabled: false  # Only set this if you want to disable
+
+# Result: 6 categories defined with minimal configuration
+# - 5 lines per simple category (just URL)
+# - Explicit only where different from defaults
+# - Easy to see which categories are "special"

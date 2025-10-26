@@ -1,0 +1,41 @@
+# Xendan Configuration
+# Status: ✅ TESTED - WORKING
+# Last Updated: 2025-10-24
+
+name: 'Xendan'
+base_url: 'https://www.xendan.org'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Universal pagination
+pagination:
+  type: 'click_load_more'
+  clicks: 5
+  delay: 2
+  load_more_button: 'a.nextbutton'  # Kurdish text: "دواتر" (next)
+
+selectors:
+  article_list: 'a:has(> .card-small)'
+  article_title: ['div.detail-top > h1']
+  article_body: ['div.detail-big-text-p > p']  # Merged
+
+wait:
+  selector: null
+  timeout: 2
+
+categories:
+  political:
+    url: 'https://www.xendan.org/babetakan?babet=1&title=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86'
+  
+  culture:
+    url: 'https://www.xendan.org/babetakan?babet=8'
+    pagination:
+      clicks: 3
+  
+  sports:
+    url: 'https://www.xendan.org/babetakan?babet=7'
+    pagination:
+      clicks: 3

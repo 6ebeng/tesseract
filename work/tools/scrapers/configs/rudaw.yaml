@@ -1,0 +1,42 @@
+# Rudaw News Configuration
+# Status: ✅ TESTED - WORKING (High yield: 41 sentences/article)
+# Last Updated: 2025-10-24
+
+name: 'Rudaw News'
+base_url: 'https://www.rudaw.net'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb', 'ar']
+
+# Universal pagination for all categories
+pagination:
+  type: 'infinite_scroll'
+  scrolls: 20
+  delay: 2
+
+selectors:
+  article_list: 'h3.article__title > a'
+  article_title: 'h1.article-main__title'
+  article_body:
+    selector: "//div[contains(@class,'bodyContentMainParent')]/div[@style='text-align: justify;']"
+    multiple: true
+    delimiter: '\n'
+
+wait:
+  selector: null
+  timeout: 2
+
+# All categories inherit infinite_scroll with 20 scrolls
+categories:
+  kurdistan:
+    url: 'https://www.rudaw.net/sorani/kurdistan'
+  
+  culture:
+    url: 'https://www.rudaw.net/sorani/news?CategoryID=412631'
+    pagination:
+      scrolls: 15  # Override: fewer scrolls
+  
+  business:
+    url: 'https://www.rudaw.net/sorani/business'

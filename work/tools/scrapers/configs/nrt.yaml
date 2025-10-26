@@ -1,0 +1,66 @@
+# NRT - Nalia Radio & TV Configuration
+# Status: ⚠️  TESTING IN PROGRESS
+# Last Updated: 2025-01-22
+
+name: 'NRT News'
+base_url: 'https://www.nrttv.com'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb', 'ar']
+
+# Universal pagination - Load More button
+pagination:
+  type: 'click_load_more'
+  load_more_button: '#loadMore'
+  clicks: 10
+  delay: 2
+
+# Selectors support multiple formats:
+# - String: 'h1' or '//h1' (CSS or XPath auto-detected by // prefix)
+# - Array: ['h1', '//h2', 'div.title'] (tries each until one works, can mix CSS/XPath)
+# - Dict with single selector: {selector: '//div', multiple: true, delimiter: '\n'}
+# - Dict with array selector: {selector: ['//div', 'p'], multiple: true, delimiter: '\n'}
+selectors:
+  article_list: '#myList > li[style="display: list-item;"]> div > table > tbody > tr:nth-child(2) > td > a'
+  article_title: ['div.detail > h2']
+  article_body:
+    selector: "//div[@class='detail']/div[not(contains(@style,'http') or (@class='detail-div') or (@class='clearfix') or (@class='clear'))]"
+    multiple: true
+    delimiter: '\n'
+
+wait:
+  selector: null
+  timeout: 3
+
+categories:
+  news:
+    url: 'https://nrttv.com/kurd'
+    pagination:
+      clicks: 15
+  
+  economy:
+    url: 'https://nrttv.com/abury'
+    pagination:
+      clicks: 5
+  
+  social:
+    url: 'https://nrttv.com/komalayaty'
+    pagination:
+      clicks: 5
+  
+  culture:
+    url: 'https://nrttv.com/kltwr'
+    pagination:
+      clicks: 5
+  
+  science:
+    url: 'https://nrttv.com/zanst'
+    pagination:
+      clicks: 5
+  
+  technology:
+    url: 'https://nrttv.com/teknology'
+    pagination:
+      clicks: 5

@@ -1,0 +1,34 @@
+# Sekokurd (Literary/Cultural) Configuration
+# Status: ✅ TESTED - WORKING
+# Last Updated: 2025-10-24
+
+name: 'Sekokurd'
+base_url: 'https://sekokurd.org'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Universal pagination
+pagination:
+  type: 'click_load_more'
+  clicks: 10
+  delay: 2
+  load_more_button: '.anwp-pg-load-more__btn'
+
+selectors:
+  article_list: 'div.anwp-pg-post-teaser > div > a.anwp-link-without-effects'
+  article_title: ['.wpr-post-title']
+  article_body: ['.wpr-post-content p']  # Merged
+
+wait:
+  selector: null
+  timeout: 2
+
+categories:
+  literature:
+    url: 'https://sekokurd.org/?page_id=874'
+  
+  analysis:
+    url: 'https://sekokurd.org/?page_id=1614'

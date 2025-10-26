@@ -1,0 +1,53 @@
+# Yariga - Kurdish News Website
+# Status: ✅ NEW WEBSITE
+# Last Updated: 2025-10-25
+
+name: 'Yariga'
+base_url: 'https://yariga.net'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Universal pagination settings
+pagination:
+  type: 'click_load_more'
+  clicks: 10
+  delay: 2
+  load_more_button: 'a.load-more-button'
+
+selectors:
+  # Article links on collection/list page
+  article_list: ['div#tie-block_1333 ul.posts-items li h2.post-title > a', 'h2.post-title > a', 'article a[href*="/sport/"]']
+  
+  # Article title on article page (try both h1 and h2)
+  article_title:
+    selector: ['div.entry-header > h1', 'div.entry-header > h2']
+    multiple: true
+    delimiter: '\n'
+  
+  # Article body content
+  article_body:
+    selector: ["div.entry-content > div[class*='my']", "div.entry-content p"]
+    multiple: true
+    delimiter: '\n'
+
+# Default wait (fallback for both collection and article pages)
+wait:
+  selector: null
+  timeout: 3
+
+# Wait for collection/list page to load
+collection_wait:
+  selector: 'ul.posts-items'
+  timeout: 5
+
+# Wait for article page to load
+article_wait:
+  selector: 'div.entry-content'
+  timeout: 3
+
+categories:
+  sport:
+    url: 'https://yariga.net/'

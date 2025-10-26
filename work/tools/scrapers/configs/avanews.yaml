@@ -1,0 +1,54 @@
+# AvaNews - Kurdish News Website
+# Status: ✅ NEW WEBSITE
+# Last Updated: 2025-10-25
+
+name: 'AvaNews'
+base_url: 'https://www.ava.news'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Universal pagination settings
+pagination:
+  type: 'url_template'
+  pages: 10
+  delay: 2
+  page_param: 'page'
+
+selectors:
+  # Article links on collection/list page
+  article_list: 'ul > li > div > div > a'
+  
+  # Article title on article page
+  article_title: ['div.intro > h1']
+  
+  # Article body content
+  article_body: ['div.news-content']
+
+wait:
+  selector: null
+  timeout: 3
+
+categories:
+  news:
+    url: 'https://www.ava.news/kurdistan'
+  
+  economy:
+    url: 'https://www.ava.news/business'
+  
+  culture:
+    url: 'https://www.ava.news/culture'
+  
+  environment:
+    url: 'https://www.ava.news/environment'
+  
+  health:
+    url: 'https://www.ava.news/health'
+  
+  opinion:
+    url: 'https://www.ava.news/opinion'
+    selectors:
+      # Opinion category has different article list selector
+      article_list: 'h2 > a'

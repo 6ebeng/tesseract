@@ -1,0 +1,166 @@
+# Website Configuration Template
+# COMPLETE STRUCTURE - All Available Features
+# Last Updated: 2025-10-25
+
+name: 'Example Website'
+base_url: 'https://example.com'
+enabled: true  # Set to false to disable entire website
+
+# ============================================================================
+# OPTIONAL: Click-through navigation for anti-scraping protection
+# ============================================================================
+# click_through_navigation: true  # Use browser back button, preserves session
+
+language_detection:
+  enabled: true
+  filter: ['ckb']  # Only keep Kurdish Central
+
+# ============================================================================
+# UNIVERSAL PAGINATION (applies to ALL categories unless category overrides)
+# ============================================================================
+pagination:
+  type: 'pagination'  # Options: pagination, url_template, infinite_scroll, click_load_more
+  pages: 5            # For pagination/url_template type
+  # scrolls: 20       # For infinite_scroll type
+  # clicks: 10        # For click_load_more type
+  delay: 2            # Delay between requests (seconds)
+  
+  # For url_template type:
+  # page_param: 'page'           # URL parameter name (e.g., ?page=2)
+  # path: '/page/{page}'         # Or path template (e.g., /news/page/2)
+  
+  # For click_load_more type:
+  # load_more_button: 'a.load-more'  # CSS selector for load more button
+
+# ============================================================================
+# SELECTORS (inherited by all categories, can override per category)
+# ============================================================================
+selectors:
+  # Collection page: Find all article links
+  article_list: 'a[href*="/articles/"]'
+  # Can be: string, array, or dict with selector/multiple/delimiter
+  
+  # Article detail page: Extract title
+  article_title: ['h1', 'h2', '.title']
+  # Array tries each selector until one works
+  
+  # Article detail page: Extract body content
+  article_body: ['.content p', '.article-body p', 'p']
+  # Can also use dict format for advanced extraction:
+  # article_body:
+  #   selector: ['div.content p', 'p']
+  #   multiple: true      # Extract all matching elements
+  #   delimiter: '\n'     # Join with newline, then split back
+
+# ============================================================================
+# WAIT STRATEGIES (all optional, fallback chain applies)
+# ============================================================================
+# Default wait (fallback for both collection and article pages)
+wait:
+  selector: null  # CSS selector to wait for, or null for manual delay
+  timeout: 3      # Timeout in seconds
+
+# Wait for collection/list page to load (optional, overrides wait)
+# collection_wait:
+#   selector: 'ul.articles'
+#   timeout: 5
+
+# Wait for article page to load (optional, overrides wait)
+# article_wait:
+#   selector: 'div.article-content'
+#   timeout: 3
+# Can also be just a number: article_wait: 3
+
+# ============================================================================
+# OPTIONAL: FlareSolverr (for Cloudflare-protected sites)
+# ============================================================================
+# flaresolverr:
+#   enabled: true
+#   url: 'http://localhost:8191'
+#   max_timeout: 60000
+
+# ============================================================================
+# CATEGORIES (inherit pagination and selectors unless overridden)
+# ============================================================================
+categories:
+  # Standard category - uses universal pagination and selectors
+  politics:
+    url: 'https://example.com/politics'
+    # Inherits: pagination (5 pages), selectors, wait
+    # Optional: enabled: false  # Disable this category
+  
+  # Category with pagination override
+  economy:
+    url: 'https://example.com/economy'
+    pagination:  # Override universal pagination
+      pages: 10  # Different number of pages
+  
+  # Category with different pagination type
+  culture:
+    url: 'https://example.com/culture'
+    pagination:  # Complete override
+      type: 'infinite_scroll'
+      scrolls: 20
+      delay: 2
+  
+  # Category with selector override
+  opinion:
+    url: 'https://example.com/opinion'
+    selectors:  # Override selectors for this category
+      article_list: 'a[href*="/opinions/"]'
+      article_title: ['h2.opinion-title', 'h1']
+  
+  # Category with custom wait times
+  breaking:
+    url: 'https://example.com/breaking'
+    collection_wait:
+      selector: 'div.news-list'
+      timeout: 8
+    article_wait: 5  # Simple number format
+
+# ============================================================================
+# SELECTOR FORMAT OPTIONS:
+# ============================================================================
+# 1. Simple string:
+#    article_list: 'a.article-link'
+#
+# 2. Array (tries each until success):
+#    article_list: ['a.article', 'div.post > a', 'h2 > a']
+#
+# 3. Dict with options:
+#    article_body:
+#      selector: 'div.content p'     # Can be string or array
+#      multiple: true                # Extract all matches
+#      delimiter: '\n'               # Join then split by delimiter
+#
+# 4. XPath (detected by // prefix):
+#    article_list: '//div[@class="article"]/a'
+#    article_body: '//div[contains(@class, "content")]//p'
+
+# ============================================================================
+# PAGINATION TYPE OPTIONS:
+# ============================================================================
+# 1. pagination / url_template:
+#    - Uses page numbers in URL
+#    - Requires: pages, page_param OR path template
+#
+# 2. infinite_scroll:
+#    - Scrolls down to load more
+#    - Requires: scrolls, delay
+#
+# 3. click_load_more:
+#    - Clicks "load more" button
+#    - Requires: clicks, load_more_button, delay
+
+# ============================================================================
+# KEY FEATURES:
+# ============================================================================
+# ✅ Universal pagination - define once, apply to all categories
+# ✅ Selector fallback - try multiple selectors until one works
+# ✅ Category overrides - customize any setting per category
+# ✅ Wait strategies - collection_wait, article_wait, wait (fallback)
+# ✅ Click-through mode - for anti-scraping sites (preserves session)
+# ✅ Delimiter support - extract multiple elements, join and split
+# ✅ XPath support - use XPath selectors (starts with //)
+# ✅ FlareSolverr - bypass Cloudflare protection
+# ✅ Enable/disable - control at website or category level

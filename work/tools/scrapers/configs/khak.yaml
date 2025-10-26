@@ -1,0 +1,51 @@
+# Khak TV Configuration
+# Status: ✅ WORKING - Using click-through navigation
+# Last Updated: 2025-10-24
+# Issue: Direct article URLs return 500 error. Must click from list page to establish session/referrer.
+# Technical: Nuxt.js site with anti-bot protection - requires JavaScript click-through navigation
+# Solution: Uses click_through_navigation feature to preserve session state
+
+name: 'Khak TV'
+base_url: 'https://www.khaktv.net'
+enabled: false  # Re-enabled with click-through navigation support
+
+# CRITICAL: Enable click-through navigation for session state preservation
+click_through_navigation: true  # Must click article links, not navigate directly
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Universal pagination
+pagination:
+  type: 'url_template'  # Query parameter pagination
+  pages: 10
+  delay: 8  # Increased delay for slow loading
+  page_param: 'page'  # Append &page=N (after group=X)
+
+selectors:
+  article_list: 'div.grid.grid-cols-1 > div.w-full.h-full> a[href*="/article/"]'
+  article_title: ['div.py-6 > div.flex > h2.text-xl']
+  article_body: 
+    selector: 'div.html-content > p'
+    multiple: true
+    delimiter: '\n'
+
+wait:
+  selector: null
+  timeout: 8  # Increased to 8s for slow Nuxt.js article loading
+
+# Article page wait time (for click-through navigation)
+article_wait: 8  # Wait for Nuxt.js to fully render content
+back_delay: 5    # Wait after back button for page to settle
+
+categories:
+  politics:
+    url: 'https://www.khaktv.net/article?group=5'
+    pagination:
+      pages: 5
+  
+  culture:
+    url: 'https://www.khaktv.net/article?group=6'
+    pagination:
+      pages: 5

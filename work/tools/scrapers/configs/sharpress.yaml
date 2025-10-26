@@ -1,0 +1,34 @@
+# Sharpress Configuration
+# Status: ✅ TESTED - WORKING
+# Last Updated: 2025-10-24
+
+name: 'Sharpress'
+base_url: 'https://www.sharpress.net'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Universal pagination
+pagination:
+  type: 'click_load_more'
+  clicks: 5
+  delay: 2
+  load_more_button: 'a.numericbutton'
+
+selectors:
+  article_list: 'div.more-news-page ul li a, div.birura-page ul li a'
+  article_title: ['h1.detail-title']
+  article_body: ['div.detail-big div.detail-content > p[style="text-align: justify;"]']
+
+wait:
+  selector: null
+  timeout: 2
+
+categories:
+  kurdistan:
+    url: 'https://www.sharpress.net/all-hawal.aspx?Cor=Herem&Nawnishan=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86'
+  
+  culture:
+    url: 'https://www.sharpress.net/all-hawal.aspx?Cor=K%C3%BClt%C3%BCr&Nawnishan=%DA%A9%D9%88%D9%84%D8%AA%D9%88%D9%88%D8%B1'

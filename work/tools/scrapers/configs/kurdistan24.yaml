@@ -1,0 +1,55 @@
+# Kurdistan24 Configuration
+# Status: ⚠️ REQUIRES FLARESOLVERR - Cloudflare protection
+# Last Updated: 2025-10-24
+# NOTE: This site requires FlareSolverr running on http://localhost:8191
+#       To start FlareSolverr: docker run -d -p 8191:8191 ghcr.io/flaresolverr/flaresolverr:latest
+
+name: 'Kurdistan 24'
+base_url: 'https://www.kurdistan24.net'
+enabled: true  # FlareSolverr is running
+
+# FlareSolverr Configuration (Cloudflare bypass)
+flaresolverr:
+  enabled: true
+  url: 'http://localhost:8191'
+  max_timeout: 60000  # milliseconds
+  session_ttl: 600  # seconds
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Universal pagination
+pagination:
+  type: 'url_template'  # Query parameter pagination
+  pages: 3
+  delay: 2
+  page_param: 'page'  # Append ?page=N
+
+selectors:
+  article_list: ['article > div > a']  # Legacy: <article> tags with <h3>
+  article_title: "div.intro > h1"
+  article_body: ['div.news-content > p']  # Paragraphs inside content div
+
+wait:
+  selector: null
+  timeout: 3
+
+categories:
+  politics:
+    url: 'https://www.kurdistan24.net/ckb/list/category/9'
+  
+  economy:
+    url: 'https://www.kurdistan24.net/ckb/list/category/12'
+  
+  culture:
+    url: 'https://www.kurdistan24.net/ckb/list/category/10'
+  
+  health:
+    url: 'https://www.kurdistan24.net/ckb/category/4'
+    pagination:
+      pages: 2
+  opinion:
+    url: 'https://www.kurdistan24.net/ckb/list/category/14'
+    selectors:
+      article_list: 'article > div > a:nth-child(2)'

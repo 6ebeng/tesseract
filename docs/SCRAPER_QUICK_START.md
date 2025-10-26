@@ -640,7 +640,162 @@ console.timeEnd('load');  // Shows: load: 3421.2ms
 
 ---
 
-## 🎯 Example 12: Using Fallback Selector Chains
+## 🎯 Example 12: XPath Multiple Nodes with Join Delimiters
+
+### Scenario: Extract content from multiple elements and combine them
+
+**Problem: Article content is split across multiple `<p>` tags**
+
+```yaml
+# Single selector - only gets first paragraph
+article_content: 'div.content p' # Returns only first <p>
+```
+
+**Solution: Use XPath with multiple nodes**
+
+```yaml
+newsite:
+  name: 'News Site'
+  base_url: 'https://newsite.com'
+
+  selectors:
+    # Extract ALL paragraphs and join with newline
+    article_content:
+      type: 'xpath'
+      value: "//div[@class='content']//p"
+      multiple: true # Extract all matching nodes
+      join: "\n" # Join with newline
+
+    # Extract keywords as comma-separated
+    article_keywords:
+      type: 'xpath'
+      value: "//ul[@class='tags']//li/text()"
+      multiple: true
+      join: ', ' # Join with comma-space
+
+    # Extract quotes with spacing
+    article_quotes:
+      type: 'xpath'
+      value: '//blockquote'
+      multiple: true
+      join: "\n\n" # Join with double newline
+
+    # Extract author bio (multiple paragraphs as continuous text)
+    article_author_bio:
+      type: 'xpath'
+      value: "//div[@class='author-bio']//p"
+      multiple: true
+      join: ' ' # Join with space
+```
+
+**Common join patterns:**
+
+| Delimiter | Result             | Use Case                   |
+| --------- | ------------------ | -------------------------- |
+| `"\n"`    | Line by line       | Article paragraphs         |
+| `"\n\n"`  | Separated sections | Quotes, major sections     |
+| `", "`    | Comma-separated    | Tags, keywords, categories |
+| `" "`     | Continuous text    | Multi-paragraph bios       |
+| `"; "`    | Semicolon list     | Citations, attributions    |
+| `" \| "`  | Pipe-separated     | Alternative sections       |
+
+**Real-world example: Rudaw articles**
+
+```yaml
+rudaw:
+  name: 'Rudaw'
+
+  selectors:
+    # Standard single-element selectors
+    article_title: 'h1'
+    article_date: 'time'
+
+    # Multiple paragraphs joined with newline
+    article_content:
+      type: 'xpath'
+      value: "//div[@class='article__body']//p"
+      multiple: true
+      join: "\n"
+
+    # Extract section headings
+    article_sections:
+      type: 'xpath'
+      value: '//article//h2 | //article//h3'
+      multiple: true
+      join: "\n\n"
+
+    # Extract image captions
+    article_captions:
+      type: 'xpath'
+      value: '//figure//figcaption'
+      multiple: true
+      join: "\n\n"
+
+    # Extract keywords/tags
+    article_keywords:
+      type: 'xpath'
+      value: "//div[@class='tags']//a/text()"
+      multiple: true
+      join: ', '
+```
+
+**With fallback chains:**
+
+```yaml
+kurdistan24:
+  selectors:
+    # Try multiple selectors, each can extract multiple nodes
+    article_content:
+      # First try: new layout with multiple divs
+      - type: 'xpath'
+        value: "//div[@class='article-body']//p"
+        multiple: true
+        join: "\n"
+
+      # Second try: old layout with multiple paragraphs
+      - type: 'xpath'
+        value: "//div[@class='post-content']//p"
+        multiple: true
+        join: "\n"
+
+      # Third try: single element fallback
+      - 'div.article-content'
+```
+
+**How it works:**
+
+```
+Input HTML:
+<div class="content">
+  <p>First paragraph</p>
+  <p>Second paragraph</p>
+  <p>Third paragraph</p>
+</div>
+
+Configuration:
+article_content:
+  type: 'xpath'
+  value: "//div[@class='content']//p"
+  multiple: true
+  join: "\n"
+
+Output:
+"First paragraph
+Second paragraph
+Third paragraph"
+```
+
+**Benefits:**
+
+- ✅ Captures complete article content
+- ✅ Preserves paragraph structure
+- ✅ Customizable formatting
+- ✅ Works with any delimiter
+- ✅ Combines with fallback chains
+
+---
+
+## 🎯 Example 13: Using Fallback Selector Chains
 
 ### Scenario: Website has multiple article layouts with different selectors
 

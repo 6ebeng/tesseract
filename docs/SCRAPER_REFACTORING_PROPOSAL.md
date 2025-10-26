@@ -400,10 +400,10 @@ websites:
 - **Custom behaviors**: Multimedia excludes video content
 - **URL patterns**: Culture uses custom page URL format
 - **Loading indicators**: Economy waits for spinner to disappear
-      technology:
-        enabled: true
-        url: "https://newwebsite.com/tech"
-        pages: 2
+  technology:
+  enabled: true
+  url: "https://newwebsite.com/tech"
+  pages: 2
   selectors:
   article_list: "div.article"
   article_link: "a"
@@ -992,7 +992,40 @@ selectors:
     value: "//div[@class='content']"
 ```
 
-**Fallback Chain - Multiple Selectors (NEW!):**
+**XPath Multiple Nodes - Returns Array (NEW!):**
+
+```yaml
+selectors:
+  # Extract all paragraphs and join with newline
+  article_content:
+    type: 'xpath'
+    value: "//div[@class='content']//p"
+    multiple: true # Extracts array of elements
+    join: "\n" # Join text with newline
+
+  # Extract all list items and join with comma-space
+  article_keywords:
+    type: 'xpath'
+    value: "//ul[@class='tags']//li"
+    multiple: true
+    join: ', ' # Join with comma-space
+
+  # Extract all quote blocks and join with double newline
+  article_quotes:
+    type: 'xpath'
+    value: '//blockquote'
+    multiple: true
+    join: "\n\n" # Join with double newline
+
+  # Extract author bio sections (multiple divs)
+  article_author_bio:
+    type: 'xpath'
+    value: "//div[@class='author']//p"
+    multiple: true
+    join: ' ' # Join with space
+```
+
+**Fallback Chain - Multiple Selectors:**
 
 ```yaml
 selectors:
@@ -1151,6 +1184,70 @@ awene:
             value: "//div[@class='meta']/span[1]" # First span in meta
 ```
 
+**Example 5: XPath Multiple Nodes with Joins**
+
+```yaml
+kurdistan24:
+  name: 'Kurdistan24'
+  selectors:
+    # Extract all paragraphs from article body
+    article_content:
+      type: 'xpath'
+      value: "//div[@class='article-body']//p"
+      multiple: true
+      join: "\n" # Join paragraphs with newline
+
+    # Extract all section headings
+    article_sections:
+      type: 'xpath'
+      value: '//article//h2 | //article//h3'
+      multiple: true
+      join: ' | ' # Join with pipe separator
+
+    # Extract all image captions
+    article_captions:
+      type: 'xpath'
+      value: '//figure//figcaption'
+      multiple: true
+      join: "\n\n" # Join with double newline
+
+    # Extract all quote attributions
+    article_quotes:
+      type: 'xpath'
+      value: '//blockquote//cite | //blockquote//footer'
+      multiple: true
+      join: '; ' # Join with semicolon
+
+    # Extract keywords/tags as comma-separated
+    article_keywords:
+      type: 'xpath'
+      value: "//ul[@class='tags']//li/a/text()"
+      multiple: true
+      join: ', ' # Join with comma-space
+
+    # Extract author bio (multiple paragraphs)
+    article_author_bio:
+      type: 'xpath'
+      value: "//div[@class='author-bio']//p"
+      multiple: true
+      join: ' ' # Join with space
+
+  categories:
+    opinion:
+      selectors:
+        # Opinion articles often have multiple content blocks
+        article_content:
+          - type: 'xpath'
+            value: "//div[@class='opinion-body']//p"
+            multiple: true
+            join: "\n"
+          - type: 'xpath'
+            value: "//div[@class='interview-qa']//p"
+            multiple: true
+            join: "\n"
+          - 'div.article-content' # Fallback to single element
+```
+
 **Mixed approach (best practice):**
 
 ```yaml
@@ -1263,6 +1360,64 @@ last_paragraph:
 nested_content:
   type: 'xpath'
   value: "//div[@id='main']//section[@class='articles']//article[position()>1]/div[@class='body']"
+
+# Multiple nodes with join (NEW!)
+article_content:
+  type: 'xpath'
+  value: "//div[@class='article-body']//p"
+  multiple: true
+  join: "\n" # Join all paragraphs with newline
+
+article_keywords:
+  type: 'xpath'
+  value: "//ul[@class='tags']//li/text()"
+  multiple: true
+  join: ', ' # Join as comma-separated list
+
+article_sections:
+  type: 'xpath'
+  value: '//article//h2 | //article//h3'
+  multiple: true
+  join: "\n\n" # Join section headings with double newline
+```
+
+#### XPath Multiple Nodes - Join Delimiters
+
+Common join patterns for multiple nodes:
+
+| Delimiter | Use Case                   | Example                                  |
+| --------- | -------------------------- | ---------------------------------------- |
+| `"\n"`    | Paragraphs, separate lines | Article content from multiple `<p>` tags |
+| `"\n\n"`  | Distinct sections          | Quotes, sections with spacing            |
+| `", "`    | Lists, tags                | Keywords, categories                     |
+| `" "`     | Continuous text            | Author bio from multiple paragraphs      |
+| `"; "`    | Semi-structured            | Quote attributions, citations            |
+| `" \| "`  | Alternatives               | Multiple headings                        |
+| Custom    | Any pattern                | `" >>> "`, `" --- "`, etc.               |
+
+**Example: Extract article content from multiple paragraphs**
+
+```yaml
+article_content:
+  type: 'xpath'
+  value: "//div[@class='article-body']//p"
+  multiple: true
+  join: "\n"
+# Result:
+# "First paragraph text
+# Second paragraph text
+# Third paragraph text"
+```
+
+**Example: Extract keywords as comma-separated**
+
+```yaml
+article_keywords:
+  type: 'xpath'
+  value: "//ul[@class='tags']//li/a/text()"
+  multiple: true
+  join: ', '
+# Result: "politics, economy, kurdistan, news"
 ```
 
 #### Real-World Example: Mixed Selectors
@@ -1446,11 +1601,25 @@ def _normalize_selector(self, selector):
         # Explicit format (single selector)
         return {
             'type': selector.get('type', 'css'),
-            'value': selector.get('value', '')
+            'value': selector.get('value', ''),
+            'multiple': selector.get('multiple', False),  # NEW: Support multiple nodes
+            'join': selector.get('join', '\n')            # NEW: Join delimiter
         }
     elif isinstance(selector, list):
         # Fallback chain - normalize each selector in the list
         normalized_chain = []
+        for sel in selector:
+            if isinstance(sel, str):
+                normalized_chain.append({'type': 'css', 'value': sel})
+            elif isinstance(sel, dict):
+                normalized_chain.append({
+                    'type': sel.get('type', 'css'),
+                    'value': sel.get('value', ''),
+                    'multiple': sel.get('multiple', False),
+                    'join': sel.get('join', '\n')
+                })
+        return normalized_chain
+    return {'type': 'css', 'value': ''}
         for sel in selector:
             if isinstance(sel, str):
                 normalized_chain.append({'type': 'css', 'value': sel})
@@ -1531,12 +1700,68 @@ def find_elements(self, selector_config, context=None):
 def extract_text_with_fallback(self, selector_config, context=None, default='') -> str:
     """
     Extract text from element using fallback chain
+    Supports multiple nodes with configurable join delimiter
     Returns text from first successful selector, or default if all fail
     """
     try:
-        elem = self.find_element(selector_config, context)
-        return elem.text.strip() if elem else default
+        selector = self._normalize_selector(selector_config)
+
+        # Handle fallback chain
+        if isinstance(selector, list):
+            for sel in selector:
+                text = self._extract_text_from_selector(sel, context)
+                if text:
+                    return text
+            return default
+
+        # Single selector
+        return self._extract_text_from_selector(selector, context) or default
     except NoSuchElementException:
+        return default
+    except Exception:
+        return default
+
+def _extract_text_from_selector(self, selector: Dict, context=None) -> str:
+    """
+    Extract text from a single selector configuration
+    Handles both single element and multiple nodes
+    """
+    ctx = context or self.driver
+
+    try:
+        # Check if this selector expects multiple nodes
+        if selector.get('multiple', False):
+            # Extract multiple elements
+            if selector['type'] == 'xpath':
+                elems = ctx.find_elements(By.XPATH, selector['value'])
+            else:
+                elems = ctx.find_elements(By.CSS_SELECTOR, selector['value'])
+
+            if not elems or len(elems) == 0:
+                return ''
+
+            # Extract text from each element
+            texts = []
+            for elem in elems:
+                text = elem.text.strip()
+                if text:  # Only include non-empty text
+                    texts.append(text)
+
+            # Join with specified delimiter
+            join_delimiter = selector.get('join', '\n')
+            return join_delimiter.join(texts)
+        else:
+            # Extract single element (original behavior)
+            if selector['type'] == 'xpath':
+                elem = ctx.find_element(By.XPATH, selector['value'])
+            else:
+                elem = ctx.find_element(By.CSS_SELECTOR, selector['value'])
+
+            return elem.text.strip() if elem else ''
+    except NoSuchElementException:
+        return ''
+    except Exception:
+        return ''
         return default
     except Exception:
         return default

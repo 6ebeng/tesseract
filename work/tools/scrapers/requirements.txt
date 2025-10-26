@@ -1,0 +1,45 @@
+# Web Scraper Framework - Python Requirements
+# Install with: pip install -r requirements.txt
+
+# Core Dependencies
+selenium==4.15.2
+webdriver-manager==4.0.1
+PyYAML==6.0.1
+requests==2.31.0
+
+# Language Detection
+langdetect==1.0.9
+
+# Dashboard
+Flask==3.0.0
+Flask-CORS==4.0.0
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+
+# Performance & Monitoring
+psutil==5.9.6
+
+# Security
+cryptography==41.0.7
+
+# Data Processing
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# Optional: Stealth Mode (advanced)
+undetected-chromedriver==3.5.4
+selenium-stealth==1.0.6
+
+# Database
+# sqlite3 is built-in to Python
+
+# Development Tools
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Documentation
+markdown==3.5.1

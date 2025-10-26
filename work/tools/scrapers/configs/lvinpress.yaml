@@ -1,0 +1,47 @@
+# Lvinpress Configuration
+# Status: ✅ CONFIGURED (based on legacy scraper)
+# Last Updated: 2025-10-24
+
+name: 'Lvinpress'
+base_url: 'https://lvinpress.com'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Path-based pagination: /page/2, /page/3, etc.
+# Note: page 1 uses base URL (no /page/1 suffix)
+pagination:
+  type: 'url_template'
+  path: '/page/{page}'  # Path pattern appended for pages 2+
+  pages: 3
+  delay: 3
+
+selectors:
+  article_list: 'article.elementor-post > div > a'  # Updated selector
+  article_title: ['h1', 'h2', '.entry-title']  # Simplified - just find any h1/h2
+  article_body: ['.ast-article-single p', '.entry-content p', 'article p']  # Multiple fallbacks
+
+wait:
+  timeout: 10  # Give enough time for Elementor to load
+
+collection_wait:
+  selector: 'article.elementor-post'
+  timeout: 5
+
+article_wait:
+  selector: '.entry-content'
+  timeout: 5
+
+categories:
+  kurdistan_news:
+    url: 'https://lvinpress.com/category/news/kurdistan'
+    pagination:
+      pages: 5
+  
+  social_media:
+    url: 'https://lvinpress.com/category/socialmedia'
+  
+  opinion:
+    url: 'https://lvinpress.com/category/birura'

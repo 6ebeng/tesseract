@@ -1,0 +1,32 @@
+# GovKrd (Kurdistan Regional Government) Configuration
+# Status: ✅ TESTED - WORKING
+# Last Updated: 2025-10-24
+
+name: 'Kurdistan Regional Government'
+base_url: 'https://gov.krd'
+enabled: true
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+# Universal pagination
+pagination:
+  type: 'url_template'  # Query parameter pagination
+  pages: 5
+  delay: 2
+  page_param: 'page'  # Append ?page=N
+
+selectors:
+  article_list: 'div.item a[href*="/ka/activities/"]'
+  article_title: ['h1.heading.main', 'h1', 'h2']
+  article_body: ['div.right-col p', 'p']  # Government content
+
+wait:
+  selector: null
+  timeout: 2
+
+# Government activities
+categories:
+  activities:
+    url: 'https://gov.krd/ka/activities/'

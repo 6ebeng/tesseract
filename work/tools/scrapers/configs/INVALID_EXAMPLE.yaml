@@ -1,0 +1,35 @@
+# Example: Invalid Config (for testing schema validation)
+# This file deliberately contains errors to demonstrate schema validation
+
+name: 'Test Website'
+base_url: 'invalid-url'  # ❌ ERROR: Not a valid URL (missing http://)
+enabled: 'yes'  # ❌ ERROR: Should be boolean, not string
+
+language_detection:
+  enabled: true
+  filter: ['ckb']
+
+pagination:
+  type: 'scroll'  # ❌ ERROR: Invalid enum value
+  pages: 'five'  # ❌ ERROR: Should be integer, not string
+  delay: 2
+
+selectors:
+  article_list: 'a.link'
+  article_link: 'a'  # ❌ ERROR: Removed in V4
+  article_content: '.content'  # ❌ ERROR: Removed in V4
+  article_paragraphs: ['p']  # ❌ ERROR: Removed in V4
+  article_title: ['h1']
+  # ❌ ERROR: Missing article_body
+
+wait:
+  type: 'manual'  # ❌ ERROR: Should use 'selector'
+  seconds: 2  # ❌ ERROR: Should use 'timeout'
+
+categories:
+  Politics-News:  # ❌ ERROR: Should be lowercase_with_underscores
+    enabled: true  # ❌ ERROR: Removed in V4
+    type: 'pagination'  # ❌ ERROR: Should override in pagination.type
+    url: 'https://example.com/politics'
+    pages: 5  # ❌ ERROR: Should override in pagination.pages
+    page_param: 'page'  # ❌ ERROR: Not needed in V4

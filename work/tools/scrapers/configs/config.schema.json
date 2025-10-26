@@ -1,0 +1,308 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "https://github.com/6ebeng/tesseract/scrapers/config.schema.json",
+	"title": "Website Scraper Configuration",
+	"description": "Schema for validating website scraper configuration files (V4.0)",
+	"type": "object",
+	"required": ["name", "base_url", "enabled", "pagination", "selectors", "wait", "categories"],
+	"additionalProperties": false,
+	"properties": {
+		"name": {
+			"type": "string",
+			"description": "Human-readable name of the website",
+			"minLength": 1,
+			"examples": ["Kurdsat TV", "Rudaw News"]
+		},
+		"base_url": {
+			"type": "string",
+			"format": "uri",
+			"pattern": "^https?://",
+			"description": "Base URL of the website",
+			"examples": ["https://kurdsat.tv", "https://www.rudaw.net"]
+		},
+		"enabled": {
+			"type": "boolean",
+			"description": "Whether this website scraper is enabled",
+			"default": true
+		},
+		"flaresolverr": {
+			"type": "object",
+			"description": "FlareSolverr configuration for bypassing Cloudflare protection",
+			"properties": {
+				"enabled": {
+					"type": "boolean",
+					"description": "Whether to use FlareSolverr for this website"
+				},
+				"url": {
+					"type": "string",
+					"format": "uri",
+					"description": "FlareSolverr service URL",
+					"default": "http://localhost:8191"
+				},
+				"max_timeout": {
+					"type": "integer",
+					"minimum": 10000,
+					"maximum": 120000,
+					"description": "Maximum timeout for FlareSolverr requests in milliseconds",
+					"default": 60000
+				},
+				"session_ttl": {
+					"type": "integer",
+					"minimum": 60,
+					"maximum": 3600,
+					"description": "Session time-to-live in seconds",
+					"default": 600
+				}
+			},
+			"required": ["enabled"]
+		},
+		"language_detection": {
+			"type": "object",
+			"description": "Language filtering configuration",
+			"properties": {
+				"enabled": {
+					"type": "boolean",
+					"description": "Whether to enable language detection filtering"
+				},
+				"filter": {
+					"type": "array",
+					"description": "List of language codes to keep (e.g., 'ckb', 'ar')",
+					"items": {
+						"type": "string",
+						"pattern": "^[a-z]{2,3}$"
+					},
+					"minItems": 1,
+					"examples": [["ckb"], ["ckb", "ar"]]
+				}
+			},
+			"required": ["enabled", "filter"]
+		},
+		"pagination": {
+			"type": "object",
+			"description": "Universal pagination settings applied to all categories",
+			"required": ["type", "delay"],
+			"properties": {
+				"type": {
+					"type": "string",
+					"enum": ["pagination", "url_template", "click_load_more", "infinite_scroll"],
+					"description": "Type of pagination method: pagination (next button), url_template (URL with {page}), click_load_more (load more button), infinite_scroll (scroll-based)"
+				},
+				"pages": {
+					"type": "integer",
+					"minimum": 1,
+					"description": "Number of pages to scrape (for type: pagination or url_template)"
+				},
+				"scrolls": {
+					"type": "integer",
+					"minimum": 1,
+					"description": "Number of scrolls to perform (for type: infinite_scroll)"
+				},
+				"clicks": {
+					"type": "integer",
+					"minimum": 1,
+					"description": "Number of clicks on load more button (for type: click_load_more)"
+				},
+				"delay": {
+					"type": "number",
+					"minimum": 0,
+					"description": "Delay between requests in seconds",
+					"default": 2
+				},
+				"page_param": {
+					"type": "string",
+					"description": "URL parameter name for page number (for type: url_template). Will append ?param=N or &param=N",
+					"examples": ["page", "p", "pageNum"]
+				},
+				"load_more_button": {
+					"type": "string",
+					"description": "CSS selector for load more button (for type: click_load_more)"
+				}
+			},
+			"allOf": [
+				{
+					"if": {
+						"properties": { "type": { "enum": ["pagination", "url_template"] } }
+					},
+					"then": {
+						"required": ["pages"]
+					}
+				},
+				{
+					"if": {
+						"properties": { "type": { "const": "infinite_scroll" } }
+					},
+					"then": {
+						"required": ["scrolls"]
+					}
+				},
+				{
+					"if": {
+						"properties": { "type": { "const": "click_load_more" } }
+					},
+					"then": {
+						"required": ["clicks", "load_more_button"]
+					}
+				}
+			]
+		},
+		"selectors": {
+			"type": "object",
+			"description": "CSS selectors for finding and extracting content",
+			"required": ["article_list", "article_title", "article_body"],
+			"properties": {
+				"article_list": {
+					"oneOf": [
+						{ "type": "string" },
+						{
+							"type": "array",
+							"items": { "type": "string" },
+							"minItems": 1
+						}
+					],
+					"description": "CSS selector(s) to find article links on collection page"
+				},
+				"article_title": {
+					"type": "array",
+					"items": { "type": "string" },
+					"minItems": 1,
+					"description": "CSS selector(s) to extract article title (fallback chain)"
+				},
+				"article_body": {
+					"type": "array",
+					"items": { "type": "string" },
+					"minItems": 1,
+					"description": "CSS selector(s) to extract article content (fallback chain)"
+				},
+				"article_link": {
+					"not": {},
+					"description": "REMOVED in V4: Use article_list instead"
+				},
+				"article_content": {
+					"not": {},
+					"description": "REMOVED in V4: Merged into article_body"
+				},
+				"article_paragraphs": {
+					"not": {},
+					"description": "REMOVED in V4: Merged into article_body"
+				}
+			},
+			"additionalProperties": false
+		},
+		"wait": {
+			"type": "object",
+			"description": "Wait strategy before scraping",
+			"required": ["selector", "timeout"],
+			"properties": {
+				"selector": {
+					"oneOf": [{ "type": "string" }, { "type": "null" }],
+					"description": "CSS selector to wait for, or null for manual delay"
+				},
+				"timeout": {
+					"type": "number",
+					"minimum": 0,
+					"description": "Timeout in seconds"
+				},
+				"type": {
+					"not": {},
+					"description": "REMOVED in V4: Use selector instead"
+				},
+				"seconds": {
+					"not": {},
+					"description": "REMOVED in V4: Use timeout instead"
+				}
+			},
+			"additionalProperties": false
+		},
+		"categories": {
+			"type": "object",
+			"description": "Categories to scrape from this website",
+			"minProperties": 1,
+			"patternProperties": {
+				"^[a-z_]+$": {
+					"type": "object",
+					"required": ["url"],
+					"properties": {
+						"url": {
+							"type": "string",
+							"format": "uri",
+							"pattern": "^https?://",
+							"description": "URL of the category page"
+						},
+						"pagination": {
+							"type": "object",
+							"description": "Override pagination settings for this category",
+							"properties": {
+								"type": {
+									"type": "string",
+									"enum": ["pagination", "url_template", "click_load_more", "infinite_scroll"]
+								},
+								"pages": {
+									"type": "integer",
+									"minimum": 1
+								},
+								"scrolls": {
+									"type": "integer",
+									"minimum": 1
+								},
+								"clicks": {
+									"type": "integer",
+									"minimum": 1
+								},
+								"delay": {
+									"type": "number",
+									"minimum": 0
+								},
+								"load_more_button": {
+									"type": "string"
+								}
+							}
+						},
+						"selectors": {
+							"type": "object",
+							"description": "Override selectors for this category",
+							"properties": {
+								"article_list": {
+									"oneOf": [
+										{ "type": "string" },
+										{
+											"type": "array",
+											"items": { "type": "string" },
+											"minItems": 1
+										}
+									]
+								},
+								"article_title": {
+									"type": "array",
+									"items": { "type": "string" },
+									"minItems": 1
+								},
+								"article_body": {
+									"type": "array",
+									"items": { "type": "string" },
+									"minItems": 1
+								}
+							}
+						},
+						"enabled": {
+							"not": {},
+							"description": "REMOVED in V4: Categories are enabled by default"
+						},
+						"type": {
+							"not": {},
+							"description": "REMOVED in V4: Override in pagination.type instead"
+						},
+						"pages": {
+							"not": {},
+							"description": "REMOVED in V4: Override in pagination.pages instead"
+						},
+						"page_param": {
+							"not": {},
+							"description": "REMOVED in V4: Not needed"
+						}
+					},
+					"additionalProperties": false
+				}
+			}
+		}
+	}
+}
