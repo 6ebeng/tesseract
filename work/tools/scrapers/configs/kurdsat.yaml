@@ -6,9 +6,6 @@ name: 'Kurdsat TV'
 base_url: 'https://kurdsat.tv'
 enabled: true
 
-language_detection:
-  enabled: true
-  filter: ['ckb', 'ar']
 
 # Universal pagination settings (applied to all categories unless overridden)
 pagination:

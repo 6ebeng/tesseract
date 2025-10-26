@@ -290,24 +290,28 @@ python3 test_debug.py website_name --config-only
 
 ---
 
-### 7. Advanced Features ✅ ACTIVE
+### 7. Advanced Features (Optional but Available)
 
 **Status:** ✅ **Fully Operational** (Fixed October 26, 2025)
+
+**Note:** All advanced features are **optional** - the scraper works perfectly without them, but they enhance functionality when enabled.
 
 **Deduplication:**
 
 - SQLite-based storage
 - Exact URL + content hash matching
 - Prevents duplicate sentences in corpus
-- **Active:** Logs "Skipping duplicate: exact_url_match" during scraping
+- **Usage:** Always available, works automatically in background
+- **Configuration:** None needed - automatically active
 
 **Language Detection:**
 
 - Auto-detect article language (Kurdish, Arabic, English, Persian)
-- Filter non-Kurdish content
-- Configurable per website
-- **Active:** All 17 configs have `language_detection.enabled: true`
+- Filter content to specified languages only
+- Configurable per website via `language_detection` section
+- **Usage:** Optional - enabled by default in all 17 configs
 - **Example:** Rudaw filters to `['ckb', 'ar']` only
+- **To disable:** Set `enabled: false` in config
 
 **Rate Limiting:**
 

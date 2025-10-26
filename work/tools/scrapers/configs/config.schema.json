@@ -58,11 +58,11 @@
 		},
 		"language_detection": {
 			"type": "object",
-			"description": "Language filtering configuration - ✅ ACTIVE (filters articles by language using character-based detection)",
+			"description": "Optional: Language filtering configuration - Available for use but not required. Filters articles by language using character-based detection.",
 			"properties": {
 				"enabled": {
 					"type": "boolean",
-					"description": "Whether to enable language detection filtering - Set to true to activate (recommended for all websites)"
+					"description": "Optional: Whether to enable language detection filtering. Set to false to disable, or omit this section entirely."
 				},
 				"filter": {
 					"type": "array",

@@ -6,9 +6,6 @@ name: 'Yariga'
 base_url: 'https://yariga.net'
 enabled: true
 
-language_detection:
-  enabled: true
-  filter: ['ckb']
 
 # Universal pagination settings
 pagination:

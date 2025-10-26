@@ -6,9 +6,6 @@ name: 'Sekokurd'
 base_url: 'https://sekokurd.org'
 enabled: true
 
-language_detection:
-  enabled: true
-  filter: ['ckb']
 
 # Universal pagination
 pagination:

@@ -6,9 +6,6 @@ name: 'NRT News'
 base_url: 'https://www.nrttv.com'
 enabled: true
 
-language_detection:
-  enabled: true
-  filter: ['ckb', 'ar']
 
 # Universal pagination - Load More button
 pagination:

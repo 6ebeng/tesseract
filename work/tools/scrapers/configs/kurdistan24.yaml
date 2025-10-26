@@ -15,9 +15,6 @@ flaresolverr:
   max_timeout: 60000  # milliseconds
   session_ttl: 600  # seconds
 
-language_detection:
-  enabled: true
-  filter: ['ckb']
 
 # Universal pagination
 pagination:

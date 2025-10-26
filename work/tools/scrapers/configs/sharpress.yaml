@@ -6,9 +6,6 @@ name: 'Sharpress'
 base_url: 'https://www.sharpress.net'
 enabled: true
 
-language_detection:
-  enabled: true
-  filter: ['ckb']
 
 # Universal pagination
 pagination:

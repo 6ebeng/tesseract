@@ -6,9 +6,6 @@ name: 'Balinde'
 base_url: 'https://balinde.com'
 enabled: true
 
-language_detection:
-  enabled: true
-  filter: ['ckb']
 
 # Universal pagination
 pagination:

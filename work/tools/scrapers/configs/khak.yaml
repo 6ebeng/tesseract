@@ -12,9 +12,6 @@ enabled: false  # Re-enabled with click-through navigation support
 # CRITICAL: Enable click-through navigation for session state preservation
 click_through_navigation: true  # Must click article links, not navigate directly
 
-language_detection:
-  enabled: true
-  filter: ['ckb']
 
 # Universal pagination
 pagination:

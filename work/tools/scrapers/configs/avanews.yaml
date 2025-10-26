@@ -6,9 +6,6 @@ name: 'AvaNews'
 base_url: 'https://www.ava.news'
 enabled: true
 
-language_detection:
-  enabled: true
-  filter: ['ckb']
 
 # Universal pagination settings
 pagination:

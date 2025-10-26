@@ -6,9 +6,6 @@ name: 'Awene'
 base_url: 'https://www.awene.com'
 enabled: true
 
-language_detection:
-  enabled: true
-  filter: ['ckb']
 
 # Universal pagination
 pagination:

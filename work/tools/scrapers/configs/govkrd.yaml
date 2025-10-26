@@ -6,9 +6,6 @@ name: 'Kurdistan Regional Government'
 base_url: 'https://gov.krd'
 enabled: true
 
-language_detection:
-  enabled: true
-  filter: ['ckb']
 
 # Universal pagination
 pagination:

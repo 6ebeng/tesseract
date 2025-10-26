@@ -12,22 +12,24 @@ enabled: true  # Set to false to disable entire website
 # click_through_navigation: true  # Use browser back button, preserves session
 
 # ============================================================================
-# LANGUAGE DETECTION & FILTERING - ✅ ACTIVE
-# Automatically detects and filters articles by language
+# OPTIONAL: Language Detection & Filtering
+# Available but not required - works automatically if enabled
 # ============================================================================
 language_detection:
-  enabled: true  # ✅ RECOMMENDED: Activate language filtering
+  enabled: true  # Optional: Set to false to disable language filtering
   filter: ['ckb']  # Language codes: 'ckb' (Kurdish Sorani), 'kmr' (Kurdish Kurmanji), 
                    # 'ar' (Arabic), 'fa' (Persian), 'en' (English)
   # Examples:
   # - ['ckb']          # Kurdish only
   # - ['ckb', 'ar']    # Kurdish and Arabic
   # - ['ckb', 'ar', 'en']  # Kurdish, Arabic, and English
+  # 
+  # To disable: Set enabled: false or remove this section entirely
 
 # ============================================================================
-# AUTOMATIC DEDUPLICATION - ✅ ALWAYS ACTIVE
-# SQLite-based tracking prevents duplicate articles automatically
-# No configuration needed - works out of the box
+# OPTIONAL: Automatic Deduplication
+# Works automatically in the background - no configuration needed
+# Can be disabled if needed (though generally recommended)
 # ============================================================================
 
 # ============================================================================
@@ -178,8 +180,11 @@ categories:
 # ✅ Click-through mode - for anti-scraping sites (preserves session)
 # ✅ Delimiter support - extract multiple elements, join and split
 # ✅ XPath support - use XPath selectors (starts with //)
-# ✅ FlareSolverr - bypass Cloudflare protection
-# ✅ Language detection - ✅ ACTIVE (filters by language automatically)
-# ✅ Deduplication - ✅ ACTIVE (skips duplicate articles automatically)
-# ✅ Stealth mode - ✅ ACTIVE (anti-detection measures)
 # ✅ Enable/disable - control at website or category level
+#
+# OPTIONAL ADVANCED FEATURES (available but not required):
+# ✅ FlareSolverr - bypass Cloudflare protection
+# ✅ Language detection - filter by language automatically (if enabled)
+# ✅ Deduplication - skip duplicate articles automatically (always available)
+# ✅ Stealth mode - anti-detection measures (always active)
+# ✅ URL tracking - network analysis (via --track-urls flag in debugger)

@@ -6,9 +6,6 @@ name: 'Xendan'
 base_url: 'https://www.xendan.org'
 enabled: true
 
-language_detection:
-  enabled: true
-  filter: ['ckb']
 
 # Universal pagination
 pagination:

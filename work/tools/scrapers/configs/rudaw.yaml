@@ -6,11 +6,6 @@ name: 'Rudaw News'
 base_url: 'https://www.rudaw.net'
 enabled: true
 
-# ✅ ACTIVE: Language detection filters to Kurdish (ckb) and Arabic (ar) only
-language_detection:
-  enabled: true  # ✅ Character-based language detection active
-  filter: ['ckb', 'ar']  # Only keep Kurdish Sorani and Arabic articles
-
 # Universal pagination for all categories
 pagination:
   type: 'infinite_scroll'
