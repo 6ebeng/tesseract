@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Advanced Features for Web Scrapers
 
