@@ -1,6 +1,6 @@
 # Website Configuration Template
 # COMPLETE STRUCTURE - All Available Features
-# Last Updated: 2025-10-25
+# Last Updated: 2025-10-26 (Advanced features now active)
 
 name: 'Example Website'
 base_url: 'https://example.com'
@@ -11,9 +11,24 @@ enabled: true  # Set to false to disable entire website
 # ============================================================================
 # click_through_navigation: true  # Use browser back button, preserves session
 
+# ============================================================================
+# LANGUAGE DETECTION & FILTERING - ✅ ACTIVE
+# Automatically detects and filters articles by language
+# ============================================================================
 language_detection:
-  enabled: true
-  filter: ['ckb']  # Only keep Kurdish Central
+  enabled: true  # ✅ RECOMMENDED: Activate language filtering
+  filter: ['ckb']  # Language codes: 'ckb' (Kurdish Sorani), 'kmr' (Kurdish Kurmanji), 
+                   # 'ar' (Arabic), 'fa' (Persian), 'en' (English)
+  # Examples:
+  # - ['ckb']          # Kurdish only
+  # - ['ckb', 'ar']    # Kurdish and Arabic
+  # - ['ckb', 'ar', 'en']  # Kurdish, Arabic, and English
+
+# ============================================================================
+# AUTOMATIC DEDUPLICATION - ✅ ALWAYS ACTIVE
+# SQLite-based tracking prevents duplicate articles automatically
+# No configuration needed - works out of the box
+# ============================================================================
 
 # ============================================================================
 # UNIVERSAL PAGINATION (applies to ALL categories unless category overrides)
@@ -72,12 +87,13 @@ wait:
 # Can also be just a number: article_wait: 3
 
 # ============================================================================
-# OPTIONAL: FlareSolverr (for Cloudflare-protected sites)
+# OPTIONAL: FlareSolverr - ✅ ACTIVE (for Cloudflare-protected sites)
+# Bypass Cloudflare protection and anti-bot measures
 # ============================================================================
 # flaresolverr:
 #   enabled: true
-#   url: 'http://localhost:8191'
-#   max_timeout: 60000
+#   url: 'http://localhost:8191'  # FlareSolverr service URL
+#   max_timeout: 60000  # Maximum timeout in milliseconds (60 seconds)
 
 # ============================================================================
 # CATEGORIES (inherit pagination and selectors unless overridden)
@@ -163,4 +179,7 @@ categories:
 # ✅ Delimiter support - extract multiple elements, join and split
 # ✅ XPath support - use XPath selectors (starts with //)
 # ✅ FlareSolverr - bypass Cloudflare protection
+# ✅ Language detection - ✅ ACTIVE (filters by language automatically)
+# ✅ Deduplication - ✅ ACTIVE (skips duplicate articles automatically)
+# ✅ Stealth mode - ✅ ACTIVE (anti-detection measures)
 # ✅ Enable/disable - control at website or category level

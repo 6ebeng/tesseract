@@ -58,21 +58,21 @@
 		},
 		"language_detection": {
 			"type": "object",
-			"description": "Language filtering configuration",
+			"description": "Language filtering configuration - ✅ ACTIVE (filters articles by language using character-based detection)",
 			"properties": {
 				"enabled": {
 					"type": "boolean",
-					"description": "Whether to enable language detection filtering"
+					"description": "Whether to enable language detection filtering - Set to true to activate (recommended for all websites)"
 				},
 				"filter": {
 					"type": "array",
-					"description": "List of language codes to keep (e.g., 'ckb', 'ar')",
+					"description": "List of language codes to keep: 'ckb' (Kurdish Sorani), 'kmr' (Kurdish Kurmanji), 'ar' (Arabic), 'fa' (Persian), 'en' (English). Articles in other languages will be skipped.",
 					"items": {
 						"type": "string",
 						"pattern": "^[a-z]{2,3}$"
 					},
 					"minItems": 1,
-					"examples": [["ckb"], ["ckb", "ar"]]
+					"examples": [["ckb"], ["ckb", "ar"], ["ckb", "ar", "en"]]
 				}
 			},
 			"required": ["enabled", "filter"]

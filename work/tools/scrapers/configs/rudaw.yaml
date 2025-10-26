@@ -1,14 +1,15 @@
 # Rudaw News Configuration
 # Status: ✅ TESTED - WORKING (High yield: 41 sentences/article)
-# Last Updated: 2025-10-24
+# Last Updated: 2025-10-26 (Advanced features activated)
 
 name: 'Rudaw News'
 base_url: 'https://www.rudaw.net'
 enabled: true
 
+# ✅ ACTIVE: Language detection filters to Kurdish (ckb) and Arabic (ar) only
 language_detection:
-  enabled: true
-  filter: ['ckb', 'ar']
+  enabled: true  # ✅ Character-based language detection active
+  filter: ['ckb', 'ar']  # Only keep Kurdish Sorani and Arabic articles
 
 # Universal pagination for all categories
 pagination:
