@@ -82,6 +82,16 @@ except ImportError:
     RateLimiter = None
     HAS_SECURITY = False
 
+try:
+    from network_features import SessionManager, ResponseCache, RetryHandler, ProxyManager
+    HAS_NETWORK = True
+except ImportError:
+    SessionManager = None
+    ResponseCache = None
+    RetryHandler = None
+    ProxyManager = None
+    HAS_NETWORK = False
+
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +135,24 @@ class GenericScraper:
         self.error_handler = ScraperErrorHandler() if HAS_ERROR_HANDLER and ScraperErrorHandler else None
         self.monitor = ScraperMonitor() if HAS_MONITOR and ScraperMonitor else None
         self.rate_limiter = RateLimiter(requests_per_minute=20) if HAS_SECURITY and RateLimiter else None
+        
+        # Initialize network features (if available and configured)
+        self.session_manager = None
+        if HAS_NETWORK and SessionManager:
+            # Check for network config in environment or config
+            use_cache = True  # Enable by default
+            use_retry = True  # Enable by default
+            use_proxy = False  # Disabled by default (needs proxy list)
+            
+            self.session_manager = SessionManager(
+                use_cache=use_cache,
+                use_retry=use_retry,
+                use_proxy=use_proxy,
+                cache_dir='cache/',
+                max_retries=3,
+                backoff_factor=2.0
+            )
+            logger.info("✅ Network features enabled: caching, retry")
         
         self.driver = None
         self.current_website = None

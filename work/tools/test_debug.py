@@ -31,8 +31,11 @@ Usage Examples:
     # Save screenshots on errors
     python3 test_debug.py rudaw --category kurdistan --screenshots
 
+    # Track all URLs fetched during scraping (helps identify what to block)
+    python3 test_debug.py rudaw --category kurdistan --track-urls
+
     # Combine multiple options
-    python3 test_debug.py rudaw --category kurdistan --max-articles 3 --headful --verbose --screenshots
+    python3 test_debug.py rudaw --category kurdistan --max-articles 3 --headful --verbose --screenshots --track-urls
 """
 
 import sys
@@ -40,8 +43,11 @@ import os
 import argparse
 import time
 import traceback
+import json
 from datetime import datetime
 from pathlib import Path
+from collections import defaultdict
+from urllib.parse import urlparse
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent / 'scrapers'))
@@ -64,12 +70,15 @@ logger = logging.getLogger(__name__)
 class DebugScraper:
     """Debug wrapper for GenericScraper with enhanced logging and controls"""
     
-    def __init__(self, website_name, headless=True, verbose=False, screenshots=False):
+    def __init__(self, website_name, headless=True, verbose=False, screenshots=False, track_urls=False):
         self.website_name = website_name
         self.headless = headless
         self.verbose = verbose
         self.screenshots = screenshots
+        self.track_urls = track_urls
         self.screenshot_dir = Path('debug_screenshots')
+        self.tracked_urls = defaultdict(list)  # {url_type: [urls]}
+        self.base_domain = None
         
         if screenshots:
             self.screenshot_dir.mkdir(exist_ok=True)
@@ -95,6 +104,201 @@ class DebugScraper:
             logger.info(f"📸 Screenshot saved: {filepath}")
         except Exception as e:
             logger.error(f"Failed to save screenshot: {e}")
+    
+    def enable_network_tracking(self):
+        """Enable network request tracking via Chrome DevTools Protocol"""
+        if not self.track_urls or not hasattr(self.scraper, 'driver') or not self.scraper.driver:
+            return
+        
+        try:
+            # Enable performance logging
+            self.scraper.driver.execute_cdp_cmd('Network.enable', {})
+            logger.info("✅ Network tracking enabled")
+        except Exception as e:
+            logger.warning(f"⚠️  Could not enable network tracking: {e}")
+            self.track_urls = False
+    
+    def collect_network_requests(self, url=None):
+        """Collect all network requests from browser logs"""
+        if not self.track_urls or not hasattr(self.scraper, 'driver') or not self.scraper.driver:
+            return
+        
+        try:
+            # Set base domain if URL provided
+            if url:
+                parsed = urlparse(url)
+                self.base_domain = parsed.netloc
+            
+            # Get performance logs
+            logs = self.scraper.driver.get_log('performance')
+            
+            for entry in logs:
+                try:
+                    log_data = json.loads(entry['message'])
+                    message = log_data.get('message', {})
+                    
+                    # Track different request types
+                    if message.get('method') == 'Network.requestWillBeSent':
+                        params = message.get('params', {})
+                        request = params.get('request', {})
+                        request_url = request.get('url', '')
+                        request_type = params.get('type', 'other').lower()
+                        
+                        if request_url and not request_url.startswith('data:'):
+                            # Categorize URL
+                            parsed = urlparse(request_url)
+                            is_third_party = self.base_domain and parsed.netloc != self.base_domain
+                            
+                            # Store URL with metadata
+                            self.tracked_urls[request_type].append({
+                                'url': request_url,
+                                'domain': parsed.netloc,
+                                'third_party': is_third_party,
+                                'timestamp': entry.get('timestamp', 0)
+                            })
+                
+                except (json.JSONDecodeError, KeyError) as e:
+                    continue
+        
+        except Exception as e:
+            logger.warning(f"⚠️  Error collecting network requests: {e}")
+    
+    def display_url_tracking_summary(self):
+        """Display comprehensive URL tracking summary with filter suggestions"""
+        if not self.track_urls or not self.tracked_urls:
+            return
+        
+        print("\n" + "="*80)
+        print("🌐 NETWORK REQUEST TRACKING SUMMARY")
+        print("="*80)
+        
+        # Collect statistics
+        total_requests = sum(len(urls) for urls in self.tracked_urls.values())
+        third_party_domains = set()
+        first_party_urls = []
+        third_party_urls = []
+        
+        for request_type, urls in self.tracked_urls.items():
+            for url_info in urls:
+                if url_info['third_party']:
+                    third_party_domains.add(url_info['domain'])
+                    third_party_urls.append(url_info)
+                else:
+                    first_party_urls.append(url_info)
+        
+        print(f"\n📊 Overview:")
+        print(f"   Total Requests: {total_requests}")
+        print(f"   First-Party: {len(first_party_urls)} requests")
+        print(f"   Third-Party: {len(third_party_urls)} requests from {len(third_party_domains)} domains")
+        print(f"   Base Domain: {self.base_domain or 'N/A'}")
+        
+        # Breakdown by type
+        print(f"\n📋 Requests by Type:")
+        for request_type in sorted(self.tracked_urls.keys()):
+            urls = self.tracked_urls[request_type]
+            if urls:
+                third_party_count = sum(1 for u in urls if u['third_party'])
+                print(f"   {request_type.upper():15} {len(urls):4} total ({third_party_count} third-party)")
+        
+        # Third-party domains
+        if third_party_domains:
+            print(f"\n🌍 Third-Party Domains ({len(third_party_domains)}):")
+            domain_counts = defaultdict(int)
+            for url_info in third_party_urls:
+                domain_counts[url_info['domain']] += 1
+            
+            for domain, count in sorted(domain_counts.items(), key=lambda x: x[1], reverse=True):
+                print(f"   {count:4}x  {domain}")
+        
+        # Suggest filter patterns
+        print(f"\n💡 Suggested Blacklist Patterns (Third-Party Services):")
+        if third_party_domains:
+            # Common analytics/tracking domains
+            tracking_keywords = ['analytics', 'tracking', 'metric', 'tag', 'pixel', 'stats', 'collect']
+            ad_keywords = ['ads', 'adserver', 'doubleclick', 'adsystem', 'advertising']
+            social_keywords = ['facebook', 'twitter', 'instagram', 'linkedin', 'social']
+            
+            tracking_domains = [d for d in third_party_domains if any(k in d.lower() for k in tracking_keywords)]
+            ad_domains = [d for d in third_party_domains if any(k in d.lower() for k in ad_keywords)]
+            social_domains = [d for d in third_party_domains if any(k in d.lower() for k in social_keywords)]
+            
+            if tracking_domains:
+                print(f"   # Analytics/Tracking ({len(tracking_domains)} domains):")
+                for domain in sorted(tracking_domains)[:5]:
+                    print(f"   '*.{domain}'")
+            
+            if ad_domains:
+                print(f"   # Advertising ({len(ad_domains)} domains):")
+                for domain in sorted(ad_domains)[:5]:
+                    print(f"   '*.{domain}'")
+            
+            if social_domains:
+                print(f"   # Social Media ({len(social_domains)} domains):")
+                for domain in sorted(social_domains)[:5]:
+                    print(f"   '*.{domain}'")
+            
+            # Other third-party
+            other_domains = third_party_domains - set(tracking_domains) - set(ad_domains) - set(social_domains)
+            if other_domains:
+                print(f"   # Other Third-Party ({len(other_domains)} domains):")
+                for domain in sorted(other_domains)[:10]:
+                    print(f"   '*.{domain}'")
+        else:
+            print("   (No third-party requests detected)")
+        
+        print(f"\n💡 Suggested Whitelist Patterns (Main Content):")
+        if self.base_domain:
+            print(f"   '*.{self.base_domain}'  # Main website")
+            
+            # Check for CDN domains
+            cdn_keywords = ['cdn', 'static', 'media', 'assets', 'content']
+            cdn_domains = [d for d in third_party_domains if any(k in d.lower() for k in cdn_keywords)]
+            if cdn_domains:
+                print(f"   # CDN/Media ({len(cdn_domains)} domains):")
+                for domain in sorted(cdn_domains)[:5]:
+                    print(f"   '*.{domain}'")
+        
+        # Request type patterns
+        print(f"\n💡 Path-Based Patterns:")
+        print(f"   # Block common tracking paths:")
+        print(f"   '*/analytics/*'")
+        print(f"   '*/tracking/*'")
+        print(f"   '*/pixel/*'")
+        print(f"   '*/beacon/*'")
+        print(f"   '*/collect*'")
+        
+        print("\n" + "="*80)
+    
+    def save_url_tracking_report(self, filename=None):
+        """Save URL tracking data to JSON file"""
+        if not self.track_urls or not self.tracked_urls:
+            return
+        
+        if filename is None:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"url_tracking_{self.website_name}_{timestamp}.json"
+        
+        report = {
+            'website': self.website_name,
+            'base_domain': self.base_domain,
+            'timestamp': datetime.now().isoformat(),
+            'summary': {
+                'total_requests': sum(len(urls) for urls in self.tracked_urls.values()),
+                'request_types': {k: len(v) for k, v in self.tracked_urls.items()}
+            },
+            'requests': {}
+        }
+        
+        # Convert to serializable format
+        for request_type, urls in self.tracked_urls.items():
+            report['requests'][request_type] = urls
+        
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(report, f, indent=2, ensure_ascii=False)
+            print(f"\n📁 URL tracking report saved: {filename}")
+        except Exception as e:
+            logger.error(f"Failed to save URL tracking report: {e}")
     
     def debug_website_config(self):
         """Debug website configuration"""
@@ -611,17 +815,41 @@ class DebugScraper:
         try:
             start_time = time.time()
             
+            # Enable network tracking if requested
+            if self.track_urls:
+                self.enable_network_tracking()
+            
             if category_name:
                 # Scrape specific category
                 print(f"\n📂 Scraping category: {category_name}")
+                
+                # Get category URL for tracking
+                if self.track_urls and self.website_name in self.scraper.config:
+                    cat_config = self.scraper.config[self.website_name].get('categories', {}).get(category_name, {})
+                    cat_url = cat_config.get('url')
+                    if cat_url:
+                        self.collect_network_requests(cat_url)
+                
                 sentences = self.scraper.scrape_category(
                     self.website_name,
                     category_name,
                     max_articles=max_articles
                 )
+                
+                # Collect network requests after scraping
+                if self.track_urls:
+                    time.sleep(2)  # Wait for remaining requests
+                    self.collect_network_requests()
             else:
                 # Scrape entire website
                 print(f"\n🌐 Scraping entire website")
+                
+                # Get base URL for tracking
+                if self.track_urls and self.website_name in self.scraper.config:
+                    base_url = self.scraper.config[self.website_name].get('base_url')
+                    if base_url:
+                        self.collect_network_requests(base_url)
+                
                 result = self.scraper.scrape_website(
                     self.website_name,
                     max_articles=max_articles
@@ -631,6 +859,11 @@ class DebugScraper:
                     # Collect all sentences from all categories
                     for cat_sentences in result.metadata.get('sentences_by_category', {}).values():
                         sentences.extend(cat_sentences)
+                
+                # Collect network requests after scraping
+                if self.track_urls:
+                    time.sleep(2)  # Wait for remaining requests
+                    self.collect_network_requests()
             
             duration = time.time() - start_time
             
@@ -644,6 +877,11 @@ class DebugScraper:
                 print(f"\n📄 Sample Sentences (first 5):")
                 for i, sentence in enumerate(sentences[:5], 1):
                     print(f"   {i}. {sentence[:100]}...")
+            
+            # Display URL tracking summary
+            if self.track_urls:
+                self.display_url_tracking_summary()
+                self.save_url_tracking_report()
             
             return sentences
             
@@ -671,6 +909,8 @@ def main():
                        help='Enable verbose debug logging')
     parser.add_argument('--screenshots', '-s', action='store_true',
                        help='Save screenshots during debugging')
+    parser.add_argument('--track-urls', '-t', action='store_true',
+                       help='Track and display all URLs fetched during scraping')
     
     # Test modes
     parser.add_argument('--config-only', action='store_true',
@@ -691,7 +931,8 @@ def main():
         args.website,
         headless=not args.headful,
         verbose=args.verbose,
-        screenshots=args.screenshots
+        screenshots=args.screenshots,
+        track_urls=args.track_urls
     )
     
     # Run selected debug mode
