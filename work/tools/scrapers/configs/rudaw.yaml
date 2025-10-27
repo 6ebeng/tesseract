@@ -1,10 +1,38 @@
 # Rudaw News Configuration
 # Status: ✅ TESTED - WORKING (High yield: 41 sentences/article)
-# Last Updated: 2025-10-26 (Advanced features activated)
+# Last Updated: 2025-10-27 (All advanced features enabled)
 
 name: 'Rudaw News'
 base_url: 'https://www.rudaw.net'
 enabled: true
+
+# ============================================================================
+# ADVANCED FEATURES - All Enabled
+# ============================================================================
+
+# Rate Limiting: Prevent server overload and IP blocking
+rate_limiting:
+  enabled: true
+  max_requests_per_minute: 30  # Polite scraping speed
+
+# Redis Caching: Speed up re-runs by caching page HTML and articles
+caching:
+  enabled: true
+  redis_host: 'localhost'
+  redis_port: 6379
+  ttl_hours: 24  # Cache for 24 hours
+
+# Retry Logic: Handle network errors and timeouts
+retry:
+  enabled: true
+  max_attempts: 3
+  delay_seconds: 2
+
+# Proxy Rotation: Bypass IP blocking (requires proxies.txt)
+proxy:
+  enabled: false  # Set to true when proxies.txt is available
+  file: 'proxies.txt'
+  strategy: 'round-robin'  # or 'random'
 
 # Universal pagination for all categories
 pagination:
