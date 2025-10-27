@@ -7,6 +7,26 @@ base_url: 'https://www.rudaw.net'
 enabled: true
 
 # ============================================================================
+# PERFORMANCE OPTIMIZATION
+# ============================================================================
+
+# URL Debugging: Track all URLs to optimize performance
+debug_urls: true  # Set to true only when analyzing, false for production
+
+# URL filtering tuned from captured network traffic
+url_filtering:
+  preset: 'standard'
+  whitelist:
+    - 'https://www.rudaw.net/sorani/*'
+    - 'https://www.rudaw.net/api/*'
+    - 'https://www.rudaw.net/bundles/*'
+    - 'https://www.rudaw.net/styles/*'
+    - 'https://www.rudaw.net/Scripts/*'
+    - 'https://www.rudaw.net/_Incapsula_*'
+  blacklist:
+    - '*clarity.ms*'
+
+# ============================================================================
 # ADVANCED FEATURES - All Enabled
 # ============================================================================
 

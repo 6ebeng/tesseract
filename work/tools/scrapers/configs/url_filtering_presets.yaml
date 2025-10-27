@@ -1,0 +1,290 @@
+# URL Filtering Presets
+# Centralized configuration for easy maintenance
+# Reference these presets in website configs with: preset: 'preset_name'
+
+# ============================================================================
+# RESOURCE TYPE PATTERNS (Building Blocks)
+# ============================================================================
+
+resource_types:
+  images:
+    - '*.jpg'
+    - '*.jpeg'
+    - '*.png'
+    - '*.gif'
+    - '*.svg'
+    - '*.webp'
+    - '*.ico'
+    - '*.bmp'
+    - '*.tiff'
+  
+  styles:
+    - '*.css'
+    - '*/css/*'
+    - '*/styles/*'
+  
+  fonts:
+    - '*.woff'
+    - '*.woff2'
+    - '*.ttf'
+    - '*.eot'
+    - '*.otf'
+  
+  scripts:
+    - '*.js'
+    - '*/js/*'
+    - '*/javascript/*'
+  
+  media:
+    - '*.mp4'
+    - '*.mp3'
+    - '*.webm'
+    - '*.avi'
+    - '*.mov'
+    - '*.flv'
+    - '*.wav'
+    - '*.ogg'
+  
+  tracking:
+    - '*google-analytics.com*'
+    - '*googletagmanager.com*'
+    - '*doubleclick.net*'
+    - '*facebook.com/tr*'
+    - '*twitter.com/i/adsct*'
+    - '*hotjar.com*'
+    - '*mixpanel.com*'
+    - '*segment.com*'
+    - '*/analytics/*'
+    - '*/tracking/*'
+  
+  ads:
+    - '*ads.*'
+    - '*/ads/*'
+    - '*adservice*'
+    - '*advertising*'
+    - '*doubleclick*'
+  
+  social:
+    - '*facebook.com*'
+    - '*twitter.com*'
+    - '*instagram.com*'
+    - '*linkedin.com*'
+    - '*pinterest.com*'
+    - '*tiktok.com*'
+
+# ============================================================================
+# PREDEFINED PRESETS (Mix & Match)
+# ============================================================================
+
+presets:
+  # Level 1: Minimal blocking - just heavy media
+  minimal:
+    description: "Block only large media files (images, videos)"
+    blacklist_types:
+      - images
+      - media
+  
+  # Level 2: Standard blocking - most common
+  standard:
+    description: "Block media, tracking, and ads (balanced approach)"
+    blacklist_types:
+      - images
+      - media
+      - tracking
+      - ads
+  
+  # Level 3: Aggressive blocking
+  aggressive:
+    description: "Block everything except HTML and API calls"
+    blacklist_types:
+      - images
+      - styles
+      - fonts
+      - scripts
+      - media
+      - tracking
+      - ads
+      - social
+  
+  # Level 4: Maximum performance (whitelist-only)
+  maximum:
+    description: "Whitelist-only approach - specify allowed domains"
+    mode: "whitelist_only"
+    # Note: Must specify whitelist patterns in website config
+
+  # HTML Only - Strictest
+  html_only:
+    description: "Only allow HTML pages, block all resources"
+    blacklist_types:
+      - images
+      - styles
+      - fonts
+      - scripts
+      - media
+      - tracking
+      - ads
+      - social
+  
+  # News Site Optimized
+  news_optimized:
+    description: "Optimized for news sites - blocks heavy resources"
+    blacklist_types:
+      - images
+      - media
+      - tracking
+      - ads
+      - social
+
+# ============================================================================
+# WEBSITE-SPECIFIC TEMPLATES
+# ============================================================================
+
+templates:
+  # Rudaw template
+  rudaw:
+    preset: "maximum"
+    whitelist:
+      - 'https://www.rudaw.net/sorani/*'
+      - 'https://www.rudaw.net/sorani/kurdistan/*'
+      - 'https://www.rudaw.net/sorani/business/*'
+      - 'https://www.rudaw.net/sorani/culture/*'
+    blacklist: []
+  
+  # Generic news site template
+  generic_news:
+    preset: "news_optimized"
+    # No whitelist needed - uses blacklist from preset
+  
+  # Social media heavy sites
+  social_heavy:
+    preset: "aggressive"
+    extra_blacklist:
+      - '*facebook.net*'
+      - '*fbcdn.net*'
+      - '*twitter.com/i/*'
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+
+examples:
+  # Example 1: Use predefined preset
+  example_minimal:
+    url_filtering:
+      preset: 'minimal'
+  
+  # Example 2: Preset + website-specific blacklist (MERGED)
+  example_custom_blacklist:
+    url_filtering:
+      preset: 'standard'          # Base blocking from preset
+      blacklist:                   # ADDED to preset blacklist
+        - '*example-tracker.com*'
+        - '*/unwanted-path/*'
+  
+  # Example 3: Use template only
+  example_template_only:
+    url_filtering:
+      template: 'rudaw'  # Uses template patterns from presets file
+  
+  # Example 4: Template + website-specific whitelist (MERGED)
+  example_template_extended:
+    url_filtering:
+      template: 'rudaw'            # Base whitelist from template
+      whitelist:                    # MERGED with template whitelist
+        - 'https://www.rudaw.net/sorani/sports/*'  # Add new category
+        - 'https://www.rudaw.net/sorani/tech/*'    # Add new category
+  
+  # Example 5: Manual configuration (no preset)
+  example_manual:
+    url_filtering:
+      whitelist:
+        - 'https://mysite.com/articles/*'
+        - 'https://mysite.com/news/*'
+      blacklist:
+        - '*.jpg'
+        - '*.png'
+        - '*tracking*'
+  
+  # Example 6: Preset + website-specific whitelist
+  example_preset_whitelist:
+    url_filtering:
+      preset: 'standard'           # Applies standard blocking
+      whitelist:                    # Website-specific whitelist
+        - 'https://mysite.com/*'
+        - 'https://cdn.mysite.com/*'
+
+# ============================================================================
+# MIGRATION GUIDE
+# ============================================================================
+
+migration:
+  old_format: |
+    # Old approach: All patterns in website config (20-30 lines)
+    url_filtering:
+      whitelist:
+        - 'https://www.rudaw.net/sorani/*'
+        - 'https://www.rudaw.net/sorani/kurdistan/*'
+        - 'https://www.rudaw.net/sorani/business/*'
+        - 'https://www.rudaw.net/sorani/culture/*'
+      blacklist: []
+  
+  new_format_option1_template_only: |
+    # Option 1: Template only (patterns from preset file)
+    url_filtering:
+      template: 'rudaw'  # 1 line instead of 20!
+  
+  new_format_option2_template_extended: |
+    # Option 2: Template + website-specific additions (FLEXIBLE)
+    url_filtering:
+      template: 'rudaw'  # Base from preset file
+      whitelist:          # Add site-specific patterns (MERGED)
+        - 'https://www.rudaw.net/sorani/sports/*'  # New category
+        - 'https://www.rudaw.net/sorani/tech/*'    # New category
+  
+  new_format_option3_preset: |
+    # Option 3: Preset-based (for standard blocking)
+    url_filtering:
+      preset: 'standard'  # Uses standard blocking preset
+  
+  new_format_option4_preset_extended: |
+    # Option 4: Preset + website-specific blacklist (MERGED)
+    url_filtering:
+      preset: 'standard'    # Base blocking from preset
+      blacklist:             # Add site-specific blocks (MERGED)
+        - '*custom-tracker.com*'
+        - '*/unwanted-ads/*'
+  
+  new_format_option5_manual: |
+    # Option 5: Manual (still supported, but not recommended)
+    url_filtering:
+      whitelist:
+        - 'https://www.rudaw.net/sorani/*'
+      blacklist:
+        - '*.jpg'
+
+# ============================================================================
+# KEY FEATURES
+# ============================================================================
+
+features:
+  merging: |
+    Whitelist/blacklist patterns are now MERGED:
+    - Template provides base patterns
+    - Website config adds site-specific patterns
+    - No duplication (duplicates are filtered out)
+    - Update template = all sites benefit
+    - Update website config = site-specific only
+  
+  flexibility: |
+    Mix and match approaches:
+    1. Template only (easiest)
+    2. Template + website patterns (flexible)
+    3. Preset only (standard blocking)
+    4. Preset + website patterns (customized)
+    5. Manual (full control)
+  
+  maintenance: |
+    Centralized + Decentralized:
+    - Common patterns in preset file (update once)
+    - Site-specific patterns in website config (update individually)
+    - Best of both worlds!

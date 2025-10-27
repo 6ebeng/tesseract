@@ -19,6 +19,7 @@ import time
 import logging
 import requests
 import re
+import json
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from selenium import webdriver
@@ -163,6 +164,18 @@ class GenericScraper:
             'duplicates_skipped': 0,
             'errors': 0
         }
+        
+        # URL tracking and whitelisting for performance optimization
+        self.url_debug_mode = False  # Enable with debug_urls: true in config
+        self.tracked_urls = []  # List of all URLs requested
+        self._tracked_url_set = set()  # Fast lookup for tracked URLs
+        self.url_whitelist = []  # Whitelist of URL patterns to allow
+        self.blocked_resources = [  # Default blocked resources for faster loading
+            '.css', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.woff', '.woff2', 
+            '.ttf', '.eot', '.mp4', '.mp3', '.webm', '.avi', '.mov', '.flv',
+            'google-analytics.com', 'googletagmanager.com', 'doubleclick.net',
+            'facebook.com/tr', 'twitter.com/i/adsct', 'ads', 'analytics', 'tracking'
+        ]
     
     def _load_config(self) -> Dict:
         """
@@ -336,6 +349,13 @@ class GenericScraper:
         website_config = self.config[website_name]
         self.current_website = website_name
         
+        # Enable URL debugging if configured
+        if website_config.get('debug_urls', False):
+            self.enable_url_debugging()
+        
+        # Load URL filtering with preset support
+        self._load_url_filtering(website_config)
+        
         # Check if website is enabled
         if not website_config.get('enabled', True):
             logger.warning(f"Website '{website_name}' is disabled in configuration")
@@ -396,6 +416,20 @@ class GenericScraper:
             logger.info(f"   Duplicates skipped: {self.stats['duplicates_skipped']}")
             logger.info(f"   Duration: {result.duration:.2f}s\n")
             
+            # Save tracked URLs if debugging was enabled
+            if self.url_debug_mode and self.tracked_urls:
+                filename = f"tracked_urls_{website_name}.txt"
+                self.save_tracked_urls(filename)
+                analysis = self.analyze_urls()
+                logger.info(f"\n📊 URL Analysis:")
+                logger.info(f"   Total URLs: {analysis['total_urls']}")
+                logger.info(f"   Unique domains: {analysis['unique_domains']}")
+                logger.info(f"   Resource types: {analysis['resource_types']}")
+                if analysis['recommendations']:
+                    logger.info(f"\n💡 Recommendations:")
+                    for rec in analysis['recommendations']:
+                        logger.info(f"   • {rec}")
+            
             return result
             
         except Exception as e:
@@ -443,6 +477,10 @@ class GenericScraper:
             raise ValueError(f"Category '{category_name}' not found for {website_name}")
         
         category_config = categories[category_name]
+
+        # Enable URL debugging when requested at website level (category run)
+        if website_config.get('debug_urls', False) and not self.url_debug_mode:
+            self.enable_url_debugging()
         
         # Apply intelligent defaults (enabled by default)
         if category_config.get('enabled', True) is False:
@@ -635,6 +673,7 @@ class GenericScraper:
         max_scrolls = category_config.get('scrolls', 10)  # Should always be set by _apply_defaults
         
         for scroll in range(max_scrolls):
+            self._capture_network_logs()
             # Extract current articles
             links = self._extract_article_links(website_config)
             new_links = [l for l in links if l not in article_links]
@@ -649,6 +688,7 @@ class GenericScraper:
             # Scroll down
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(2)
+            self._capture_network_logs()
         
         return article_links
     
@@ -663,6 +703,7 @@ class GenericScraper:
         load_more_selector = category_config.get('load_more_button', 'button.load-more')  # Should be set
         
         for click in range(max_clicks):
+            self._capture_network_logs()
             # Extract current articles (pass category_config with merged selectors)
             links = self._extract_article_links(category_config)
             new_links = [l for l in links if l not in article_links]
@@ -683,6 +724,7 @@ class GenericScraper:
                 time.sleep(1)
                 self.driver.execute_script("arguments[0].click();", button)
                 time.sleep(2)
+                self._capture_network_logs()
                 
             except Exception as e:
                 logger.debug(f"   Could not click load more: {e}")
@@ -1127,6 +1169,17 @@ class GenericScraper:
         options.add_argument('--disable-gpu')
         options.add_argument('--window-size=1920,1080')
         
+        # Performance optimization: Block unnecessary resources
+        prefs = {
+            "profile.managed_default_content_settings.images": 2,  # Block images for faster loading
+            "profile.default_content_setting_values.notifications": 2,  # Block notifications
+        }
+        options.add_experimental_option("prefs", prefs)
+        
+        # Enable performance logging for URL tracking if debug mode
+        if self.url_debug_mode:
+            options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
+        
         if self.stealth and HAS_ADVANCED:
             # Use stealth mode if available
             options_config = self.stealth.get_stealth_options()
@@ -1338,13 +1391,62 @@ class GenericScraper:
         try:
             if not self.driver:
                 self._init_stealth_driver()
+            
+            # Track URL if debugging is enabled
+            if self.url_debug_mode and url not in self._tracked_url_set:
+                self.tracked_urls.append(url)
+                self._tracked_url_set.add(url)
+                logger.debug(f"📍 Tracked: {url}")
+            
             self.driver.get(url)
             time.sleep(delay)
+            self._capture_network_logs()
             return True
         except Exception as e:
             logger.error(f"Failed to load {url}: {e}")
             return False
     
+    def _capture_network_logs(self):
+        """Capture network activity from Chrome performance logs when debugging"""
+        if not self.url_debug_mode or not self.driver:
+            return
+
+        try:
+            performance_logs = self.driver.get_log('performance')
+        except Exception as exc:
+            logger.debug(f"   Unable to fetch performance logs: {exc}")
+            return
+
+        for entry in performance_logs:
+            try:
+                message = json.loads(entry.get('message', '{}'))
+                message_data = message.get('message', {})
+                method = message_data.get('method')
+
+                if method not in ('Network.requestWillBeSent', 'Network.responseReceived'):
+                    continue
+
+                params = message_data.get('params', {})
+                url = None
+
+                if method == 'Network.requestWillBeSent':
+                    request = params.get('request', {})
+                    url = request.get('url')
+                elif method == 'Network.responseReceived':
+                    response = params.get('response', {})
+                    url = response.get('url')
+
+                if not url or not url.startswith(('http://', 'https://')):
+                    continue
+
+                if url not in self._tracked_url_set:
+                    self.tracked_urls.append(url)
+                    self._tracked_url_set.add(url)
+            except (json.JSONDecodeError, TypeError):
+                continue
+            except Exception as exc:
+                logger.debug(f"   Failed to parse performance log entry: {exc}")
+
     def _wait_for_page(
         self,
         website_config: Dict,
@@ -1425,6 +1527,8 @@ class GenericScraper:
         else:
             # Manual delay (V4.0: selector is null)
             time.sleep(timeout)
+
+        self._capture_network_logs()
     
     def _find_element(
         self,
@@ -1570,6 +1674,259 @@ class GenericScraper:
             duration=0,
             error=reason
         )
+    
+    # ========================================================================
+    # URL Tracking & Whitelisting for Performance Optimization
+    # ========================================================================
+    
+    def enable_url_debugging(self):
+        """Enable URL tracking to see all requests being made"""
+        self.url_debug_mode = True
+        self.tracked_urls = []
+        self._tracked_url_set = set()
+        logger.info("🔍 URL debugging enabled - will track all requests")
+    
+    def disable_url_debugging(self):
+        """Disable URL tracking"""
+        self.url_debug_mode = False
+        logger.info("🔍 URL debugging disabled")
+    
+    def get_tracked_urls(self) -> List[str]:
+        """Get all tracked URLs"""
+        return self.tracked_urls
+    
+    def save_tracked_urls(self, filename: str = 'tracked_urls.txt'):
+        """Save tracked URLs to a file for analysis"""
+        if not self.tracked_urls:
+            logger.warning("No URLs tracked. Enable URL debugging first.")
+            return
+        
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(f"# Tracked URLs ({len(self.tracked_urls)} total)\n")
+            f.write(f"# Tracked on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            
+            # Group by resource type
+            html_urls = []
+            script_urls = []
+            style_urls = []
+            image_urls = []
+            other_urls = []
+            
+            for url in self.tracked_urls:
+                if any(ext in url.lower() for ext in ['.js']):
+                    script_urls.append(url)
+                elif any(ext in url.lower() for ext in ['.css']):
+                    style_urls.append(url)
+                elif any(ext in url.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp']):
+                    image_urls.append(url)
+                elif any(ext in url.lower() for ext in ['.html', '.htm']) or '?' in url or url.endswith('/'):
+                    html_urls.append(url)
+                else:
+                    other_urls.append(url)
+            
+            f.write(f"# HTML Pages ({len(html_urls)})\n")
+            for url in html_urls:
+                f.write(f"{url}\n")
+            
+            f.write(f"\n# Scripts ({len(script_urls)})\n")
+            for url in script_urls:
+                f.write(f"{url}\n")
+            
+            f.write(f"\n# Styles ({len(style_urls)})\n")
+            for url in style_urls:
+                f.write(f"{url}\n")
+            
+            f.write(f"\n# Images ({len(image_urls)})\n")
+            for url in image_urls:
+                f.write(f"{url}\n")
+            
+            f.write(f"\n# Other ({len(other_urls)})\n")
+            for url in other_urls:
+                f.write(f"{url}\n")
+        
+        logger.info(f"✅ Tracked URLs saved to {filename}")
+        logger.info(f"   Total: {len(self.tracked_urls)} URLs")
+        logger.info(f"   HTML: {len(html_urls)}, Scripts: {len(script_urls)}, Styles: {len(style_urls)}, Images: {len(image_urls)}, Other: {len(other_urls)}")
+    
+    def set_url_whitelist(self, patterns: List[str]):
+        """Set URL whitelist patterns (only these URLs will be loaded)"""
+        self.url_whitelist = patterns
+        logger.info(f"🔒 URL whitelist set: {len(patterns)} patterns")
+    
+    def add_to_whitelist(self, pattern: str):
+        """Add a pattern to the whitelist"""
+        if pattern not in self.url_whitelist:
+            self.url_whitelist.append(pattern)
+            logger.info(f"✅ Added to whitelist: {pattern}")
+    
+    def _load_url_filtering(self, website_config: Dict):
+        """
+        Load URL filtering configuration with preset support
+        
+        Supports multiple approaches:
+        1. Template-based: template: 'rudaw' (uses predefined template)
+        2. Preset-based: preset: 'standard' (applies preset patterns)
+        3. Manual: Direct whitelist/blacklist arrays in config
+        4. Hybrid: Preset + website-specific whitelist/blacklist additions
+        
+        Processing order:
+        - Load preset/template base patterns (if specified)
+        - Add website-specific whitelist patterns (merged/extended)
+        - Add website-specific blacklist patterns (merged/extended)
+        - Add extra_blacklist patterns (always appended)
+        """
+        url_filtering = website_config.get('url_filtering', {})
+        if not url_filtering:
+            return
+        
+        # Try to load presets file
+        presets_file = self.config_path / 'url_filtering_presets.yaml' if self.config_path.is_dir() else None
+        presets = {}
+        resource_types = {}
+        templates = {}
+        
+        if presets_file and presets_file.exists():
+            try:
+                with open(presets_file, 'r', encoding='utf-8') as f:
+                    presets_data = yaml.safe_load(f) or {}
+                    presets = presets_data.get('presets', {})
+                    resource_types = presets_data.get('resource_types', {})
+                    templates = presets_data.get('templates', {})
+                logger.debug(f"📦 Loaded {len(presets)} presets from url_filtering_presets.yaml")
+            except Exception as e:
+                logger.warning(f"Could not load URL filtering presets: {e}")
+        
+        # Step 1: Process template (if specified)
+        template_whitelist = []
+        template_blacklist = []
+        
+        if url_filtering.get('template'):
+            template_name = url_filtering['template']
+            if template_name in templates:
+                template = templates[template_name]
+                logger.info(f"📋 Using URL filtering template: {template_name}")
+                
+                # Collect template patterns (don't apply yet)
+                template_whitelist = template.get('whitelist', [])
+                template_blacklist = template.get('blacklist', [])
+                
+                # Apply template preset to blocked_resources
+                if template.get('preset') and template['preset'] in presets:
+                    self._apply_preset(presets[template['preset']], resource_types)
+            else:
+                logger.warning(f"Template '{template_name}' not found in presets file")
+        
+        # Step 2: Process preset (if specified and no template)
+        elif url_filtering.get('preset'):
+            preset_name = url_filtering['preset']
+            if preset_name in presets:
+                preset = presets[preset_name]
+                logger.info(f"📦 Using URL filtering preset: {preset_name} - {preset.get('description', '')}")
+                self._apply_preset(preset, resource_types)
+            else:
+                logger.warning(f"Preset '{preset_name}' not found in presets file")
+        
+        # Step 3: Merge website-specific whitelist with template/preset whitelist
+        final_whitelist = []
+        
+        # Add template whitelist patterns first
+        if template_whitelist:
+            final_whitelist.extend(template_whitelist)
+            logger.info(f"  ✅ Template whitelist: {len(template_whitelist)} patterns")
+        
+        # Add website-specific whitelist patterns (merged or standalone)
+        website_whitelist = url_filtering.get('whitelist', [])
+        if website_whitelist:
+            # Merge with template patterns (avoid duplicates)
+            for pattern in website_whitelist:
+                if pattern not in final_whitelist:
+                    final_whitelist.append(pattern)
+            logger.info(f"  ✅ Website whitelist: {len(website_whitelist)} patterns")
+        
+        # Apply final merged whitelist
+        if final_whitelist:
+            self.set_url_whitelist(final_whitelist)
+            logger.info(f"📋 Total whitelist patterns: {len(final_whitelist)}")
+        
+        # Step 4: Add website-specific blacklist patterns
+        website_blacklist = url_filtering.get('blacklist', [])
+        if template_blacklist:
+            self.blocked_resources.extend(template_blacklist)
+            logger.info(f"  🚫 Template blacklist: {len(template_blacklist)} patterns")
+        
+        if website_blacklist:
+            self.blocked_resources.extend(website_blacklist)
+            logger.info(f"  🚫 Website blacklist: {len(website_blacklist)} patterns")
+        
+        # Extra blacklist (for preset + custom additions)
+        if url_filtering.get('extra_blacklist'):
+            self.blocked_resources.extend(url_filtering['extra_blacklist'])
+            logger.info(f"🚫 Added {len(url_filtering['extra_blacklist'])} extra blacklist patterns")
+    
+    def _apply_preset(self, preset: Dict, resource_types: Dict):
+        """Apply a URL filtering preset"""
+        # Check if preset uses whitelist-only mode
+        if preset.get('mode') == 'whitelist_only':
+            logger.info("  ⚠️  Whitelist-only mode - must specify whitelist patterns in config")
+            return
+        
+        # Apply blacklist types from preset
+        blacklist_types = preset.get('blacklist_types', [])
+        for type_name in blacklist_types:
+            if type_name in resource_types:
+                patterns = resource_types[type_name]
+                self.blocked_resources.extend(patterns)
+                logger.info(f"  🚫 Blocking {type_name}: {len(patterns)} patterns")
+    
+    def get_performance_stats(self) -> Dict:
+        """Get performance statistics including URL tracking"""
+        stats = self.stats.copy()
+        stats['tracked_urls_count'] = len(self.tracked_urls)
+        stats['url_debug_mode'] = self.url_debug_mode
+        stats['whitelist_patterns'] = len(self.url_whitelist)
+        return stats
+    
+    def analyze_urls(self) -> Dict:
+        """Analyze tracked URLs and provide recommendations"""
+        if not self.tracked_urls:
+            return {"error": "No URLs tracked. Enable URL debugging first."}
+        
+        analysis = {
+            'total_urls': len(self.tracked_urls),
+            'unique_domains': len(set(url.split('/')[2] if len(url.split('/')) > 2 else '' for url in self.tracked_urls)),
+            'resource_types': {},
+            'third_party_urls': [],
+            'recommendations': []
+        }
+        
+        # Categorize URLs
+        for url in self.tracked_urls:
+            if any(ext in url.lower() for ext in self.blocked_resources):
+                resource_type = 'blocked_resource'
+            elif '.js' in url.lower():
+                resource_type = 'javascript'
+            elif '.css' in url.lower():
+                resource_type = 'stylesheet'
+            elif any(ext in url.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
+                resource_type = 'image'
+            else:
+                resource_type = 'html/api'
+            
+            analysis['resource_types'][resource_type] = analysis['resource_types'].get(resource_type, 0) + 1
+            
+            # Identify third-party URLs
+            if any(tracker in url.lower() for tracker in ['google-analytics', 'facebook', 'twitter', 'ads', 'tracking']):
+                analysis['third_party_urls'].append(url)
+        
+        # Generate recommendations
+        if analysis['resource_types'].get('blocked_resource', 0) > 0:
+            analysis['recommendations'].append(f"Block {analysis['resource_types']['blocked_resource']} unnecessary resources")
+        if len(analysis['third_party_urls']) > 0:
+            analysis['recommendations'].append(f"Block {len(analysis['third_party_urls'])} third-party tracking URLs")
+        if analysis['resource_types'].get('image', 0) > 10:
+            analysis['recommendations'].append("Consider disabling image loading (already implemented)")
+        
+        return analysis
 
 
 if __name__ == '__main__':
@@ -1591,6 +1948,21 @@ if __name__ == '__main__':
     if args.category:
         sentences = scraper.scrape_category(args.website, args.category, args.max_articles)
         print(f"\n✅ Extracted {len(sentences)} sentences")
+
+        if scraper.url_debug_mode and scraper.tracked_urls:
+            filename = f"tracked_urls_{args.website}_{args.category}.txt"
+            scraper.save_tracked_urls(filename)
+            analysis = scraper.analyze_urls()
+            print(f"\n📊 URL Analysis saved to {filename}")
+            print(f"   Total URLs: {analysis.get('total_urls', 0)}")
+            print(f"   Unique domains: {analysis.get('unique_domains', 0)}")
+            resource_types = analysis.get('resource_types', {})
+            if resource_types:
+                print(f"   Resource types: {resource_types}")
+            if analysis.get('recommendations'):
+                print("   Recommendations:")
+                for rec in analysis['recommendations']:
+                    print(f"    - {rec}")
     else:
         result = scraper.scrape_website(args.website, max_articles=args.max_articles)
         print(f"\n✅ {result}")
