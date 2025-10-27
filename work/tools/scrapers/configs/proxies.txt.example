@@ -1,0 +1,78 @@
+# Proxy List Example
+# ==================
+# Copy this file to 'proxies.txt' and add your actual proxies
+# Format: [protocol://][username:password@]host:port
+#
+# Supported protocols: http, https, socks4, socks5
+# If no protocol specified, http is assumed
+
+# ==================
+# HTTP Proxies
+# ==================
+
+# Simple HTTP proxy (no authentication)
+# http://proxy1.example.com:8080
+# http://proxy2.example.com:3128
+
+# HTTP proxy with authentication
+# http://username:password@proxy3.example.com:8080
+
+# ==================
+# SOCKS Proxies
+# ==================
+
+# SOCKS5 proxy
+# socks5://proxy4.example.com:1080
+
+# SOCKS5 with authentication
+# socks5://username:password@proxy5.example.com:1080
+
+# ==================
+# No Protocol (assumes HTTP)
+# ==================
+
+# Short format - assumes http://
+# proxy6.example.com:8080
+# proxy7.example.com:3128
+
+# ==================
+# Where to Get Proxies
+# ==================
+#
+# FREE (not recommended for production):
+# - https://www.proxy-list.download/
+# - https://free-proxy-list.net/
+# - https://www.sslproxies.org/
+#
+# PAID (recommended for production):
+# - Bright Data (brightdata.com) - $500+/month
+# - Oxylabs (oxylabs.io) - $300+/month
+# - SmartProxy (smartproxy.com) - $75+/month
+# - ProxyMesh (proxymesh.com) - $20+/month
+# - WebShare (webshare.io) - $10+/month
+#
+# ==================
+# Testing Your Proxies
+# ==================
+#
+# Test a proxy with curl:
+#   curl -x http://proxy:port https://api.ipify.org
+#
+# Should return proxy's IP address, not your real IP
+#
+# Test with Python:
+#   import requests
+#   proxies = {'http': 'http://proxy:port', 'https': 'http://proxy:port'}
+#   response = requests.get('https://api.ipify.org', proxies=proxies)
+#   print(response.text)  # Proxy IP
+#
+# ==================
+# Proxy Rotation Tips
+# ==================
+#
+# 1. Mix of different proxy providers (better distribution)
+# 2. Monitor performance (remove slow/dead proxies)
+# 3. Use 'round_robin' for even distribution
+# 4. Use 'random' to avoid detection patterns
+# 5. Keep proxy list updated (proxies die often)
+#

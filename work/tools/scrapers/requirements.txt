@@ -36,6 +36,9 @@ selenium-stealth==1.0.6
 # Database
 # sqlite3 is built-in to Python
 
+# Advanced Features (Optional)
+redis==5.0.1  # For caching feature
+
 # Development Tools
 black==23.11.0
 flake8==6.1.0

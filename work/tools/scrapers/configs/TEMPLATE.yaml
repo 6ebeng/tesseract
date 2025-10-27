@@ -33,6 +33,54 @@ language_detection:
 # ============================================================================
 
 # ============================================================================
+# OPTIONAL: Rate Limiting (prevent server overload and IP blocking)
+# ============================================================================
+rate_limiting:
+  enabled: true
+  max_requests_per_minute: 30  # Maximum requests per minute
+  # Lower values = more polite to servers but slower scraping
+  # Higher values = faster scraping but risk of getting blocked
+  # Recommended: 20-40 for production, 10-20 for testing
+
+# ============================================================================
+# OPTIONAL: Redis Caching (reduce redundant scraping)
+# Requires Redis server running (install: apt-get install redis-server)
+# ============================================================================
+caching:
+  enabled: true
+  redis_host: 'localhost'  # Redis server host
+  redis_port: 6379         # Redis server port
+  redis_db: 0              # Redis database number
+  redis_password: null     # Redis password (if required)
+  ttl_hours: 24            # Cache validity in hours
+  # Caches both page HTML and extracted articles
+  # Set ttl_hours: 0 to force fresh data on every run
+
+# ============================================================================
+# OPTIONAL: Retry Logic (handle network errors and timeouts)
+# ============================================================================
+retry:
+  enabled: true
+  max_attempts: 3          # Maximum retry attempts (including first try)
+  delay_seconds: 2.0       # Fixed delay between retries
+  retry_on_empty: true     # Retry if result is empty
+  # Retries on: network errors, timeouts, empty results
+
+# ============================================================================
+# OPTIONAL: Proxy Rotation (bypass IP-based blocking)
+# Requires proxy list file (one proxy per line)
+# ============================================================================
+proxy:
+  enabled: false
+  proxy_file: 'proxies.txt'  # Path to proxy list file
+  rotation_strategy: 'round_robin'  # Options: 'round_robin' or 'random'
+  # Works with both Selenium and FlareSolverr
+  # Proxy file format:
+  #   http://proxy1.example.com:8080
+  #   http://user:pass@proxy2.example.com:3128
+  #   socks5://proxy3.example.com:1080
+
+# ============================================================================
 # UNIVERSAL PAGINATION (applies to ALL categories unless category overrides)
 # ============================================================================
 pagination:

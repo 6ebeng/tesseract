@@ -7,13 +7,21 @@ Implements:
 - Article deduplication (content similarity detection)
 - Browser fingerprinting prevention (stealth mode)
 - Language-specific text processing
+- Rate limiting (prevent server overload and blocking)
+- Redis caching (page HTML and extracted articles)
+- Retry logic (handle network errors and timeouts)
+- Proxy rotation (bypass IP-based blocking)
 
 Usage:
     from advanced_features import (
         LanguageDetector,
         ArticleDeduplicator,
         StealthBrowser,
-        MultiLanguageConfig
+        MultiLanguageConfig,
+        RateLimiter,
+        RedisCache,
+        RetryHandler,
+        ProxyRotator
     )
     
     # Language detection
@@ -22,11 +30,30 @@ Usage:
     
     # Deduplication
     dedup = ArticleDeduplicator()
-    is_duplicate = dedup.is_duplicate(article_text, threshold=0.85)
+    is_duplicate, reason = dedup.is_duplicate(article_dict, url, title, content)
     
     # Stealth mode
     stealth = StealthBrowser()
     driver = stealth.create_driver()
+    
+    # Rate limiting
+    rate_limiter = RateLimiter(max_requests_per_minute=30)
+    rate_limiter.wait_if_needed()  # Enforces rate limit
+    
+    # Redis caching
+    cache = RedisCache(ttl_hours=24)
+    html = cache.get_page_html(url)  # Returns cached or None
+    cache.set_page_html(url, html)   # Cache for 24 hours
+    
+    # Retry logic
+    retry = RetryHandler(max_attempts=3, delay_seconds=2.0)
+    result, success, attempts = retry.execute_with_retry(scrape_function, url)
+    
+    # Proxy rotation
+    proxies = ProxyRotator('proxies.txt', rotation_strategy='round_robin')
+    proxy = proxies.get_next_proxy()  # Get next proxy
+    selenium_config = proxies.get_selenium_proxy_config(proxy)
+    flare_config = proxies.get_flaresolverr_proxy_config(proxy)
 """
 
 import hashlib
@@ -38,9 +65,20 @@ import json
 from datetime import datetime
 import sqlite3
 from collections import Counter
+import time
+import random
+import requests
 
 
 logger = logging.getLogger(__name__)
+
+# Try to import Redis (optional dependency)
+try:
+    import redis
+    HAS_REDIS = True
+except ImportError:
+    HAS_REDIS = False
+    logger.warning("Redis not installed. Caching feature will be disabled. Install: pip install redis")
 
 
 # ==================== MULTI-LANGUAGE SUPPORT ====================
@@ -603,6 +641,608 @@ class StealthBrowser:
         logger.info("✅ Stealth mode applied to browser")
 
 
+# ==================== RATE LIMITING ====================
+
+class RateLimiter:
+    """
+    Rate limiting for web scraping
+    
+    Prevents overwhelming servers and reduces risk of being blocked.
+    Configurable per-website with max requests per minute.
+    """
+    
+    def __init__(self, max_requests_per_minute: int = 30):
+        """
+        Args:
+            max_requests_per_minute: Maximum requests allowed per minute
+        """
+        self.max_requests_per_minute = max_requests_per_minute
+        self.min_delay = 60.0 / max_requests_per_minute if max_requests_per_minute > 0 else 0
+        self.request_times = []
+        
+        logger.info(f"⏱️  Rate limiter initialized: {max_requests_per_minute} req/min (min delay: {self.min_delay:.2f}s)")
+    
+    def wait_if_needed(self):
+        """
+        Wait if necessary to respect rate limit
+        
+        Tracks request times and enforces minimum delay between requests
+        """
+        if self.max_requests_per_minute <= 0:
+            return  # No rate limiting
+        
+        now = time.time()
+        
+        # Remove old request times (older than 1 minute)
+        cutoff = now - 60
+        self.request_times = [t for t in self.request_times if t > cutoff]
+        
+        # Check if we've hit the limit
+        if len(self.request_times) >= self.max_requests_per_minute:
+            # Calculate how long to wait
+            oldest_request = self.request_times[0]
+            wait_until = oldest_request + 60
+            wait_time = wait_until - now
+            
+            if wait_time > 0:
+                logger.info(f"⏳ Rate limit reached ({self.max_requests_per_minute} req/min). Waiting {wait_time:.1f}s...")
+                time.sleep(wait_time)
+                now = time.time()
+        
+        # Enforce minimum delay between consecutive requests
+        if self.request_times:
+            time_since_last = now - self.request_times[-1]
+            if time_since_last < self.min_delay:
+                delay = self.min_delay - time_since_last
+                time.sleep(delay)
+                now = time.time()
+        
+        # Record this request
+        self.request_times.append(now)
+    
+    def get_stats(self) -> Dict:
+        """Get rate limiting statistics"""
+        now = time.time()
+        cutoff = now - 60
+        recent_requests = [t for t in self.request_times if t > cutoff]
+        
+        return {
+            'max_requests_per_minute': self.max_requests_per_minute,
+            'min_delay_seconds': self.min_delay,
+            'requests_last_minute': len(recent_requests),
+            'current_rate': f"{len(recent_requests)}/min",
+            'remaining_capacity': max(0, self.max_requests_per_minute - len(recent_requests))
+        }
+
+
+# ==================== CACHING (REDIS) ====================
+
+class RedisCache:
+    """
+    Redis-based caching for web scraping
+    
+    Caches both page HTML and extracted articles to reduce redundant scraping.
+    Supports configurable TTL (time-to-live) in hours.
+    """
+    
+    def __init__(
+        self,
+        host: str = 'localhost',
+        port: int = 6379,
+        db: int = 0,
+        password: Optional[str] = None,
+        ttl_hours: int = 24,
+        prefix: str = 'scraper:'
+    ):
+        """
+        Args:
+            host: Redis server host
+            port: Redis server port
+            db: Redis database number
+            password: Redis password (if required)
+            ttl_hours: Cache TTL in hours
+            prefix: Key prefix for namespacing
+        """
+        if not HAS_REDIS:
+            raise ImportError("Redis not installed. Install: pip install redis")
+        
+        self.ttl_seconds = ttl_hours * 3600
+        self.prefix = prefix
+        
+        try:
+            self.redis = redis.Redis(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                decode_responses=True,
+                socket_connect_timeout=5
+            )
+            
+            # Test connection
+            self.redis.ping()
+            logger.info(f"✅ Redis cache connected: {host}:{port} (TTL: {ttl_hours}h)")
+        
+        except redis.ConnectionError as e:
+            logger.error(f"❌ Redis connection failed: {e}")
+            raise
+    
+    def _make_key(self, key_type: str, identifier: str) -> str:
+        """Generate namespaced cache key"""
+        # Hash long URLs/identifiers for consistent key length
+        hashed = hashlib.md5(identifier.encode()).hexdigest()
+        return f"{self.prefix}{key_type}:{hashed}"
+    
+    def get_page_html(self, url: str) -> Optional[str]:
+        """
+        Get cached page HTML
+        
+        Args:
+            url: Page URL
+        
+        Returns:
+            Cached HTML or None if not found/expired
+        """
+        key = self._make_key('html', url)
+        
+        try:
+            html = self.redis.get(key)
+            if html:
+                logger.debug(f"✅ Cache HIT (HTML): {url[:50]}...")
+                return html
+            else:
+                logger.debug(f"❌ Cache MISS (HTML): {url[:50]}...")
+                return None
+        
+        except Exception as e:
+            logger.error(f"Redis get error: {e}")
+            return None
+    
+    def set_page_html(self, url: str, html: str):
+        """
+        Cache page HTML
+        
+        Args:
+            url: Page URL
+            html: Page HTML content
+        """
+        key = self._make_key('html', url)
+        
+        try:
+            self.redis.setex(key, self.ttl_seconds, html)
+            logger.debug(f"💾 Cached HTML: {url[:50]}... (TTL: {self.ttl_seconds}s)")
+        
+        except Exception as e:
+            logger.error(f"Redis set error: {e}")
+    
+    def get_articles(self, category_url: str) -> Optional[List[Dict]]:
+        """
+        Get cached extracted articles for a category
+        
+        Args:
+            category_url: Category page URL
+        
+        Returns:
+            List of cached articles or None if not found/expired
+        """
+        key = self._make_key('articles', category_url)
+        
+        try:
+            data = self.redis.get(key)
+            if data:
+                articles = json.loads(data)
+                logger.debug(f"✅ Cache HIT (Articles): {category_url[:50]}... ({len(articles)} articles)")
+                return articles
+            else:
+                logger.debug(f"❌ Cache MISS (Articles): {category_url[:50]}...")
+                return None
+        
+        except Exception as e:
+            logger.error(f"Redis get error: {e}")
+            return None
+    
+    def set_articles(self, category_url: str, articles: List[Dict]):
+        """
+        Cache extracted articles for a category
+        
+        Args:
+            category_url: Category page URL
+            articles: List of extracted articles
+        """
+        key = self._make_key('articles', category_url)
+        
+        try:
+            data = json.dumps(articles, ensure_ascii=False)
+            self.redis.setex(key, self.ttl_seconds, data)
+            logger.debug(f"💾 Cached Articles: {category_url[:50]}... ({len(articles)} articles, TTL: {self.ttl_seconds}s)")
+        
+        except Exception as e:
+            logger.error(f"Redis set error: {e}")
+    
+    def invalidate(self, pattern: str = '*'):
+        """
+        Invalidate cache entries matching pattern
+        
+        Args:
+            pattern: Key pattern to match (default: all)
+        """
+        try:
+            full_pattern = f"{self.prefix}{pattern}"
+            keys = self.redis.keys(full_pattern)
+            
+            if keys:
+                deleted = self.redis.delete(*keys)
+                logger.info(f"🗑️  Invalidated {deleted} cache entries: {pattern}")
+            else:
+                logger.info(f"No cache entries found for pattern: {pattern}")
+        
+        except Exception as e:
+            logger.error(f"Redis delete error: {e}")
+    
+    def get_stats(self) -> Dict:
+        """Get cache statistics"""
+        try:
+            # Count keys by type
+            html_keys = len(self.redis.keys(f"{self.prefix}html:*"))
+            article_keys = len(self.redis.keys(f"{self.prefix}articles:*"))
+            total_keys = html_keys + article_keys
+            
+            # Get Redis info
+            info = self.redis.info('memory')
+            memory_used = info.get('used_memory_human', 'N/A')
+            
+            return {
+                'total_cached_items': total_keys,
+                'cached_html_pages': html_keys,
+                'cached_article_sets': article_keys,
+                'ttl_hours': self.ttl_seconds / 3600,
+                'memory_used': memory_used
+            }
+        
+        except Exception as e:
+            logger.error(f"Redis stats error: {e}")
+            return {'error': str(e)}
+
+
+# ==================== RETRY LOGIC ====================
+
+class RetryHandler:
+    """
+    Retry logic for web scraping
+    
+    Handles network errors, timeouts, and empty results with configurable
+    retry attempts and fixed delays.
+    """
+    
+    def __init__(
+        self,
+        max_attempts: int = 3,
+        delay_seconds: float = 2.0,
+        retry_on_empty: bool = True
+    ):
+        """
+        Args:
+            max_attempts: Maximum retry attempts (including first try)
+            delay_seconds: Fixed delay between retries
+            retry_on_empty: Retry if result is empty
+        """
+        self.max_attempts = max_attempts
+        self.delay_seconds = delay_seconds
+        self.retry_on_empty = retry_on_empty
+        
+        # Track retry statistics
+        self.total_attempts = 0
+        self.successful_retries = 0
+        self.failed_after_retries = 0
+        
+        logger.info(f"🔁 Retry handler initialized: {max_attempts} attempts, {delay_seconds}s delay")
+    
+    def execute_with_retry(
+        self,
+        func,
+        *args,
+        **kwargs
+    ) -> Tuple[Optional[any], bool, int]:
+        """
+        Execute function with retry logic
+        
+        Args:
+            func: Function to execute
+            *args: Function arguments
+            **kwargs: Function keyword arguments
+        
+        Returns:
+            (result, success, attempts_used)
+        """
+        last_error = None
+        
+        for attempt in range(1, self.max_attempts + 1):
+            self.total_attempts += 1
+            
+            try:
+                logger.debug(f"Attempt {attempt}/{self.max_attempts}...")
+                
+                result = func(*args, **kwargs)
+                
+                # Check if result is empty (if retry_on_empty enabled)
+                if self.retry_on_empty and self._is_empty_result(result):
+                    logger.warning(f"⚠️  Empty result on attempt {attempt}/{self.max_attempts}")
+                    
+                    if attempt < self.max_attempts:
+                        logger.info(f"⏳ Retrying in {self.delay_seconds}s...")
+                        time.sleep(self.delay_seconds)
+                        continue
+                    else:
+                        logger.error(f"❌ All {self.max_attempts} attempts returned empty results")
+                        self.failed_after_retries += 1
+                        return (result, False, attempt)
+                
+                # Success!
+                if attempt > 1:
+                    logger.info(f"✅ Succeeded on attempt {attempt}/{self.max_attempts}")
+                    self.successful_retries += 1
+                
+                return (result, True, attempt)
+            
+            except (
+                # Network errors
+                requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.RequestException,
+                # Selenium errors
+                Exception  # Catch-all for selenium errors (TimeoutException, etc.)
+            ) as e:
+                last_error = e
+                error_type = type(e).__name__
+                
+                logger.warning(f"⚠️  {error_type} on attempt {attempt}/{self.max_attempts}: {str(e)[:100]}")
+                
+                if attempt < self.max_attempts:
+                    logger.info(f"⏳ Retrying in {self.delay_seconds}s...")
+                    time.sleep(self.delay_seconds)
+                else:
+                    logger.error(f"❌ All {self.max_attempts} attempts failed")
+                    self.failed_after_retries += 1
+        
+        # All attempts failed
+        return (None, False, self.max_attempts)
+    
+    def _is_empty_result(self, result) -> bool:
+        """Check if result is considered empty"""
+        if result is None:
+            return True
+        
+        if isinstance(result, (list, dict, str)) and len(result) == 0:
+            return True
+        
+        return False
+    
+    def get_stats(self) -> Dict:
+        """Get retry statistics"""
+        success_rate = (
+            (self.total_attempts - self.failed_after_retries) / self.total_attempts * 100
+            if self.total_attempts > 0
+            else 0
+        )
+        
+        return {
+            'max_attempts': self.max_attempts,
+            'delay_seconds': self.delay_seconds,
+            'retry_on_empty': self.retry_on_empty,
+            'total_attempts': self.total_attempts,
+            'successful_retries': self.successful_retries,
+            'failed_after_retries': self.failed_after_retries,
+            'success_rate': f"{success_rate:.1f}%"
+        }
+
+
+# ==================== PROXY SUPPORT ====================
+
+class ProxyRotator:
+    """
+    Rotating proxy support for web scraping
+    
+    Loads proxies from file and rotates through them.
+    Works with both direct Selenium and FlareSolverr.
+    """
+    
+    def __init__(
+        self,
+        proxy_file: str,
+        rotation_strategy: str = 'round_robin'
+    ):
+        """
+        Args:
+            proxy_file: Path to file with proxy list (one per line)
+            rotation_strategy: 'round_robin' or 'random'
+        """
+        self.proxy_file = Path(proxy_file)
+        self.rotation_strategy = rotation_strategy
+        self.proxies = []
+        self.current_index = 0
+        
+        # Track proxy usage
+        self.proxy_stats = {}
+        
+        self._load_proxies()
+        
+        logger.info(f"🔄 Proxy rotator initialized: {len(self.proxies)} proxies ({rotation_strategy})")
+    
+    def _load_proxies(self):
+        """Load proxies from file"""
+        if not self.proxy_file.exists():
+            raise FileNotFoundError(f"Proxy file not found: {self.proxy_file}")
+        
+        with open(self.proxy_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                
+                # Skip empty lines and comments
+                if not line or line.startswith('#'):
+                    continue
+                
+                # Parse proxy format
+                proxy = self._parse_proxy(line)
+                if proxy:
+                    self.proxies.append(proxy)
+                    self.proxy_stats[proxy['url']] = {
+                        'uses': 0,
+                        'successes': 0,
+                        'failures': 0
+                    }
+        
+        if not self.proxies:
+            raise ValueError(f"No valid proxies found in {self.proxy_file}")
+        
+        logger.info(f"📋 Loaded {len(self.proxies)} proxies from {self.proxy_file}")
+    
+    def _parse_proxy(self, line: str) -> Optional[Dict]:
+        """
+        Parse proxy string
+        
+        Formats supported:
+        - http://proxy:port
+        - http://user:pass@proxy:port
+        - socks5://proxy:port
+        - proxy:port (assumes http)
+        """
+        try:
+            # Add http:// if no protocol specified
+            if '://' not in line:
+                line = f'http://{line}'
+            
+            # Parse URL
+            from urllib.parse import urlparse
+            parsed = urlparse(line)
+            
+            proxy_dict = {
+                'url': line,
+                'protocol': parsed.scheme,
+                'host': parsed.hostname,
+                'port': parsed.port,
+                'username': parsed.username,
+                'password': parsed.password
+            }
+            
+            return proxy_dict
+        
+        except Exception as e:
+            logger.warning(f"Invalid proxy format: {line} ({e})")
+            return None
+    
+    def get_next_proxy(self) -> Dict:
+        """
+        Get next proxy based on rotation strategy
+        
+        Returns:
+            Proxy dict with connection details
+        """
+        if not self.proxies:
+            raise ValueError("No proxies available")
+        
+        if self.rotation_strategy == 'random':
+            proxy = random.choice(self.proxies)
+        else:  # round_robin
+            proxy = self.proxies[self.current_index]
+            self.current_index = (self.current_index + 1) % len(self.proxies)
+        
+        # Track usage
+        self.proxy_stats[proxy['url']]['uses'] += 1
+        
+        logger.debug(f"🔄 Using proxy: {proxy['host']}:{proxy['port']}")
+        
+        return proxy
+    
+    def mark_success(self, proxy: Dict):
+        """Mark proxy as successful"""
+        self.proxy_stats[proxy['url']]['successes'] += 1
+    
+    def mark_failure(self, proxy: Dict):
+        """Mark proxy as failed"""
+        self.proxy_stats[proxy['url']]['failures'] += 1
+        
+        # Calculate failure rate
+        stats = self.proxy_stats[proxy['url']]
+        total = stats['successes'] + stats['failures']
+        failure_rate = stats['failures'] / total if total > 0 else 0
+        
+        # Warn if failure rate is high
+        if failure_rate > 0.5 and total >= 5:
+            logger.warning(f"⚠️  High failure rate for proxy {proxy['host']}:{proxy['port']} ({failure_rate:.1%})")
+    
+    def get_selenium_proxy_config(self, proxy: Dict) -> Dict:
+        """
+        Get Selenium proxy configuration
+        
+        Args:
+            proxy: Proxy dict
+        
+        Returns:
+            Dict with Selenium proxy settings
+        """
+        config = {
+            'proxyType': 'MANUAL',
+            'httpProxy': f"{proxy['host']}:{proxy['port']}",
+            'sslProxy': f"{proxy['host']}:{proxy['port']}",
+        }
+        
+        # Add SOCKS proxy if needed
+        if proxy['protocol'] == 'socks5':
+            config['socksProxy'] = f"{proxy['host']}:{proxy['port']}"
+            config['socksVersion'] = 5
+        
+        return config
+    
+    def get_flaresolverr_proxy_config(self, proxy: Dict) -> str:
+        """
+        Get FlareSolverr proxy configuration
+        
+        Args:
+            proxy: Proxy dict
+        
+        Returns:
+            Proxy URL string for FlareSolverr
+        """
+        # FlareSolverr expects: protocol://user:pass@host:port
+        if proxy['username'] and proxy['password']:
+            return f"{proxy['protocol']}://{proxy['username']}:{proxy['password']}@{proxy['host']}:{proxy['port']}"
+        else:
+            return f"{proxy['protocol']}://{proxy['host']}:{proxy['port']}"
+    
+    def get_stats(self) -> Dict:
+        """Get proxy statistics"""
+        total_uses = sum(s['uses'] for s in self.proxy_stats.values())
+        total_successes = sum(s['successes'] for s in self.proxy_stats.values())
+        total_failures = sum(s['failures'] for s in self.proxy_stats.values())
+        
+        # Find best/worst proxies
+        proxy_performance = []
+        for url, stats in self.proxy_stats.items():
+            total = stats['successes'] + stats['failures']
+            success_rate = stats['successes'] / total if total > 0 else 0
+            
+            proxy_performance.append({
+                'url': url,
+                'uses': stats['uses'],
+                'success_rate': f"{success_rate:.1%}",
+                'successes': stats['successes'],
+                'failures': stats['failures']
+            })
+        
+        # Sort by success rate
+        proxy_performance.sort(key=lambda x: float(x['success_rate'].rstrip('%')), reverse=True)
+        
+        return {
+            'total_proxies': len(self.proxies),
+            'rotation_strategy': self.rotation_strategy,
+            'total_uses': total_uses,
+            'total_successes': total_successes,
+            'total_failures': total_failures,
+            'overall_success_rate': f"{total_successes / (total_successes + total_failures) * 100:.1f}%" if (total_successes + total_failures) > 0 else "0%",
+            'proxy_performance': proxy_performance
+        }
+
+
 # Example configuration with multi-language support
 EXAMPLE_MULTILANG_CONFIG = '''
 kurdsat:
@@ -708,3 +1348,121 @@ if __name__ == '__main__':
     print(f"   Arguments: {len(options['arguments'])} stealth flags")
     print(f"   WebRTC: Disabled")
     print(f"   Canvas fingerprinting: Protected")
+    
+    print()
+    
+    # Rate Limiting
+    print("4. Rate Limiting:")
+    rate_limiter = RateLimiter(max_requests_per_minute=30)
+    print(f"   Max requests: {rate_limiter.max_requests_per_minute}/min")
+    print(f"   Min delay: {rate_limiter.min_delay:.2f}s")
+    
+    # Simulate requests
+    for i in range(3):
+        rate_limiter.wait_if_needed()
+        print(f"   Request {i+1} sent")
+    
+    stats = rate_limiter.get_stats()
+    print(f"   Current rate: {stats['current_rate']}, Remaining: {stats['remaining_capacity']}")
+    
+    print()
+    
+    # Redis Cache (if available)
+    print("5. Redis Cache:")
+    if HAS_REDIS:
+        try:
+            cache = RedisCache(ttl_hours=24)
+            
+            # Test caching
+            test_url = 'https://test.com/article'
+            test_html = '<html><body>Test content</body></html>'
+            
+            # Set cache
+            cache.set_page_html(test_url, test_html)
+            
+            # Get cache
+            cached = cache.get_page_html(test_url)
+            print(f"   Cache test: {'✅ PASS' if cached == test_html else '❌ FAIL'}")
+            
+            stats = cache.get_stats()
+            print(f"   Cached items: {stats['total_cached_items']} (HTML: {stats['cached_html_pages']}, Articles: {stats['cached_article_sets']})")
+            print(f"   Memory used: {stats['memory_used']}")
+            
+            # Cleanup test data
+            cache.invalidate('*')
+        
+        except Exception as e:
+            print(f"   ⚠️  Redis not available: {e}")
+            print(f"   Install Redis: https://redis.io/docs/getting-started/")
+    else:
+        print(f"   ⚠️  Redis module not installed")
+        print(f"   Install: pip install redis")
+    
+    print()
+    
+    # Retry Logic
+    print("6. Retry Logic:")
+    retry_handler = RetryHandler(max_attempts=3, delay_seconds=1.0)
+    
+    # Test function that fails twice then succeeds
+    class Counter:
+        def __init__(self):
+            self.count = 0
+    
+    counter = Counter()
+    
+    def flaky_function():
+        counter.count += 1
+        if counter.count < 3:
+            raise Exception("Simulated network error")
+        return "Success!"
+    
+    result, success, attempts = retry_handler.execute_with_retry(flaky_function)
+    print(f"   Result: {result}")
+    print(f"   Success: {success}, Attempts: {attempts}")
+    
+    stats = retry_handler.get_stats()
+    print(f"   Total attempts: {stats['total_attempts']}, Success rate: {stats['success_rate']}")
+    
+    print()
+    
+    # Proxy Rotation
+    print("7. Proxy Rotation:")
+    
+    # Create sample proxy file
+    sample_proxies = """# Proxy list - one per line
+http://proxy1.example.com:8080
+http://user:pass@proxy2.example.com:3128
+socks5://proxy3.example.com:1080
+"""
+    
+    proxy_file = Path('test_proxies.txt')
+    proxy_file.write_text(sample_proxies)
+    
+    try:
+        proxy_rotator = ProxyRotator('test_proxies.txt', rotation_strategy='round_robin')
+        
+        # Get proxies
+        for i in range(3):
+            proxy = proxy_rotator.get_next_proxy()
+            print(f"   Proxy {i+1}: {proxy['protocol']}://{proxy['host']}:{proxy['port']}")
+            
+            # Simulate success
+            proxy_rotator.mark_success(proxy)
+        
+        stats = proxy_rotator.get_stats()
+        print(f"   Total proxies: {stats['total_proxies']}")
+        print(f"   Strategy: {stats['rotation_strategy']}")
+        print(f"   Total uses: {stats['total_uses']}")
+        
+        # Cleanup
+        proxy_file.unlink()
+    
+    except Exception as e:
+        print(f"   ⚠️  Error: {e}")
+        if proxy_file.exists():
+            proxy_file.unlink()
+    
+    print()
+    print("✅ Demo complete!")
+
