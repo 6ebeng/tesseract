@@ -36,6 +36,7 @@ url_filtering:
 ## 📊 What's Blocked vs Allowed
 
 ### ❌ BLOCKED (Everything Except Whitelist)
+
 - Images (`.jpg`, `.png`, `.gif`, `.svg`)
 - CSS files (`.css`)
 - Fonts (`.woff`, `.woff2`, `.ttf`)
@@ -47,6 +48,7 @@ url_filtering:
 - **All external resources**
 
 ### ✅ ALLOWED (Whitelist Only)
+
 - Rudaw category pages (`/sorani/kurdistan`)
 - Rudaw article pages (`/sorani/kurdistan/2710202522`)
 - **Only HTML content**
@@ -54,23 +56,26 @@ url_filtering:
 ## 🔧 Common Modifications
 
 ### Add New Category
+
 ```yaml
 url_filtering:
   whitelist:
     - 'https://www.rudaw.net/sorani/*'
-    - 'https://www.rudaw.net/sorani/NEWCATEGORY/*'  # Add here
+    - 'https://www.rudaw.net/sorani/NEWCATEGORY/*' # Add here
 ```
 
 ### Switch to Blacklist-Only (More Flexible)
+
 ```yaml
 url_filtering:
-  whitelist: []  # Empty = allow all
+  whitelist: [] # Empty = allow all
   blacklist:
     - '*.facebook.com'
     - '*.google-analytics.com'
 ```
 
 ### Disable Filtering
+
 ```yaml
 # Comment out entire section
 # url_filtering:
@@ -80,28 +85,31 @@ url_filtering:
 
 ## 📈 Performance Expectations
 
-| Scenario | Articles | Time | Network | Speed Gain |
-|----------|----------|------|---------|------------|
-| Test (2 articles) | 2 | ~5s | ~100 KB | 20x faster |
-| Small (50 articles) | 50 | ~30-60s | ~10-20 MB | 15x faster |
-| Medium (200 articles) | 200 | ~2-5 min | ~50-100 MB | 12x faster |
-| Large (1000 articles) | 1000 | ~10-15 min | ~200-300 MB | 10x faster |
+| Scenario              | Articles | Time       | Network     | Speed Gain |
+| --------------------- | -------- | ---------- | ----------- | ---------- |
+| Test (2 articles)     | 2        | ~5s        | ~100 KB     | 20x faster |
+| Small (50 articles)   | 50       | ~30-60s    | ~10-20 MB   | 15x faster |
+| Medium (200 articles) | 200      | ~2-5 min   | ~50-100 MB  | 12x faster |
+| Large (1000 articles) | 1000     | ~10-15 min | ~200-300 MB | 10x faster |
 
 ## 🐛 Troubleshooting
 
 ### No Sentences Extracted
+
 ```bash
 # Check if whitelist is too restrictive
 # Try with blacklist-only approach instead
 ```
 
 ### Slow Performance
+
 ```bash
 # Verify whitelist is enabled in rudaw.yaml
 # Check debug_urls: false (should be disabled)
 ```
 
 ### Chrome Errors
+
 ```bash
 # Performance logs don't work in headless
 # This is expected - use log parsing instead

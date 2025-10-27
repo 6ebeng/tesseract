@@ -451,13 +451,13 @@ if error_handler.has_critical_errors():
 
 ### 📚 Documentation Files
 
-| Document | Purpose | Location |
-|----------|---------|----------|
-| **QUICK_REFERENCE.md** | 🚀 Quick commands & common tasks | `docs/` |
-| **URL_FILTERING_EASY_GUIDE.md** | 🎯 5 flexible configuration options | `docs/` |
-| **URL_FILTERING_MERGING_GUIDE.md** | 🔄 Pattern merging guide | `docs/` |
-| **URL_FILTERING.md** | � URL filtering system documentation | `docs/` |
-| **ADVANCED_FEATURES.md** | ⚡ Rate limiting, caching, retry, proxy | `docs/` |
+| Document                           | Purpose                                 | Location |
+| ---------------------------------- | --------------------------------------- | -------- |
+| **QUICK_REFERENCE.md**             | 🚀 Quick commands & common tasks        | `docs/`  |
+| **URL_FILTERING_EASY_GUIDE.md**    | 🎯 5 flexible configuration options     | `docs/`  |
+| **URL_FILTERING_MERGING_GUIDE.md** | 🔄 Pattern merging guide                | `docs/`  |
+| **URL_FILTERING.md**               | � URL filtering system documentation    | `docs/`  |
+| **ADVANCED_FEATURES.md**           | ⚡ Rate limiting, caching, retry, proxy | `docs/`  |
 
 ### For Questions or Issues
 
@@ -472,23 +472,26 @@ if error_handler.has_critical_errors():
 **NEW: Pattern Merging** - Combine preset/template with website-specific patterns!
 
 **Before (Inflexible):**
+
 ```yaml
 # Had to choose: ALL from template OR ALL manual
 url_filtering:
-  template: 'rudaw'  # Can't add site-specific patterns
+  template: 'rudaw' # Can't add site-specific patterns
 ```
 
 **After (Flexible - MERGED):**
+
 ```yaml
 # Best of both worlds - patterns are MERGED!
 url_filtering:
-  template: 'rudaw'    # Base: 4 patterns from preset file
-  whitelist:            # Add: 2 site-specific patterns
-    - 'https://www.rudaw.net/sorani/sports/*'  # MERGED = 6 total
+  template: 'rudaw' # Base: 4 patterns from preset file
+  whitelist: # Add: 2 site-specific patterns
+    - 'https://www.rudaw.net/sorani/sports/*' # MERGED = 6 total
     - 'https://www.rudaw.net/sorani/tech/*'
 ```
 
 **5 Configuration Options:**
+
 1. **Template only** - `template: 'rudaw'` (simplest)
 2. **Template + website patterns** - Preset base + site-specific (RECOMMENDED)
 3. **Preset only** - `preset: 'standard'` (standard blocking)
@@ -496,6 +499,7 @@ url_filtering:
 5. **Manual** - Full control, no preset/template
 
 **Benefits:**
+
 - ✅ **Pattern merging** - Preset/template + website = combined
 - ✅ **Common patterns centralized** - Update once in preset file
 - ✅ **Unique patterns localized** - Add in website config
@@ -503,12 +507,14 @@ url_filtering:
 - ✅ **Backward compatible** - Old configs still work
 
 **Configuration Reduction:**
+
 - **Before:** 20-30 lines per site (all patterns in website config)
 - **After Option 1:** 1 line (template only)
 - **After Option 2:** 3-5 lines (template + site-specific additions)
 - **Improvement:** **85-95% less code**
 
 **Example Scenarios:**
+
 ```yaml
 # Scenario 1: Use template as-is
 url_filtering:
@@ -527,7 +533,8 @@ url_filtering:
     - '*custom-tracker.com*'  # Merged with preset blocking
 ```
 
-**See:** 
+**See:**
+
 - `docs/URL_FILTERING_EASY_GUIDE.md` for 5 configuration options
 - `docs/URL_FILTERING_MERGING_GUIDE.md` for complete merging guide
 
