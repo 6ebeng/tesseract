@@ -1,112 +1,90 @@
-# AvaNews - Kurdish News Website
-# Status: ✅ NEW WEBSITE
-# Last Updated: 2025-10-25
-
-name: 'AvaNews'
-base_url: 'https://www.ava.news'
+name: AvaNews
+base_url: https://www.ava.news
 enabled: true
-debug_urls: true  # Temporary: URL tracking for optimization
-
-# ============================================================================
-# URL FILTERING - Preset Based
-# ============================================================================
-
+debug_urls: true
 url_filtering:
-  preset: 'standard'
+  preset: standard
   whitelist:
-    # Core site content
-    - 'www.ava.news/kurdistan'
-    - 'www.ava.news/news/'
-    - 'www.ava.news/business'
-    - 'www.ava.news/culture'
-    - 'www.ava.news/environment'
-    - 'www.ava.news/health'
-    - 'www.ava.news/opinion'
-    - 'www.ava.news/api/'
-    # Next.js static resources (essential for page rendering)
-    - 'www.ava.news/_next/static/'
-    # Embedded media
-    - 'www.facebook.com/plugins/video.php'
-    - 'www.youtube.com/embed/'
+  - '*.ava.news/*'
+  - '*.gstatic.com/*.woff2'
   blacklist:
-    # Analytics & tracking
-    - 'analytics.google.com'
-    - 'stats.g.doubleclick.net'
-    - 'www.google.com/ccm/collect'
-    - 'www.googletagmanager.com'
-    # Cloudflare telemetry (keeps CDN core, blocks monitoring)
-    - 'cloudflareinsights.com'
-    - 'www.ava.news/cdn-cgi/zaraz/'
-    - 'www.ava.news/cdn-cgi/rum'
-
-# ============================================================================
-# ADVANCED FEATURES - All Enabled
-# ============================================================================
-
-# Rate Limiting: Prevent server overload and IP blocking
+  - '*google-analytics.com/*'
+  - '*googletagmanager.com/*'
+  - '*doubleclick.net/*'
+  - '*analytics.google.com/*'
+  - '*stats.g.doubleclick.net/*'
+  - '*facebook.com/*'
+  - '*twitter.com/*'
+  - '*addtoany.com/*'
+  - '*cloudflareinsights.com/*'
+  - '*/beacon.min.js/*'
+  - '*/gtag/*'
+  - '*/analytics/*'
+  - '*?gtm=*'
+  - '*/ccm/collect*'
+  - '*/privacy-sandbox/*'
 rate_limiting:
   enabled: true
-  max_requests_per_minute: 30  # Polite scraping speed
-
-# Redis Caching: Speed up re-runs by caching page HTML and articles
+  max_requests_per_minute: 30
 caching:
   enabled: true
-  redis_host: 'localhost'
+  redis_host: localhost
   redis_port: 6379
-  ttl_hours: 24  # Cache for 24 hours
-
-# Retry Logic: Handle network errors and timeouts
+  ttl_hours: 24
 retry:
   enabled: true
   max_attempts: 3
   delay_seconds: 2
-
-# Proxy Rotation: Bypass IP blocking (requires proxies.txt)
 proxy:
-  enabled: false  # Set to true when proxies.txt is available
-  file: 'proxies.txt'
-  strategy: 'round-robin'  # or 'random'
-
-
-# Universal pagination settings
+  enabled: false
+  file: proxies.txt
+  strategy: round-robin
 pagination:
-  type: 'url_template'
+  type: url_template
   pages: 10
   delay: 2
-  page_param: 'page'
-
+  page_param: page
 selectors:
-  # Article links on collection/list page
-  article_list: 'ul > li > div > div > a'
-  
-  # Article title on article page
-  article_title: ['div.intro > h1']
-  
-  # Article body content
-  article_body: ['div.news-content']
-
+  article_list: ul > li > div > div > a
+  article_title:
+  - div.intro > h1
+  article_body:
+  - div.news-content
 wait:
   selector: null
   timeout: 3
-
 categories:
   news:
-    url: 'https://www.ava.news/kurdistan'
-  
+    url: https://www.ava.news/kurdistan
   economy:
-    url: 'https://www.ava.news/business'
-  
+    url: https://www.ava.news/business
   culture:
-    url: 'https://www.ava.news/culture'
-  
+    url: https://www.ava.news/culture
   environment:
-    url: 'https://www.ava.news/environment'
-  
+    url: https://www.ava.news/environment
   health:
-    url: 'https://www.ava.news/health'
-  
+    url: https://www.ava.news/health
   opinion:
-    url: 'https://www.ava.news/opinion'
+    url: https://www.ava.news/opinion
     selectors:
-      # Opinion category has different article list selector
-      article_list: 'h2 > a'
+      article_list: h2 > a
+request_filter:
+  whitelist:
+  - '*.ava.news/*'
+  - '*.gstatic.com/*.woff2'
+  blacklist:
+  - '*google-analytics.com/*'
+  - '*googletagmanager.com/*'
+  - '*doubleclick.net/*'
+  - '*analytics.google.com/*'
+  - '*stats.g.doubleclick.net/*'
+  - '*facebook.com/*'
+  - '*twitter.com/*'
+  - '*addtoany.com/*'
+  - '*cloudflareinsights.com/*'
+  - '*/beacon.min.js/*'
+  - '*/gtag/*'
+  - '*/analytics/*'
+  - '*?gtm=*'
+  - '*/ccm/collect*'
+  - '*/privacy-sandbox/*'

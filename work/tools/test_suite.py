@@ -153,37 +153,50 @@ def test_website(scraper, website_name, max_articles=5, state=None, track_urls=F
             print(f"   Available categories: {available}")
             return None
     
-    # For URL tracking mode: limit to first enabled category only (unless specific category requested)
-    if track_urls and not category_filter:
-        first_category = list(enabled_categories.keys())[0]
-        enabled_categories = {first_category: enabled_categories[first_category]}
-        print(f"   📊 URL Tracking Mode: Testing only first category '{first_category}'")
+    # For URL tracking mode: override pagination to 1 click/page
+    if track_urls:
+        if not category_filter:
+            # Limit to first enabled category only if no specific category requested
+            first_category = list(enabled_categories.keys())[0]
+            enabled_categories = {first_category: enabled_categories[first_category]}
+            print(f"   📊 URL Tracking Mode: Testing only first category '{first_category}'")
+        else:
+            print(f"   📊 URL Tracking Mode: Active")
+        
         max_articles = 1  # Override to 1 article for URL tracking
         
-        # Temporarily override pagination to 1 page (both website and category level)
+        # Override pagination to 1 page/click for ALL categories (both website and category level)
         config_backup = config.get('pagination', {}).copy() if 'pagination' in config else None
         if 'pagination' not in config:
             config['pagination'] = {}
-        config['pagination']['pages'] = 1
         
-        # Also override category-level pagination if it exists
-        category_config = enabled_categories[first_category]
-        category_pagination_backup = category_config.get('pagination', {}).copy() if 'pagination' in category_config else None
-        if 'pagination' not in category_config:
-            category_config['pagination'] = {}
-        category_config['pagination']['pages'] = 1
+        # Set both 'pages' and 'clicks' to 1 to cover all pagination types
+        config['pagination']['pages'] = 1
+        config['pagination']['clicks'] = 1
+        print(f"   🔧 Website pagination overridden: pages=1, clicks=1")
+        
+        # Also override for ALL enabled categories
+        for cat_name, category_config in enabled_categories.items():
+            if 'pagination' not in category_config:
+                category_config['pagination'] = {}
+            category_config['pagination']['pages'] = 1
+            category_config['pagination']['clicks'] = 1
+        print(f"   🔧 All category pagination overridden: pages=1, clicks=1")
     
     # Override pages if requested (applies to all categories being tested)
     if pages_override is not None:
-        print(f"   📄 Pages Override: Limiting to {pages_override} page(s)")
+        print(f"   📄 Pages Override: Limiting to {pages_override} page(s)/click(s)")
         for cat_name, cat_config in enabled_categories.items():
             if 'pagination' not in cat_config:
                 cat_config['pagination'] = {}
+            # Set both pages and clicks to cover all pagination types
             cat_config['pagination']['pages'] = pages_override
+            cat_config['pagination']['clicks'] = pages_override
         # Also set at website level
         if 'pagination' not in config:
             config['pagination'] = {}
         config['pagination']['pages'] = pages_override
+        config['pagination']['clicks'] = pages_override
     
     # Check if resuming from previous state
     completed_categories = set()
@@ -276,14 +289,7 @@ def test_website(scraper, website_name, max_articles=5, state=None, track_urls=F
         elif 'config_backup' in locals() and config_backup is None and 'pagination' in config:
             del config['pagination']
         
-        # Restore category-level pagination
-        if 'category_pagination_backup' in locals():
-            first_category = list(enabled_categories.keys())[0]
-            category_config = enabled_categories[first_category]
-            if category_pagination_backup is not None:
-                category_config['pagination'] = category_pagination_backup
-            elif 'pagination' in category_config:
-                del category_config['pagination']
+        # Note: Category-level pagination backup/restore removed since we now loop through all categories
     
     # Summary for this website
     successful_cats = [c for c, r in category_results.items() if r['success']]
@@ -315,6 +321,7 @@ def test_website(scraper, website_name, max_articles=5, state=None, track_urls=F
 
 def main():
     """Main test suite"""
+    # Parse arguments first to check for debug flag
     parser = argparse.ArgumentParser(
         description='Test Kurdish news scraper websites',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -402,7 +409,22 @@ Examples:
         help='Clear scraped articles database before testing (force re-scrape all articles)'
     )
     
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        help='Enable detailed debug logging'
+    )
+    
     args = parser.parse_args()
+    
+    # Enable debug logging if requested
+    if args.debug:
+        import logging
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(levelname)s - %(name)s - %(message)s'
+        )
+        print("🐛 Debug logging enabled")
     
     # Handle fresh start
     if args.fresh:
@@ -416,6 +438,10 @@ Examples:
     scraper.scraped_article_links = set()  # Clear in-memory cache
     scraper._scraped_articles_loaded = True  # Skip loading from database
     print("🔓 Article link deduplication disabled for testing")
+    
+    # Disable content deduplication for testing (allows re-testing same content)
+    scraper.deduplicator = None
+    print("🔓 Content deduplication disabled for testing")
     
     # Clear scraped articles database if requested
     if args.clear_scraped:
