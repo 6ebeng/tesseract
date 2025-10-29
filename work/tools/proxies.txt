@@ -1,0 +1,22 @@
+# Example Proxy List
+# Format: protocol://host:port or host:port (assumes http)
+# 
+# You can use:
+# - Free proxy lists (usually unreliable)
+# - Paid proxy services (recommended for production)
+# - Your own proxy servers
+#
+# Examples:
+# http://proxy1.example.com:8080
+# socks5://proxy2.example.com:1080
+# 192.168.1.100:3128
+#
+# For testing with real proxies, replace these with actual proxy addresses:
+
+# Example free proxies (these are just placeholders - replace with real ones)
+# 103.152.112.162:80
+# 185.93.3.123:8080
+# 47.91.45.235:443
+
+# For now, leave empty or commented out unless you have real proxies
+# The system will warn if proxy file is empty but enabled

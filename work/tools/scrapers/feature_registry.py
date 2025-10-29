@@ -100,7 +100,13 @@ class FeatureRegistry:
         module_name, class_name = cls._FEATURE_MAP[feature_name]
         
         try:
-            module = __import__(module_name, fromlist=[class_name])
+            # Try relative import first (for scrapers package modules)
+            try:
+                module = __import__(f'scrapers.{module_name}', fromlist=[class_name])
+            except (ImportError, ModuleNotFoundError):
+                # Fallback to direct import (for installed packages like langdetect)
+                module = __import__(module_name, fromlist=[class_name])
+            
             feature_class = getattr(module, class_name)
             cls._features[feature_name] = feature_class
             logger.debug(f"✅ Feature loaded: {feature_name}")

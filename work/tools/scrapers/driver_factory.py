@@ -40,10 +40,11 @@ class DriverFactory:
         enable_performance_logging: bool = False,
         block_images: bool = True,
         user_agent: Optional[str] = None,
-        window_size: str = '1920,1080'
+        window_size: str = '1920,1080',
+        proxy: Optional[dict] = None
     ) -> webdriver.Chrome:
         """
-        Create a headless Chrome driver with optional stealth mode
+        Create a headless Chrome driver with optional stealth mode and proxy
         
         Args:
             stealth: Enable stealth mode to avoid bot detection
@@ -51,6 +52,7 @@ class DriverFactory:
             block_images: Block images for faster loading (recommended)
             user_agent: Custom user agent string (uses default if None)
             window_size: Browser window size as 'width,height'
+            proxy: Proxy configuration dict (from ProxyRotator.get_next_proxy())
         
         Returns:
             Configured Chrome WebDriver instance
@@ -63,6 +65,10 @@ class DriverFactory:
             driver = DriverFactory.create_headless_driver(
                 enable_performance_logging=True
             )
+            
+            # With proxy rotation
+            proxy = proxy_rotator.get_next_proxy()
+            driver = DriverFactory.create_headless_driver(proxy=proxy)
             
             # Without stealth (faster, but easier to detect)
             driver = DriverFactory.create_headless_driver(stealth=False)
@@ -97,6 +103,25 @@ class DriverFactory:
             options.add_argument('--disable-blink-features=AutomationControlled')
             options.add_experimental_option("excludeSwitches", ["enable-automation"])
             options.add_experimental_option('useAutomationExtension', False)
+        
+        # Proxy configuration
+        if proxy:
+            proxy_url = f"{proxy['host']}:{proxy['port']}"
+            
+            # Configure proxy based on protocol
+            if proxy['protocol'] == 'socks5':
+                options.add_argument(f'--proxy-server=socks5://{proxy_url}')
+            else:
+                # HTTP/HTTPS proxy
+                options.add_argument(f'--proxy-server={proxy_url}')
+            
+            # Add proxy authentication if credentials provided
+            if proxy.get('username') and proxy.get('password'):
+                # Note: Chrome doesn't support proxy auth via command line
+                # This would require a Chrome extension or other workaround
+                logger.warning("⚠️  Proxy authentication requires Chrome extension (not yet implemented)")
+            
+            logger.debug(f"🔀 Proxy configured: {proxy['protocol']}://{proxy_url}")
         
         # Create driver with explicit chromedriver path
         driver = DriverFactory._create_driver_with_service(options)

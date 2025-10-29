@@ -98,6 +98,7 @@ class ExtractionMixin:
         
         Navigates to each article URL and extracts content using selectors.
         Supports both Selenium and FlareSolverr modes.
+        Supports Redis caching if enabled.
         
         Args:
             article_links: List of article URLs to visit
@@ -109,6 +110,25 @@ class ExtractionMixin:
         """
         sentences = []
         selectors = category_config.get('selectors', website_config.get('selectors', {}))
+        
+        # Check if we have cached results (if Redis caching is enabled)
+        category_url = category_config.get('url', '')
+        if hasattr(self, 'redis_cache') and self.redis_cache:
+            try:
+                cached_articles = self.redis_cache.get_articles(category_url)
+                if cached_articles:
+                    logger.info(f"   💾 Using {len(cached_articles)} cached articles from Redis")
+                    # Extract sentences from cached articles
+                    for article in cached_articles:
+                        text = article.get('text', [])
+                        if text:
+                            sentences.extend(text)
+                    return sentences
+            except Exception as e:
+                logger.debug(f"Cache check failed, will scrape: {e}")
+        
+        # No cache, proceed with normal extraction
+        extracted_articles = []  # For caching later
         
         for i, link in enumerate(article_links):
             try:
@@ -163,10 +183,22 @@ class ExtractionMixin:
                         ]
                         logger.info(f"      Split into {len(split_sentences)} sentences")
                         sentences.extend(split_sentences)
+                        
+                        # Store for caching
+                        extracted_articles.append({
+                            'url': link,
+                            'text': split_sentences
+                        })
                     else:
                         # Use paragraphs as-is
                         logger.info(f"      Adding {len(article_text)} paragraphs as sentences")
                         sentences.extend(article_text)
+                        
+                        # Store for caching
+                        extracted_articles.append({
+                            'url': link,
+                            'text': article_text
+                        })
                     
                     self.stats['articles_processed'] += 1
                     
@@ -179,6 +211,14 @@ class ExtractionMixin:
             except Exception as e:
                 logger.debug(f"   Error processing article {link}: {e}")
                 continue
+        
+        # Cache the results if Redis is enabled
+        if hasattr(self, 'redis_cache') and self.redis_cache and extracted_articles:
+            try:
+                self.redis_cache.set_articles(category_url, extracted_articles)
+                logger.info(f"   💾 Cached {len(extracted_articles)} articles to Redis")
+            except Exception as e:
+                logger.debug(f"Failed to cache articles: {e}")
         
         self.stats['sentences_extracted'] += len(sentences)
         return sentences

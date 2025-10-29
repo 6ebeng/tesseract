@@ -52,20 +52,65 @@ class DriverMixin:
     # ========================================================================
     
     def _init_stealth_driver(self):
-        """Initialize Selenium WebDriver with stealth mode."""
+        """Initialize Selenium WebDriver with stealth mode and optional proxy."""
         if self.driver:
             return
         
         logger.info("🚀 Initializing headless Chrome driver...")
         
+        # Get proxy if proxy rotation is enabled
+        proxy = None
+        if hasattr(self, 'proxy_rotator') and self.proxy_rotator:
+            proxy = self.proxy_rotator.get_next_proxy()
+            logger.info(f"🔀 Using proxy: {proxy['protocol']}://{proxy['host']}:{proxy['port']}")
+        
         # Use DriverFactory for centralized driver creation
         self.driver = DriverFactory.create_headless_driver(
             stealth=True,
             enable_performance_logging=self.url_debug_mode,
-            block_images=True
+            block_images=True,
+            proxy=proxy
         )
         
+        # Store current proxy for success/failure tracking
+        if proxy:
+            self.current_proxy = proxy
+        
         logger.info("✅ Driver initialized successfully")
+    
+    def _rotate_proxy_and_restart_driver(self):
+        """
+        Rotate to next proxy and restart driver.
+        Used when current proxy fails or is blocked.
+        """
+        if not hasattr(self, 'proxy_rotator') or not self.proxy_rotator:
+            logger.warning("⚠️  Proxy rotation not enabled, cannot rotate")
+            return False
+        
+        # Mark current proxy as failed
+        if hasattr(self, 'current_proxy') and self.current_proxy:
+            self.proxy_rotator.mark_failure(self.current_proxy)
+            logger.warning(f"❌ Proxy failed: {self.current_proxy['host']}:{self.current_proxy['port']}")
+        
+        # Close current driver
+        if self.driver:
+            try:
+                self.driver.quit()
+            except:
+                pass
+            self.driver = None
+        
+        # Reinitialize with new proxy
+        logger.info("🔄 Rotating to next proxy...")
+        self._init_stealth_driver()
+        
+        return True
+    
+    def _mark_proxy_success(self):
+        """Mark current proxy as successful"""
+        if hasattr(self, 'proxy_rotator') and self.proxy_rotator:
+            if hasattr(self, 'current_proxy') and self.current_proxy:
+                self.proxy_rotator.mark_success(self.current_proxy)
     
     # ========================================================================
     # FlareSolverr Integration

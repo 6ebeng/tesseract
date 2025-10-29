@@ -111,11 +111,16 @@ class GenericScraper(ExtractionMixin, PaginationMixin, URLFilteringMixin, Driver
         # Initialize quality control if available
         self.qc = SimpleQC() if HAS_BASE_SCRAPER and SimpleQC else None
         
-        # Initialize advanced features (if available)
+        # Initialize advanced features (if available) - will be configured per-website
         self.lang_detector = LanguageDetector() if HAS_ADVANCED and LanguageDetector else None
         self.deduplicator = ArticleDeduplicator() if HAS_ADVANCED and ArticleDeduplicator else None
         self.monitor = ScraperMonitor() if HAS_MONITOR and ScraperMonitor else None
-        self.rate_limiter = RateLimiter(requests_per_minute=20) if RateLimiter else None
+        
+        # Website-specific advanced features (initialized per website)
+        self.rate_limiter = None
+        self.redis_cache = None
+        self.retry_handler = None
+        self.proxy_rotator = None
         
         # Driver and session state
         self.driver = None
@@ -150,6 +155,128 @@ class GenericScraper(ExtractionMixin, PaginationMixin, URLFilteringMixin, Driver
         # Performance optimizations
         self._selector_cache = {}  # Cache parsed selectors
         self._http_session = None  # Lazy-initialized HTTP session with connection pooling
+    
+    # ========================================================================
+    # Advanced Features Initialization
+    # ========================================================================
+    
+    def _init_advanced_features(self, website_config: Dict):
+        """
+        Initialize advanced features based on website configuration.
+        
+        Reads optional feature configs from YAML and initializes them if enabled:
+        - rate_limiting: Polite scraping with request rate control
+        - caching: Redis-based page/article caching
+        - retry: Automatic retry on failures
+        - proxy: Proxy rotation for IP blocking bypass
+        
+        Args:
+            website_config: Website configuration dict from YAML
+        """
+        # 1. Rate Limiting
+        rate_config = website_config.get('rate_limiting', {})
+        if rate_config.get('enabled', False):
+            try:
+                if RateLimiter:
+                    max_rpm = rate_config.get('max_requests_per_minute', 30)
+                    self.rate_limiter = RateLimiter(requests_per_minute=max_rpm)
+                    logger.info(f"✅ Rate limiting enabled: {max_rpm} requests/min")
+                else:
+                    logger.warning("⚠️  Rate limiting configured but RateLimiter not available")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize rate limiter: {e}")
+                self.rate_limiter = None
+        else:
+            self.rate_limiter = None
+        
+        # 2. Redis Caching
+        cache_config = website_config.get('caching', {})
+        if cache_config.get('enabled', False):
+            try:
+                # Lazy import - only when caching is enabled
+                try:
+                    from .advanced_features import RedisCache
+                except ImportError:
+                    from advanced_features import RedisCache
+                
+                redis_host = cache_config.get('redis_host', 'localhost')
+                redis_port = cache_config.get('redis_port', 6379)
+                ttl_hours = cache_config.get('ttl_hours', 24)
+                
+                self.redis_cache = RedisCache(
+                    host=redis_host,
+                    port=redis_port,
+                    ttl_hours=ttl_hours,
+                    prefix=f"{self.current_website}:"
+                )
+                logger.info(f"✅ Redis caching enabled: {redis_host}:{redis_port} (TTL: {ttl_hours}h)")
+            except ImportError:
+                logger.warning("⚠️  Redis caching configured but RedisCache not available")
+                self.redis_cache = None
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize Redis cache: {e}")
+                logger.info("💡 Continuing without caching (is Redis running?)")
+                self.redis_cache = None
+        else:
+            self.redis_cache = None
+        
+        # 3. Retry Logic
+        retry_config = website_config.get('retry', {})
+        if retry_config.get('enabled', False):
+            try:
+                # Lazy import - only when retry is enabled
+                try:
+                    from .advanced_features import RetryHandler
+                except ImportError:
+                    from advanced_features import RetryHandler
+                
+                max_attempts = retry_config.get('max_attempts', 3)
+                delay_seconds = retry_config.get('delay_seconds', 2)
+                
+                self.retry_handler = RetryHandler(
+                    max_attempts=max_attempts,
+                    delay_seconds=delay_seconds
+                )
+                logger.info(f"✅ Retry logic enabled: {max_attempts} attempts, {delay_seconds}s delay")
+            except ImportError:
+                logger.warning("⚠️  Retry configured but RetryHandler not available")
+                self.retry_handler = None
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize retry handler: {e}")
+                self.retry_handler = None
+        else:
+            self.retry_handler = None
+        
+        # 4. Proxy Rotation
+        proxy_config = website_config.get('proxy', {})
+        if proxy_config.get('enabled', False):
+            try:
+                # Lazy import - only when proxy is enabled
+                try:
+                    from .advanced_features import ProxyRotator
+                except ImportError:
+                    from advanced_features import ProxyRotator
+                
+                proxy_file = proxy_config.get('file', 'proxies.txt')
+                strategy = proxy_config.get('strategy', 'round-robin')
+                
+                self.proxy_rotator = ProxyRotator(
+                    proxy_file=proxy_file,
+                    rotation_strategy=strategy
+                )
+                logger.info(f"✅ Proxy rotation enabled: {proxy_file} ({strategy})")
+            except ImportError:
+                logger.warning("⚠️  Proxy configured but ProxyRotator not available")
+                self.proxy_rotator = None
+            except FileNotFoundError:
+                logger.warning(f"⚠️  Proxy file not found: {proxy_config.get('file')}")
+                logger.info("💡 Continuing without proxy rotation")
+                self.proxy_rotator = None
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize proxy rotator: {e}")
+                self.proxy_rotator = None
+        else:
+            self.proxy_rotator = None
     
     # ========================================================================
     # Performance Optimization Methods
@@ -239,6 +366,9 @@ class GenericScraper(ExtractionMixin, PaginationMixin, URLFilteringMixin, Driver
         
         website_config = self.config[website_name]
         self.current_website = website_name
+        
+        # Initialize website-specific advanced features
+        self._init_advanced_features(website_config)
         
         # Enable URL debugging if configured
         if website_config.get('debug_urls', False):
@@ -369,6 +499,12 @@ class GenericScraper(ExtractionMixin, PaginationMixin, URLFilteringMixin, Driver
             raise ValueError(f"Category '{category_name}' not found for {website_name}")
         
         category_config = categories[category_name]
+
+        # Initialize website-specific advanced features (if not already done)
+        if not hasattr(self, '_features_initialized') or self.current_website != website_name:
+            self.current_website = website_name
+            self._init_advanced_features(website_config)
+            self._features_initialized = True
 
         # Load previously scraped articles for deduplication
         if not hasattr(self, '_scraped_articles_loaded'):
