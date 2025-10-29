@@ -26,7 +26,8 @@ class ConfigValidator:
     """Validates scraper configuration files"""
     
     # Valid pagination types
-    VALID_PAGINATION_TYPES = ['pagination', 'scroll', 'infinite_scroll', 'load_more', 'numbered_pages']
+    VALID_PAGINATION_TYPES = ['pagination', 'url_template', 'scroll', 'infinite_scroll', 
+                              'load_more', 'click_load_more', 'numbered_pages']
     
     # Valid wait conditions
     VALID_WAIT_CONDITIONS = ['visible', 'invisible', 'present', 'clickable', 'count', 'text_present']
@@ -36,15 +37,20 @@ class ConfigValidator:
     
     # Required fields per level
     REQUIRED_WEBSITE_FIELDS = ['name', 'base_url', 'categories']
-    REQUIRED_CATEGORY_FIELDS = ['url', 'type']
+    REQUIRED_CATEGORY_FIELDS = ['url']  # Only 'url' is required; 'type' is for pagination, not categories
     
     def __init__(self):
         self.errors = []
         self.warnings = []
     
-    def validate_config(self, config: Dict) -> Tuple[bool, List[str], List[str]]:
+    def validate_config(self, config: Dict, is_single_website: bool = False) -> Tuple[bool, List[str], List[str]]:
         """
         Validate entire configuration dictionary
+        
+        Args:
+            config: Configuration dictionary
+            is_single_website: If True, config is a single website (new format).
+                              If False, config is dict of websites (old format).
         
         Returns:
             (is_valid, errors, warnings)
@@ -56,9 +62,15 @@ class ConfigValidator:
             self.errors.append("Config must be a dictionary")
             return False, self.errors, self.warnings
         
-        # Validate each website
-        for website_key, website_config in config.items():
-            self._validate_website(website_key, website_config)
+        if is_single_website:
+            # New format: entire file is one website config
+            # Use filename or 'website' as the key for error messages
+            self._validate_website('website', config)
+        else:
+            # Old format: dict containing multiple websites
+            # Validate each website
+            for website_key, website_config in config.items():
+                self._validate_website(website_key, website_config)
         
         is_valid = len(self.errors) == 0
         return is_valid, self.errors, self.warnings
@@ -90,6 +102,10 @@ class ConfigValidator:
         if 'enabled' in config and not isinstance(config['enabled'], bool):
             self.errors.append(f"{prefix} 'enabled' must be boolean (true/false)")
         
+        # Validate debug_urls flag
+        if 'debug_urls' in config and not isinstance(config['debug_urls'], bool):
+            self.errors.append(f"{prefix} 'debug_urls' must be boolean (true/false)")
+        
         # Validate scraper_class
         if 'scraper_class' in config:
             if not isinstance(config['scraper_class'], str):
@@ -97,7 +113,59 @@ class ConfigValidator:
             elif not config['scraper_class'].strip():
                 self.errors.append(f"{prefix} 'scraper_class' cannot be empty")
         
-        # Validate wait_times
+        # Validate url_filtering
+        if 'url_filtering' in config:
+            self._validate_url_filtering(f"{prefix}.url_filtering", config['url_filtering'])
+        
+        # Validate rate_limiting
+        if 'rate_limiting' in config:
+            self._validate_rate_limiting(f"{prefix}.rate_limiting", config['rate_limiting'])
+        
+        # Validate caching
+        if 'caching' in config:
+            self._validate_caching(f"{prefix}.caching", config['caching'])
+        
+        # Validate retry
+        if 'retry' in config:
+            self._validate_retry(f"{prefix}.retry", config['retry'])
+        
+        # Validate proxy
+        if 'proxy' in config:
+            self._validate_proxy(f"{prefix}.proxy", config['proxy'])
+        
+        # Validate flaresolverr
+        if 'flaresolverr' in config:
+            self._validate_flaresolverr(f"{prefix}.flaresolverr", config['flaresolverr'])
+        
+        # Validate pagination
+        if 'pagination' in config:
+            self._validate_pagination(f"{prefix}.pagination", config['pagination'])
+        
+        # Validate wait
+        if 'wait' in config:
+            self._validate_wait_config(f"{prefix}.wait", config['wait'])
+        
+        # Validate collection_wait
+        if 'collection_wait' in config:
+            self._validate_wait_config(f"{prefix}.collection_wait", config['collection_wait'])
+        
+        # Validate article_wait
+        if 'article_wait' in config:
+            self._validate_wait_config(f"{prefix}.article_wait", config['article_wait'])
+        
+        # Validate back_delay
+        if 'back_delay' in config:
+            if not isinstance(config['back_delay'], (int, float)):
+                self.errors.append(f"{prefix}.back_delay must be a number")
+            elif config['back_delay'] < 0:
+                self.errors.append(f"{prefix}.back_delay cannot be negative")
+        
+        # Validate click_through_navigation
+        if 'click_through_navigation' in config:
+            if not isinstance(config['click_through_navigation'], bool):
+                self.errors.append(f"{prefix}.click_through_navigation must be boolean (true/false)")
+        
+        # Validate wait_times (legacy)
         if 'wait_times' in config:
             self._validate_wait_times(f"{prefix}.wait_times", config['wait_times'])
         
@@ -143,7 +211,11 @@ class ConfigValidator:
         if 'enabled' in config and not isinstance(config['enabled'], bool):
             self.errors.append(f"{prefix} 'enabled' must be boolean (true/false)")
         
-        # Validate pagination-specific fields
+        # Validate pagination (category-specific override)
+        if 'pagination' in config:
+            self._validate_pagination(f"{prefix}.pagination", config['pagination'])
+        
+        # Legacy: validate pagination-specific fields at category level
         pagination_type = config.get('type')
         
         if pagination_type == 'pagination':
@@ -161,7 +233,7 @@ class ConfigValidator:
                 if not isinstance(config['clicks'], int) or config['clicks'] < 1:
                     self.errors.append(f"{prefix} 'clicks' must be a positive integer")
         
-        # Validate wait_times
+        # Validate wait_times (legacy)
         if 'wait_times' in config:
             self._validate_wait_times(f"{prefix}.wait_times", config['wait_times'])
         
@@ -169,7 +241,7 @@ class ConfigValidator:
         if 'wait_for' in config:
             self._validate_wait_for(f"{prefix}.wait_for", config['wait_for'])
         
-        # Validate selectors
+        # Validate selectors (category-specific override)
         if 'selectors' in config:
             self._validate_selectors(f"{prefix}.selectors", config['selectors'])
     
@@ -287,7 +359,15 @@ class ConfigValidator:
         
         # Dictionary (explicit type + options)
         if isinstance(config, dict):
-            # Validate type
+            # Determine format: old format uses 'value', new format uses 'selector'
+            has_value = 'value' in config
+            has_selector = 'selector' in config
+            
+            if not has_value and not has_selector:
+                self.errors.append(f"{prefix} Missing required field: 'value' (old format) or 'selector' (new format)")
+                return
+            
+            # Validate type (old format only)
             if 'type' in config:
                 selector_type = config['type']
                 if selector_type not in self.VALID_SELECTOR_TYPES:
@@ -296,15 +376,32 @@ class ConfigValidator:
                         f"Must be 'css' or 'xpath'"
                     )
             
-            # Validate value
-            if 'value' not in config:
-                self.errors.append(f"{prefix} Missing required field: 'value'")
-            elif not isinstance(config['value'], str):
-                self.errors.append(f"{prefix}.value must be a string")
-            elif not config['value'].strip():
-                self.errors.append(f"{prefix}.value cannot be empty")
+            # Validate value/selector based on format
+            if has_value:
+                # Old format: {'type': 'xpath', 'value': '//...'}
+                if not isinstance(config['value'], str):
+                    self.errors.append(f"{prefix}.value must be a string")
+                elif not config['value'].strip():
+                    self.errors.append(f"{prefix}.value cannot be empty")
             
-            # Validate multiple (for XPath multi-node extraction)
+            if has_selector:
+                # New format: {'selector': '...', 'multiple': true, 'delimiter': '\n'}
+                # selector can be string, list, or nested dict
+                selector_value = config['selector']
+                if isinstance(selector_value, str):
+                    if not selector_value.strip():
+                        self.errors.append(f"{prefix}.selector cannot be empty string")
+                elif isinstance(selector_value, list):
+                    # Recursively validate list items
+                    for idx, item in enumerate(selector_value):
+                        self._validate_selector_config(f"{prefix}.selector[{idx}]", item)
+                elif isinstance(selector_value, dict):
+                    # Nested dict - validate recursively
+                    self._validate_selector_config(f"{prefix}.selector", selector_value)
+                elif selector_value is not None:
+                    self.errors.append(f"{prefix}.selector must be string, list, or dict")
+            
+            # Validate multiple (for multi-node extraction)
             if 'multiple' in config:
                 if not isinstance(config['multiple'], bool):
                     self.errors.append(f"{prefix}.multiple must be boolean (true/false)")
@@ -321,10 +418,216 @@ class ConfigValidator:
                         "join will have no effect"
                     )
             
+            # Validate delimiter (alternative to join)
+            if 'delimiter' in config:
+                if not isinstance(config['delimiter'], str):
+                    self.errors.append(f"{prefix}.delimiter must be a string")
+                
+                # Warn if delimiter used without multiple
+                if not config.get('multiple', False):
+                    self.warnings.append(
+                        f"{prefix}.delimiter specified but 'multiple: true' not set - "
+                        "delimiter will have no effect"
+                    )
+            
             return
         
         # Invalid type
         self.errors.append(f"{prefix} Selector must be string, list, or dictionary")
+    
+    def _validate_url_filtering(self, prefix: str, config: Dict):
+        """Validate url_filtering configuration"""
+        if not isinstance(config, dict):
+            self.errors.append(f"{prefix} must be a dictionary")
+            return
+        
+        # Validate preset
+        if 'preset' in config:
+            valid_presets = ['standard', 'strict', 'minimal', 'none']
+            if config['preset'] not in valid_presets:
+                self.errors.append(f"{prefix}.preset must be one of: {', '.join(valid_presets)}")
+        
+        # Validate whitelist
+        if 'whitelist' in config:
+            if not isinstance(config['whitelist'], list):
+                self.errors.append(f"{prefix}.whitelist must be a list")
+            else:
+                for idx, pattern in enumerate(config['whitelist']):
+                    if not isinstance(pattern, str):
+                        self.errors.append(f"{prefix}.whitelist[{idx}] must be a string")
+        
+        # Validate blacklist
+        if 'blacklist' in config:
+            if not isinstance(config['blacklist'], list):
+                self.errors.append(f"{prefix}.blacklist must be a list")
+            else:
+                for idx, pattern in enumerate(config['blacklist']):
+                    if not isinstance(pattern, str):
+                        self.errors.append(f"{prefix}.blacklist[{idx}] must be a string")
+    
+    def _validate_rate_limiting(self, prefix: str, config: Dict):
+        """Validate rate_limiting configuration"""
+        if not isinstance(config, dict):
+            self.errors.append(f"{prefix} must be a dictionary")
+            return
+        
+        if 'enabled' in config and not isinstance(config['enabled'], bool):
+            self.errors.append(f"{prefix}.enabled must be boolean (true/false)")
+        
+        if 'max_requests_per_minute' in config:
+            val = config['max_requests_per_minute']
+            if not isinstance(val, int) or val < 1:
+                self.errors.append(f"{prefix}.max_requests_per_minute must be a positive integer")
+    
+    def _validate_caching(self, prefix: str, config: Dict):
+        """Validate caching configuration"""
+        if not isinstance(config, dict):
+            self.errors.append(f"{prefix} must be a dictionary")
+            return
+        
+        if 'enabled' in config and not isinstance(config['enabled'], bool):
+            self.errors.append(f"{prefix}.enabled must be boolean (true/false)")
+        
+        if 'redis_host' in config and not isinstance(config['redis_host'], str):
+            self.errors.append(f"{prefix}.redis_host must be a string")
+        
+        if 'redis_port' in config:
+            val = config['redis_port']
+            if not isinstance(val, int) or val < 1 or val > 65535:
+                self.errors.append(f"{prefix}.redis_port must be an integer between 1-65535")
+        
+        if 'ttl_hours' in config:
+            val = config['ttl_hours']
+            if not isinstance(val, (int, float)) or val < 0:
+                self.errors.append(f"{prefix}.ttl_hours must be a non-negative number")
+    
+    def _validate_retry(self, prefix: str, config: Dict):
+        """Validate retry configuration"""
+        if not isinstance(config, dict):
+            self.errors.append(f"{prefix} must be a dictionary")
+            return
+        
+        if 'enabled' in config and not isinstance(config['enabled'], bool):
+            self.errors.append(f"{prefix}.enabled must be boolean (true/false)")
+        
+        if 'max_attempts' in config:
+            val = config['max_attempts']
+            if not isinstance(val, int) or val < 1:
+                self.errors.append(f"{prefix}.max_attempts must be a positive integer")
+        
+        if 'delay_seconds' in config:
+            val = config['delay_seconds']
+            if not isinstance(val, (int, float)) or val < 0:
+                self.errors.append(f"{prefix}.delay_seconds must be a non-negative number")
+    
+    def _validate_proxy(self, prefix: str, config: Dict):
+        """Validate proxy configuration"""
+        if not isinstance(config, dict):
+            self.errors.append(f"{prefix} must be a dictionary")
+            return
+        
+        if 'enabled' in config and not isinstance(config['enabled'], bool):
+            self.errors.append(f"{prefix}.enabled must be boolean (true/false)")
+        
+        if 'file' in config and not isinstance(config['file'], str):
+            self.errors.append(f"{prefix}.file must be a string")
+        
+        if 'strategy' in config:
+            valid_strategies = ['round-robin', 'random']
+            if config['strategy'] not in valid_strategies:
+                self.errors.append(f"{prefix}.strategy must be one of: {', '.join(valid_strategies)}")
+    
+    def _validate_flaresolverr(self, prefix: str, config: Dict):
+        """Validate flaresolverr configuration"""
+        if not isinstance(config, dict):
+            self.errors.append(f"{prefix} must be a dictionary")
+            return
+        
+        if 'enabled' in config and not isinstance(config['enabled'], bool):
+            self.errors.append(f"{prefix}.enabled must be boolean (true/false)")
+        
+        if 'url' in config:
+            if not self._is_valid_url(config['url']):
+                self.errors.append(f"{prefix}.url must be a valid URL")
+        
+        if 'max_timeout' in config:
+            val = config['max_timeout']
+            if not isinstance(val, (int, float)) or val < 0:
+                self.errors.append(f"{prefix}.max_timeout must be a non-negative number")
+    
+    def _validate_pagination(self, prefix: str, config: Dict):
+        """Validate pagination configuration"""
+        if not isinstance(config, dict):
+            self.errors.append(f"{prefix} must be a dictionary")
+            return
+        
+        # Validate type
+        if 'type' in config:
+            if config['type'] not in self.VALID_PAGINATION_TYPES:
+                self.errors.append(
+                    f"{prefix}.type must be one of: {', '.join(self.VALID_PAGINATION_TYPES)}"
+                )
+        
+        # Type-specific validation
+        pagination_type = config.get('type')
+        
+        if pagination_type in ['pagination', 'url_template', 'numbered_pages']:
+            if 'pages' in config:
+                if not isinstance(config['pages'], int) or config['pages'] < 1:
+                    self.errors.append(f"{prefix}.pages must be a positive integer")
+            
+            if 'page_param' in config:
+                # page_param can be a string or null (for path-based pagination)
+                if config['page_param'] is not None and not isinstance(config['page_param'], str):
+                    self.errors.append(f"{prefix}.page_param must be a string or null")
+        
+        elif pagination_type in ['scroll', 'infinite_scroll']:
+            if 'scrolls' in config:
+                if not isinstance(config['scrolls'], int) or config['scrolls'] < 1:
+                    self.errors.append(f"{prefix}.scrolls must be a positive integer")
+        
+        elif pagination_type in ['load_more', 'click_load_more']:
+            if 'clicks' in config:
+                if not isinstance(config['clicks'], int) or config['clicks'] < 1:
+                    self.errors.append(f"{prefix}.clicks must be a positive integer")
+            
+            if 'load_more_button' in config:
+                self._validate_selector_config(f"{prefix}.load_more_button", config['load_more_button'])
+        
+        # Common fields
+        if 'delay' in config:
+            val = config['delay']
+            if not isinstance(val, (int, float)) or val < 0:
+                self.errors.append(f"{prefix}.delay must be a non-negative number")
+    
+    def _validate_wait_config(self, prefix: str, config):
+        """Validate wait/collection_wait/article_wait configuration"""
+        # Can be a number, None, or dict
+        if config is None:
+            return
+        
+        if isinstance(config, (int, float)):
+            if config < 0:
+                self.errors.append(f"{prefix} cannot be negative")
+            return
+        
+        if isinstance(config, dict):
+            # Validate selector
+            if 'selector' in config:
+                if config['selector'] is not None:
+                    self._validate_selector_config(f"{prefix}.selector", config['selector'])
+            
+            # Validate timeout
+            if 'timeout' in config:
+                val = config['timeout']
+                if not isinstance(val, (int, float)):
+                    self.errors.append(f"{prefix}.timeout must be a number")
+                elif val < 0:
+                    self.errors.append(f"{prefix}.timeout cannot be negative")
+            
+            return
+        
+        self.errors.append(f"{prefix} must be a number, None/null, or dictionary")
     
     def _is_valid_url(self, url: str) -> bool:
         """Check if URL is valid"""
@@ -369,7 +672,12 @@ def validate_config_file(yaml_path: str, verbose: bool = True) -> bool:
     
     # Validate configuration
     validator = ConfigValidator()
-    is_valid, errors, warnings = validator.validate_config(config)
+    
+    # Detect format: if config has 'name' and 'categories', it's a single website file
+    is_single_website = ('name' in config and 'categories' in config) or \
+                        ('base_url' in config and 'categories' in config)
+    
+    is_valid, errors, warnings = validator.validate_config(config, is_single_website=is_single_website)
     
     if verbose:
         if is_valid:
