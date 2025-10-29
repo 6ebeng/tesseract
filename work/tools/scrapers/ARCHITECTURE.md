@@ -80,6 +80,7 @@
 ### Layer 1: Entry Points
 
 #### CLI Interface
+
 - **File**: `production_scraper.py`
 - **Purpose**: Command-line interface for scraping
 - **Features**:
@@ -89,6 +90,7 @@
   - Progress reporting
 
 #### Python API
+
 - **Usage**: Import and use directly in code
 - **Example**:
   ```python
@@ -102,6 +104,7 @@
 ### Layer 2: Configuration
 
 #### ConfigValidator
+
 - **File**: `config_validator.py`
 - **Purpose**: Validate YAML configuration against schema
 - **Validates**:
@@ -113,11 +116,13 @@
 - **Output**: Errors and warnings
 
 #### YAML Loader
+
 - **File**: `security_utils.py` (`safe_load_yaml`)
 - **Purpose**: Safely load YAML without code execution
 - **Security**: Prevents YAML deserialization attacks
 
 #### Template System
+
 - **Location**: `configs/templates/`
 - **Purpose**: Reusable URL filtering patterns
 - **Benefits**:
@@ -130,6 +135,7 @@
 ### Layer 3: Monitoring & Error Handling
 
 #### ScraperMonitor
+
 - **File**: `scraper_monitor.py`
 - **Features**:
   - Structured logging (JSON + text)
@@ -140,11 +146,13 @@
   - Metric export (JSON)
 
 **Data Flow**:
+
 ```
 Scrape → Log Result → Update Metrics → Check Thresholds → Alert if needed
 ```
 
 #### ErrorHandler
+
 - **File**: `error_handler.py`
 - **Features**:
   - Automatic retry with exponential backoff
@@ -154,6 +162,7 @@ Scrape → Log Result → Update Metrics → Check Thresholds → Alert if neede
   - Context preservation
 
 **Error Handling Flow**:
+
 ```
 Try Scrape → Error? → Classify → Should Retry? → Wait → Retry → Max Attempts? → Fail/Succeed
 ```
@@ -163,6 +172,7 @@ Try Scrape → Error? → Classify → Should Retry? → Wait → Retry → Max 
 ### Layer 4: Advanced Features
 
 #### RateLimiter
+
 - **File**: `advanced_features.py`
 - **Purpose**: Control request rate to prevent IP blocking
 - **Algorithm**:
@@ -172,6 +182,7 @@ Try Scrape → Error? → Classify → Should Retry? → Wait → Retry → Max 
 - **Configuration**: `max_requests_per_minute`
 
 #### RedisCache
+
 - **File**: `advanced_features.py`
 - **Purpose**: Cache scraped content for dramatic performance improvement
 - **Features**:
@@ -183,11 +194,13 @@ Try Scrape → Error? → Classify → Should Retry? → Wait → Retry → Max 
 - **Performance**: 60x faster re-runs
 
 **Cache Flow**:
+
 ```
 Request → Check Cache → Hit? → Return Cached → Miss? → Scrape → Cache → Return
 ```
 
 #### RetryHandler
+
 - **File**: `advanced_features.py`
 - **Purpose**: Automatic retry on failures
 - **Strategy**:
@@ -200,6 +213,7 @@ Request → Check Cache → Hit? → Return Cached → Miss? → Scrape → Cach
   - Empty results
 
 #### ProxyRotator
+
 - **File**: `advanced_features.py`
 - **Purpose**: Rotate through proxies to bypass IP blocking
 - **Strategies**:
@@ -211,11 +225,13 @@ Request → Check Cache → Hit? → Return Cached → Miss? → Scrape → Cach
   - Selenium & FlareSolverr support
 
 **Proxy Flow**:
+
 ```
 Request → Get Next Proxy → Configure Driver → Scrape → Success/Fail? → Track → Rotate
 ```
 
 #### ArticleDeduplicator
+
 - **File**: `advanced_features.py`
 - **Purpose**: Detect and prevent duplicate articles
 - **Strategies**:
@@ -225,11 +241,13 @@ Request → Get Next Proxy → Configure Driver → Scrape → Success/Fail? →
 - **Storage**: SQLite database
 
 **Deduplication Flow**:
+
 ```
 Article → Hash URL → Exists? → Yes: Duplicate → No: Check Title → Similar? → Yes: Duplicate → No: Check Content → Similar? → Yes: Duplicate → No: Store & Accept
 ```
 
 #### LanguageDetector
+
 - **File**: `advanced_features.py`
 - **Purpose**: Detect and filter content by language
 - **Supported**:
@@ -245,6 +263,7 @@ Article → Hash URL → Exists? → Yes: Duplicate → No: Check Title → Simi
 ### Layer 5: Core Scraper
 
 #### BaseScraper
+
 - **File**: `core/base_scraper.py`
 - **Purpose**: Core scraping functionality
 - **Responsibilities**:
@@ -254,6 +273,7 @@ Article → Hash URL → Exists? → Yes: Duplicate → No: Check Title → Simi
   - Monitoring integration
 
 #### Pagination Module
+
 - **File**: `core/pagination.py`
 - **Types**:
   - Standard pagination (page parameter)
@@ -267,6 +287,7 @@ Article → Hash URL → Exists? → Yes: Duplicate → No: Check Title → Simi
   - Wait for elements
 
 #### Extraction Module
+
 - **File**: `core/extraction.py`
 - **Purpose**: Extract content from HTML
 - **Features**:
@@ -278,6 +299,7 @@ Article → Hash URL → Exists? → Yes: Duplicate → No: Check Title → Simi
   - Attribute extraction
 
 #### URL Filtering Module
+
 - **File**: `core/url_filtering.py`
 - **Purpose**: Filter URLs before scraping
 - **Strategies**:
@@ -292,11 +314,13 @@ Article → Hash URL → Exists? → Yes: Duplicate → No: Check Title → Simi
   - Block unwanted URLs (ads, trackers)
 
 **URL Filtering Flow**:
+
 ```
 URL → Matches Whitelist? → Yes: Allow → No: Check Blacklist → Matches? → Yes: Block → No: Allow
 ```
 
 #### Wait Strategy Module
+
 - **File**: `core/wait_strategy.py`
 - **Purpose**: Wait for dynamic content to load
 - **Strategies**:
@@ -311,6 +335,7 @@ URL → Matches Whitelist? → Yes: Allow → No: Check Blacklist → Matches? �
   - Article wait (`article_wait`)
 
 #### Selector Module
+
 - **File**: `selector_utils.py`
 - **Purpose**: Resolve and execute selectors
 - **Features**:
@@ -325,6 +350,7 @@ URL → Matches Whitelist? → Yes: Allow → No: Check Blacklist → Matches? �
 ### Layer 6: Driver & Network
 
 #### Selenium WebDriver
+
 - **Purpose**: Browser automation
 - **Features**:
   - JavaScript execution
@@ -334,6 +360,7 @@ URL → Matches Whitelist? → Yes: Allow → No: Check Blacklist → Matches? �
 - **Driver**: ChromeDriver (stealth mode)
 
 #### Stealth Mode
+
 - **File**: `advanced_features.py` (`StealthBrowser`)
 - **Purpose**: Avoid bot detection
 - **Techniques**:
@@ -344,6 +371,7 @@ URL → Matches Whitelist? → Yes: Allow → No: Check Blacklist → Matches? �
   - Automation flag removal
 
 #### FlareSolverr Integration
+
 - **Purpose**: Bypass Cloudflare protection
 - **Features**:
   - Automatic challenge solving
@@ -352,6 +380,7 @@ URL → Matches Whitelist? → Yes: Allow → No: Check Blacklist → Matches? �
 - **Configuration**: `flaresolverr.enabled`, `flaresolverr.url`
 
 #### HTTP Requests
+
 - **Purpose**: Simple HTTP requests (non-JavaScript sites)
 - **Library**: `requests`
 - **Features**:
@@ -606,32 +635,32 @@ work/tools/scrapers/
 
 ### Scraping Performance
 
-| Metric | Without Optimization | With Optimization | Improvement |
-|--------|---------------------|-------------------|-------------|
-| Single website scrape | ~5-10 min | ~2-3 min | 2-3x faster |
-| All websites (sequential) | ~60 min | ~20 min | 3x faster |
-| All websites (parallel, 3 workers) | ~60 min | ~7 min | **8.5x faster** |
-| Re-run (with cache) | ~60 min | < 1 min | **60x faster** |
+| Metric                             | Without Optimization | With Optimization | Improvement     |
+| ---------------------------------- | -------------------- | ----------------- | --------------- |
+| Single website scrape              | ~5-10 min            | ~2-3 min          | 2-3x faster     |
+| All websites (sequential)          | ~60 min              | ~20 min           | 3x faster       |
+| All websites (parallel, 3 workers) | ~60 min              | ~7 min            | **8.5x faster** |
+| Re-run (with cache)                | ~60 min              | < 1 min           | **60x faster**  |
 
 ### Memory Usage
 
-| Component | Memory Usage |
-|-----------|-------------|
-| Base scraper | ~50 MB |
-| Selenium WebDriver | ~200-300 MB |
-| Redis cache | Configurable (default: 100 MB) |
-| Article dedup DB | ~10-50 MB (depends on article count) |
-| **Total (typical)** | **~300-450 MB** |
+| Component           | Memory Usage                         |
+| ------------------- | ------------------------------------ |
+| Base scraper        | ~50 MB                               |
+| Selenium WebDriver  | ~200-300 MB                          |
+| Redis cache         | Configurable (default: 100 MB)       |
+| Article dedup DB    | ~10-50 MB (depends on article count) |
+| **Total (typical)** | **~300-450 MB**                      |
 
 ### Disk Usage
 
-| Component | Disk Usage |
-|-----------|-----------|
-| Code | ~5 MB |
-| Dependencies | ~500 MB |
-| Logs (per day) | ~10-50 MB |
-| Cache DB | ~10-100 MB |
-| Redis (24h cache) | ~100-500 MB |
+| Component           | Disk Usage               |
+| ------------------- | ------------------------ |
+| Code                | ~5 MB                    |
+| Dependencies        | ~500 MB                  |
+| Logs (per day)      | ~10-50 MB                |
+| Cache DB            | ~10-100 MB               |
+| Redis (24h cache)   | ~100-500 MB              |
 | **Total (typical)** | **~625-1155 MB (~1 GB)** |
 
 ---
@@ -641,6 +670,7 @@ work/tools/scrapers/
 ### Threat Model
 
 **Threats Addressed:**
+
 1. ✅ YAML deserialization attacks → Safe YAML loading
 2. ✅ XPath injection → XPath sanitization
 3. ✅ IP blocking → Rate limiting + proxy rotation
@@ -648,6 +678,7 @@ work/tools/scrapers/
 5. ✅ Credential leakage → Environment variables only
 
 **Threats NOT Addressed:**
+
 - ❌ Advanced bot detection (CAPTCHA, behavioral analysis)
 - ❌ SSL/TLS certificate pinning bypass
 - ❌ Client-side JavaScript challenges (use FlareSolverr)
@@ -677,21 +708,25 @@ Instance 3: Websites G, H, I
 ```
 
 **Shared Resources**:
+
 - Redis cache (single instance)
 - Deduplication DB (single instance)
 
 **Coordination**:
+
 - File-based locking (prevent duplicate scraping)
 - Redis-based job queue (optional)
 
 ### Vertical Scaling
 
 **Increase resources per instance**:
+
 - More CPU cores → More parallel workers
 - More RAM → Larger cache, more workers
 - Faster disk → Faster DB operations
 
 **Limits**:
+
 - Selenium WebDriver: ~10-20 instances per machine
 - Redis: Up to several GB of cache
 - Network: Bandwidth limits
@@ -703,6 +738,7 @@ Instance 3: Websites G, H, I
 ### Plugin System
 
 **Custom Scrapers**:
+
 ```python
 from core.base_scraper import BaseScraper
 
@@ -713,6 +749,7 @@ class CustomScraper(BaseScraper):
 ```
 
 **Custom Extractors**:
+
 ```python
 from core.extraction import BaseExtractor
 
@@ -775,6 +812,7 @@ class CustomExtractor(BaseExtractor):
 ### Metrics Collected
 
 **Per-Scrape**:
+
 - Success/failure
 - Articles scraped
 - Sentences extracted
@@ -782,6 +820,7 @@ class CustomExtractor(BaseExtractor):
 - Error type (if failed)
 
 **Aggregated**:
+
 - Success rate (overall, per-website, per-category)
 - Average duration
 - Articles per minute
@@ -793,12 +832,14 @@ class CustomExtractor(BaseExtractor):
 ### Alerts
 
 **Configurable Thresholds**:
+
 - Failure rate > 20%
 - Sentences < 10 per article
 - Duration > 5 minutes
 - Success rate < 80%
 
 **Alert Methods**:
+
 - Console output
 - Log file
 - (Future: Email, Slack, webhook)
@@ -823,12 +864,14 @@ class CustomExtractor(BaseExtractor):
 ### Resource Requirements
 
 **Minimum**:
+
 - CPU: 2 cores
 - RAM: 2 GB
 - Disk: 5 GB
 - Network: 10 Mbps
 
 **Recommended**:
+
 - CPU: 4+ cores
 - RAM: 8+ GB
 - Disk: 20+ GB (SSD)
@@ -837,6 +880,7 @@ class CustomExtractor(BaseExtractor):
 ### High Availability
 
 **Strategies**:
+
 1. **Multiple instances** (horizontal scaling)
 2. **Redis replication** (master-slave)
 3. **Database backups** (daily)
@@ -851,22 +895,26 @@ class CustomExtractor(BaseExtractor):
 ### Regular Tasks
 
 **Daily**:
+
 - Check error logs
 - Review metrics
 - Monitor disk usage
 
 **Weekly**:
+
 - Update dependencies
 - Review performance trends
 - Check for new errors
 
 **Monthly**:
+
 - Update user agent list
 - Review configuration
 - Optimize selectors
 - Clean old logs/cache
 
 **Quarterly**:
+
 - Security audit
 - Performance optimization
 - Feature review
@@ -888,21 +936,25 @@ class CustomExtractor(BaseExtractor):
 ### Planned Features
 
 1. **Dashboard** (In Progress)
+
    - Real-time metrics visualization
    - Historical trends
    - Error analysis
 
 2. **Advanced Proxy Management**
+
    - Automatic proxy health checks
    - Proxy provider integration
    - Geographic distribution
 
 3. **Machine Learning**
+
    - Automatic selector generation
    - Content quality prediction
    - Anomaly detection
 
 4. **Distributed Scraping**
+
    - Job queue (Redis/RabbitMQ)
    - Worker pool management
    - Load balancing

@@ -15,18 +15,22 @@ This is your complete guide to the Production Scraper System. All documentation 
 Choose your path based on your goal:
 
 ### 🚀 I want to get started quickly
+
 → **Read**: [`QUICK_START_GUIDE.md`](QUICK_START_GUIDE.md)  
 ⏱️ **Time**: 5 minutes to first scrape
 
 ### 📖 I want complete documentation
+
 → **Read**: [`USAGE_DOCUMENTATION.md`](USAGE_DOCUMENTATION.md)  
 ⏱️ **Time**: 30-60 minutes comprehensive guide
 
 ### 🏗️ I want to understand the architecture
+
 → **Read**: [`ARCHITECTURE.md`](ARCHITECTURE.md)  
 ⏱️ **Time**: 20-30 minutes deep dive
 
 ### 🔍 I want quick reference
+
 → **Read**: [`README.md`](README.md)  
 ⏱️ **Time**: 5 minutes overview
 
@@ -35,9 +39,11 @@ Choose your path based on your goal:
 ## 📄 Document Descriptions
 
 ### 1. QUICK_START_GUIDE.md
+
 **Purpose**: Get up and running in 5 minutes  
 **Audience**: New users, quick setup  
 **Contents**:
+
 - Installation (1 minute)
 - Configuration validation (30 seconds)
 - First scrape (2 minutes)
@@ -46,7 +52,8 @@ Choose your path based on your goal:
 - Common issues
 - Pro tips
 
-**When to use**: 
+**When to use**:
+
 - ✅ First time using the system
 - ✅ Need to set up quickly
 - ✅ Want to test functionality
@@ -55,9 +62,11 @@ Choose your path based on your goal:
 ---
 
 ### 2. USAGE_DOCUMENTATION.md
+
 **Purpose**: Complete reference for all features  
 **Audience**: All users  
 **Contents**:
+
 - System overview
 - Installation & setup
 - Core components (detailed)
@@ -69,6 +78,7 @@ Choose your path based on your goal:
 - Examples (9 complete examples)
 
 **When to use**:
+
 - ✅ Need detailed information
 - ✅ Configuring advanced features
 - ✅ Troubleshooting issues
@@ -76,6 +86,7 @@ Choose your path based on your goal:
 - ✅ Understanding best practices
 
 **Sections** (17 total):
+
 1. System Overview
 2. Quick Start
 3. Core Components
@@ -88,6 +99,7 @@ Choose your path based on your goal:
 10. Additional Resources
 
 **Examples Included**:
+
 1. Basic scraping
 2. Parallel scraping
 3. With all features
@@ -100,9 +112,11 @@ Choose your path based on your goal:
 ---
 
 ### 3. ARCHITECTURE.md
+
 **Purpose**: System design and technical details  
 **Audience**: Developers, maintainers, architects  
 **Contents**:
+
 - System architecture diagram
 - Component layers (6 layers)
 - Data flow diagrams
@@ -122,6 +136,7 @@ Choose your path based on your goal:
 - Future roadmap
 
 **When to use**:
+
 - ✅ Understanding system design
 - ✅ Contributing to the project
 - ✅ Extending functionality
@@ -130,6 +145,7 @@ Choose your path based on your goal:
 - ✅ Security audit
 
 **Diagrams Included**:
+
 1. System architecture (full stack)
 2. Data flow (scraping process)
 3. Error handling flow
@@ -141,9 +157,11 @@ Choose your path based on your goal:
 ---
 
 ### 4. README.md
+
 **Purpose**: Quick reference and overview  
 **Audience**: All users  
 **Contents**:
+
 - Overview (what is it?)
 - Quick reference (common commands)
 - Key features
@@ -159,6 +177,7 @@ Choose your path based on your goal:
 - Support
 
 **When to use**:
+
 - ✅ Quick overview
 - ✅ Looking up commands
 - ✅ Finding documentation
@@ -202,18 +221,18 @@ Documentation Suite
 
 ## 📊 Feature Coverage Matrix
 
-| Feature | Quick Start | Usage Doc | Architecture | README |
-|---------|-------------|-----------|--------------|--------|
-| **Installation** | ✅ Full | ✅ Full | ⚠️ Brief | ⚠️ Brief |
-| **Configuration** | ⚠️ Basic | ✅ Full | ✅ Schema | ⚠️ Brief |
-| **Core Components** | ❌ None | ✅ Full | ✅ Full | ⚠️ List |
-| **Advanced Features** | ⚠️ Enable | ✅ Full | ✅ Design | ⚠️ Summary |
-| **API Reference** | ❌ None | ✅ Full | ⚠️ Design | ❌ None |
-| **Examples** | ⚠️ Basic | ✅ 9 Full | ❌ None | ⚠️ Brief |
-| **Troubleshooting** | ✅ Common | ✅ Full | ❌ None | ⚠️ Brief |
-| **Best Practices** | ✅ Tips | ✅ Full | ✅ Design | ⚠️ Brief |
-| **Deployment** | ❌ None | ⚠️ Brief | ✅ Full | ⚠️ Checklist |
-| **Architecture** | ❌ None | ⚠️ Brief | ✅ Full | ❌ None |
+| Feature               | Quick Start | Usage Doc | Architecture | README       |
+| --------------------- | ----------- | --------- | ------------ | ------------ |
+| **Installation**      | ✅ Full     | ✅ Full   | ⚠️ Brief     | ⚠️ Brief     |
+| **Configuration**     | ⚠️ Basic    | ✅ Full   | ✅ Schema    | ⚠️ Brief     |
+| **Core Components**   | ❌ None     | ✅ Full   | ✅ Full      | ⚠️ List      |
+| **Advanced Features** | ⚠️ Enable   | ✅ Full   | ✅ Design    | ⚠️ Summary   |
+| **API Reference**     | ❌ None     | ✅ Full   | ⚠️ Design    | ❌ None      |
+| **Examples**          | ⚠️ Basic    | ✅ 9 Full | ❌ None      | ⚠️ Brief     |
+| **Troubleshooting**   | ✅ Common   | ✅ Full   | ❌ None      | ⚠️ Brief     |
+| **Best Practices**    | ✅ Tips     | ✅ Full   | ✅ Design    | ⚠️ Brief     |
+| **Deployment**        | ❌ None     | ⚠️ Brief  | ✅ Full      | ⚠️ Checklist |
+| **Architecture**      | ❌ None     | ⚠️ Brief  | ✅ Full      | ❌ None      |
 
 **Legend**: ✅ Full coverage | ⚠️ Partial coverage | ❌ Not covered
 
@@ -272,24 +291,24 @@ Documentation Suite
 
 **I need to...**
 
-| Task | Document | Section |
-|------|----------|---------|
-| Install the system | QUICK_START_GUIDE.md | Installation |
-| Run my first scrape | QUICK_START_GUIDE.md | Run Your First Scrape |
-| Validate configuration | QUICK_START_GUIDE.md | Validate Configuration |
-| Configure a website | USAGE_DOCUMENTATION.md | Configuration Guide |
-| Enable rate limiting | USAGE_DOCUMENTATION.md | Advanced Features → Rate Limiting |
-| Enable caching | USAGE_DOCUMENTATION.md | Advanced Features → Redis Caching |
-| Set up proxy rotation | USAGE_DOCUMENTATION.md | Advanced Features → Proxy Rotation |
-| Understand selectors | USAGE_DOCUMENTATION.md | Configuration Guide → Selector Types |
-| Handle errors | USAGE_DOCUMENTATION.md | Troubleshooting |
-| Monitor performance | USAGE_DOCUMENTATION.md | Core Components → ScraperMonitor |
-| Understand architecture | ARCHITECTURE.md | System Architecture |
-| Extend the system | ARCHITECTURE.md | Extensibility |
-| Deploy to production | ARCHITECTURE.md | Deployment Considerations |
-| Run tests | README.md | Testing |
-| Find examples | USAGE_DOCUMENTATION.md | Examples |
-| Common commands | README.md | Quick Reference |
+| Task                    | Document               | Section                              |
+| ----------------------- | ---------------------- | ------------------------------------ |
+| Install the system      | QUICK_START_GUIDE.md   | Installation                         |
+| Run my first scrape     | QUICK_START_GUIDE.md   | Run Your First Scrape                |
+| Validate configuration  | QUICK_START_GUIDE.md   | Validate Configuration               |
+| Configure a website     | USAGE_DOCUMENTATION.md | Configuration Guide                  |
+| Enable rate limiting    | USAGE_DOCUMENTATION.md | Advanced Features → Rate Limiting    |
+| Enable caching          | USAGE_DOCUMENTATION.md | Advanced Features → Redis Caching    |
+| Set up proxy rotation   | USAGE_DOCUMENTATION.md | Advanced Features → Proxy Rotation   |
+| Understand selectors    | USAGE_DOCUMENTATION.md | Configuration Guide → Selector Types |
+| Handle errors           | USAGE_DOCUMENTATION.md | Troubleshooting                      |
+| Monitor performance     | USAGE_DOCUMENTATION.md | Core Components → ScraperMonitor     |
+| Understand architecture | ARCHITECTURE.md        | System Architecture                  |
+| Extend the system       | ARCHITECTURE.md        | Extensibility                        |
+| Deploy to production    | ARCHITECTURE.md        | Deployment Considerations            |
+| Run tests               | README.md              | Testing                              |
+| Find examples           | USAGE_DOCUMENTATION.md | Examples                             |
+| Common commands         | README.md              | Quick Reference                      |
 
 ---
 
@@ -358,18 +377,21 @@ Documentation Suite
 ## 🚀 Next Steps
 
 ### If you're new:
+
 1. Read `QUICK_START_GUIDE.md`
 2. Follow installation steps
 3. Run your first scrape
 4. Review `README.md` for overview
 
 ### If you're experienced:
+
 1. Read `USAGE_DOCUMENTATION.md` for advanced features
 2. Review `ARCHITECTURE.md` for system design
 3. Check `README.md` for latest updates
 4. Explore examples in `integration_example.py`
 
 ### If you're contributing:
+
 1. Read `ARCHITECTURE.md` for system design
 2. Review source code in `core/` and main files
 3. Run tests in `test_scraper_framework.py`
@@ -382,12 +404,14 @@ Documentation Suite
 ### Documentation Issues
 
 If you find:
+
 - ❌ Missing information
 - ❌ Incorrect examples
 - ❌ Broken links
 - ❌ Unclear explanations
 
 Please report by:
+
 1. Creating an issue
 2. Suggesting improvements
 3. Contributing to documentation

@@ -71,30 +71,35 @@ The Production Scraper is a comprehensive, enterprise-ready web scraping framewo
 ### Key Features
 
 #### 1. **Configuration System**
+
 - YAML-based configuration with schema validation
 - Template system for reusable patterns
 - Per-website and per-category customization
 - Automatic validation on load
 
 #### 2. **Advanced Features** (Phase 5)
+
 - **Rate Limiting**: Prevent IP blocking (configurable requests/minute)
 - **Redis Caching**: 60x faster re-runs with 24-hour cache
 - **Retry Logic**: Automatic retry with exponential backoff
 - **Proxy Rotation**: Round-robin/random with failure tracking
 
 #### 3. **Monitoring & Observability**
+
 - Structured logging (JSON + text formats)
 - Real-time metrics (success rate, articles, sentences)
 - Configurable alerts on thresholds
 - Performance analytics by website/category
 
 #### 4. **Error Handling**
+
 - Automatic retry with exponential backoff
 - WebDriver crash recovery
 - Error classification (network, extraction, timeout)
 - Detailed error reports
 
 #### 5. **Security**
+
 - Safe YAML loading (prevents code execution)
 - XPath injection prevention
 - Rate limiting to avoid bans
@@ -174,6 +179,7 @@ class ProductionScraper:
 ```
 
 **Features:**
+
 - Configuration validation on initialization
 - Automatic component initialization
 - Incremental scraping (avoid re-scraping)
@@ -204,6 +210,7 @@ for result in results:
 **Purpose:** Validates YAML configuration against schema.
 
 **Key Features:**
+
 - Required field validation
 - Type checking (strings, numbers, booleans, lists, dicts)
 - URL validation
@@ -235,6 +242,7 @@ if not is_valid:
 **Purpose:** Tracks scraping performance and health metrics.
 
 **Key Features:**
+
 - Success/failure rates
 - Article/sentence counts
 - Performance metrics (duration)
@@ -274,6 +282,7 @@ monitor.export_metrics('metrics.json')
 **Purpose:** Detect and filter content by language.
 
 **Supported Languages:**
+
 - Kurdish Sorani (ckb)
 - Kurdish Kurmanji (kmr)
 - Arabic (ar)
@@ -309,6 +318,7 @@ kurdish_articles = detector.filter_by_language(articles, ['ckb'])
 **Purpose:** Detect and prevent duplicate articles using multiple strategies.
 
 **Strategies:**
+
 - URL exact match
 - Title similarity (fuzzy matching)
 - Content similarity
@@ -371,6 +381,7 @@ print(f"Current rate: {stats['current_rate']}, "
 **Purpose:** Cache scraped content for dramatic performance improvement.
 
 **Features:**
+
 - Page HTML caching
 - Article list caching
 - Configurable TTL (time-to-live)
@@ -441,6 +452,7 @@ print(f"Success rate: {stats['success_rate']}")
 **Purpose:** Rotate through proxies to bypass IP blocking.
 
 **Strategies:**
+
 - Round-robin (sequential)
 - Random
 
@@ -485,29 +497,29 @@ print(f"Success rate: {stats['overall_success_rate']}")
 
 ```yaml
 # Website Configuration
-name: "Website Name"
-base_url: "https://example.com"
-enabled: true  # Optional: disable without deleting config
+name: 'Website Name'
+base_url: 'https://example.com'
+enabled: true # Optional: disable without deleting config
 
 # Selectors (CSS or XPath)
 selectors:
-  article_list: "div.article-card"
-  article_link: "a.article-link"
-  article_title: "h1.title"
+  article_list: 'div.article-card'
+  article_link: 'a.article-link'
+  article_title: 'h1.title'
   article_content:
-    - "div.content"  # Fallback chain
-    - "article.main"
-    - "div.text"
+    - 'div.content' # Fallback chain
+    - 'article.main'
+    - 'div.text'
 
 # Categories
 categories:
   politics:
-    url: "https://example.com/politics"
+    url: 'https://example.com/politics'
     enabled: true
-  
+
   economy:
-    url: "https://example.com/economy"
-    enabled: false  # Skip this category
+    url: 'https://example.com/economy'
+    enabled: false # Skip this category
 
 # Advanced Features
 rate_limiting:
@@ -516,7 +528,7 @@ rate_limiting:
 
 caching:
   enabled: true
-  redis_host: "localhost"
+  redis_host: 'localhost'
   redis_port: 6379
   ttl_hours: 24
 
@@ -527,36 +539,36 @@ retry:
 
 proxy:
   enabled: true
-  file: "proxies.txt"
-  strategy: "round_robin"  # or "random"
+  file: 'proxies.txt'
+  strategy: 'round_robin' # or "random"
 
 # URL Filtering
 url_filtering:
-  template: "rudaw"  # Use preset template
+  template: 'rudaw' # Use preset template
   # OR
-  preset: "standard"  # Use preset patterns
+  preset: 'standard' # Use preset patterns
   # OR
-  whitelist:  # Manual patterns
-    - "https://example.com/sorani/*"
+  whitelist: # Manual patterns
+    - 'https://example.com/sorani/*'
   blacklist:
-    - "*cdn.example.com*"
+    - '*cdn.example.com*'
 
 # Pagination
 pagination:
-  type: "pagination"  # or scroll, load_more, etc.
+  type: 'pagination' # or scroll, load_more, etc.
   pages: 5
   delay: 2.0
 
 # Wait Strategies
 wait:
-  selector: "div.content"
+  selector: 'div.content'
   timeout: 10
 
 collection_wait:
-  selector: "div.article-list"
+  selector: 'div.article-list'
   timeout: 15
 
-article_wait: 3.0  # Simple delay in seconds
+article_wait: 3.0 # Simple delay in seconds
 ```
 
 ### Configuration Options
@@ -567,7 +579,7 @@ article_wait: 3.0  # Simple delay in seconds
 
 ```yaml
 selectors:
-  article_title: "h1.title"
+  article_title: 'h1.title'
 ```
 
 **2. Fallback Chain (List)**
@@ -575,9 +587,9 @@ selectors:
 ```yaml
 selectors:
   article_content:
-    - "div.content-main"  # Try first
-    - "article.content"   # Fallback
-    - "div.article-body"  # Last resort
+    - 'div.content-main' # Try first
+    - 'article.content' # Fallback
+    - 'div.article-body' # Last resort
 ```
 
 **3. XPath Selector (Dict)**
@@ -585,7 +597,7 @@ selectors:
 ```yaml
 selectors:
   article_title:
-    type: "xpath"
+    type: 'xpath'
     value: "//h1[@class='title']"
 ```
 
@@ -594,9 +606,9 @@ selectors:
 ```yaml
 selectors:
   tags:
-    selector: "span.tag"
+    selector: 'span.tag'
     multiple: true
-    join: ", "  # Join with comma
+    join: ', ' # Join with comma
 ```
 
 #### Pagination Types
@@ -605,9 +617,9 @@ selectors:
 
 ```yaml
 pagination:
-  type: "pagination"
+  type: 'pagination'
   pages: 5
-  page_param: "page"  # URL: ?page=1, ?page=2, etc.
+  page_param: 'page' # URL: ?page=1, ?page=2, etc.
   delay: 2.0
 ```
 
@@ -615,7 +627,7 @@ pagination:
 
 ```yaml
 pagination:
-  type: "url_template"
+  type: 'url_template'
   pages: 5
   # URL: /page/1/, /page/2/, etc.
 ```
@@ -624,7 +636,7 @@ pagination:
 
 ```yaml
 pagination:
-  type: "scroll"
+  type: 'scroll'
   scrolls: 10
   delay: 1.5
 ```
@@ -633,9 +645,9 @@ pagination:
 
 ```yaml
 pagination:
-  type: "load_more"
+  type: 'load_more'
   clicks: 5
-  load_more_button: "button.load-more"
+  load_more_button: 'button.load-more'
   delay: 2.0
 ```
 
@@ -644,14 +656,14 @@ pagination:
 **1. Simple Delay**
 
 ```yaml
-wait: 3.0  # Wait 3 seconds
+wait: 3.0 # Wait 3 seconds
 ```
 
 **2. Wait for Element**
 
 ```yaml
 wait:
-  selector: "div.content"
+  selector: 'div.content'
   timeout: 10
 ```
 
@@ -659,11 +671,11 @@ wait:
 
 ```yaml
 wait:
-  selector: "div.article-list"
-  condition: "count"  # visible, clickable, etc.
+  selector: 'div.article-list'
+  condition: 'count' # visible, clickable, etc.
   count: 5
   timeout: 15
-  fallback_wait: 3.0  # If wait fails
+  fallback_wait: 3.0 # If wait fails
 ```
 
 #### URL Filtering Options
@@ -672,34 +684,34 @@ wait:
 
 ```yaml
 url_filtering:
-  template: "rudaw"  # Use preset template
+  template: 'rudaw' # Use preset template
 ```
 
 **Option 2: Template + Custom Patterns (Recommended)**
 
 ```yaml
 url_filtering:
-  template: "rudaw"  # Base patterns from template
-  whitelist:  # Add site-specific patterns
-    - "https://www.rudaw.net/sorani/sports/*"
+  template: 'rudaw' # Base patterns from template
+  whitelist: # Add site-specific patterns
+    - 'https://www.rudaw.net/sorani/sports/*'
   blacklist:
-    - "*tracker.example.com*"
+    - '*tracker.example.com*'
 ```
 
 **Option 3: Preset**
 
 ```yaml
 url_filtering:
-  preset: "standard"  # Use standard blocking patterns
+  preset: 'standard' # Use standard blocking patterns
 ```
 
 **Option 4: Preset + Custom Patterns**
 
 ```yaml
 url_filtering:
-  preset: "standard"
+  preset: 'standard'
   blacklist:
-    - "*custom-tracker.com*"
+    - '*custom-tracker.com*'
 ```
 
 **Option 5: Manual (Full Control)**
@@ -707,12 +719,12 @@ url_filtering:
 ```yaml
 url_filtering:
   whitelist:
-    - "https://example.com/sorani/*"
-    - "https://example.com/kurdish/*"
+    - 'https://example.com/sorani/*'
+    - 'https://example.com/kurdish/*'
   blacklist:
-    - "*cdn.example.com*"
-    - "*ads.example.com*"
-    - "*?utm_*"
+    - '*cdn.example.com*'
+    - '*ads.example.com*'
+    - '*?utm_*'
 ```
 
 ---
@@ -728,10 +740,11 @@ url_filtering:
 ```yaml
 rate_limiting:
   enabled: true
-  max_requests_per_minute: 30  # 30 requests per minute
+  max_requests_per_minute: 30 # 30 requests per minute
 ```
 
 **Benefits:**
+
 - Prevents IP bans
 - Respects server resources
 - Configurable per website
@@ -754,13 +767,14 @@ scraper.scrape_website('kurdsat')  # Rate limited automatically
 ```yaml
 caching:
   enabled: true
-  redis_host: "localhost"
+  redis_host: 'localhost'
   redis_port: 6379
   redis_db: 0
-  ttl_hours: 24  # Cache for 24 hours
+  ttl_hours: 24 # Cache for 24 hours
 ```
 
 **Benefits:**
+
 - 60x faster re-runs (first run: 60 min, cached: <1 min)
 - Reduces server load
 - Automatic expiration
@@ -800,12 +814,13 @@ result2 = scraper.scrape_website('kurdsat')  # <1 second
 ```yaml
 retry:
   enabled: true
-  max_attempts: 3  # Retry up to 3 times
-  delay_seconds: 2.0  # Wait 2 seconds between retries
-  retry_on_empty: true  # Retry if result is empty
+  max_attempts: 3 # Retry up to 3 times
+  delay_seconds: 2.0 # Wait 2 seconds between retries
+  retry_on_empty: true # Retry if result is empty
 ```
 
 **Benefits:**
+
 - Handles transient network errors
 - Exponential backoff prevents server overload
 - Automatic crash recovery
@@ -830,8 +845,8 @@ result = scraper.scrape_website('kurdsat')
 ```yaml
 proxy:
   enabled: true
-  file: "proxies.txt"
-  strategy: "round_robin"  # or "random"
+  file: 'proxies.txt'
+  strategy: 'round_robin' # or "random"
 ```
 
 **Setup:**
@@ -850,6 +865,7 @@ http://user:pass@proxy3.example.com:3128
 ```
 
 **Benefits:**
+
 - Bypass IP blocking
 - Distribute load across proxies
 - Automatic failure tracking
@@ -875,19 +891,19 @@ result = scraper.scrape_website('kurdsat')
 ```python
 class ProductionScraper:
     """Main scraper orchestrator"""
-    
+
     def __init__(self, config_path: str):
         """
         Initialize scraper with configuration
-        
+
         Args:
             config_path: Path to YAML configuration file
-        
+
         Raises:
             ValueError: If configuration is invalid
             FileNotFoundError: If config file not found
         """
-    
+
     def scrape_website(
         self,
         website_name: str,
@@ -896,16 +912,16 @@ class ProductionScraper:
     ) -> ScrapeResult:
         """
         Scrape a single website
-        
+
         Args:
             website_name: Website identifier from config
             category: Optional category filter
             max_articles: Maximum articles to scrape
-        
+
         Returns:
             ScrapeResult with metrics
         """
-    
+
     def scrape_all_websites(
         self,
         parallel: bool = True,
@@ -913,11 +929,11 @@ class ProductionScraper:
     ) -> List[ScrapeResult]:
         """
         Scrape all configured websites
-        
+
         Args:
             parallel: Whether to use parallel scraping
             max_workers: Number of parallel workers
-        
+
         Returns:
             List of ScrapeResult objects
         """
@@ -929,7 +945,7 @@ class ProductionScraper:
 @dataclass
 class ScrapeResult:
     """Result of a scrape operation"""
-    
+
     website: str              # Website name
     success: bool             # Whether scrape succeeded
     articles_scraped: int     # Number of articles scraped
@@ -943,7 +959,7 @@ class ScrapeResult:
 ```python
 class ConfigValidator:
     """Validates YAML configuration"""
-    
+
     def validate_config(
         self,
         config: Dict,
@@ -951,11 +967,11 @@ class ConfigValidator:
     ) -> Tuple[bool, List[str], List[str]]:
         """
         Validate configuration dictionary
-        
+
         Args:
             config: Configuration dictionary
             is_single_website: True if config is single website
-        
+
         Returns:
             (is_valid, errors, warnings)
         """
@@ -966,7 +982,7 @@ class ConfigValidator:
 ```python
 class ScraperMonitor:
     """Monitor scraping performance"""
-    
+
     def __init__(
         self,
         log_dir: str = 'logs',
@@ -974,23 +990,23 @@ class ScraperMonitor:
     ):
         """
         Initialize monitor
-        
+
         Args:
             log_dir: Directory for log files
             alert_thresholds: Custom alert thresholds
         """
-    
+
     def log_scrape(self, result: ScrapeResult):
         """
         Log scrape result
-        
+
         Args:
             result: ScrapeResult object
         """
-    
+
     def generate_report(self) -> str:
         """Generate performance report"""
-    
+
     def export_metrics(self, filepath: str):
         """Export metrics to JSON file"""
 ```
@@ -1002,12 +1018,14 @@ class ScraperMonitor:
 ### 1. Configuration Management
 
 **✅ DO:**
+
 - Validate configuration before scraping
 - Use templates for common patterns
 - Keep website-specific patterns minimal
 - Document custom selectors
 
 **❌ DON'T:**
+
 - Hardcode configuration in code
 - Duplicate patterns across websites
 - Skip validation
@@ -1032,12 +1050,14 @@ config = yaml.load(open('websites.yaml'))  # Unsafe!
 ### 2. Error Handling
 
 **✅ DO:**
+
 - Use error handler for all scraping operations
 - Review error summaries regularly
 - Configure appropriate retry attempts
 - Log errors with context
 
 **❌ DON'T:**
+
 - Ignore errors silently
 - Retry indefinitely
 - Use bare except blocks
@@ -1066,12 +1086,14 @@ except:  # Bare except!
 ### 3. Rate Limiting
 
 **✅ DO:**
+
 - Enable rate limiting for all websites
 - Start conservative (20-30 req/min)
 - Monitor for 429 errors
 - Adjust based on website capacity
 
 **❌ DON'T:**
+
 - Scrape without rate limiting
 - Set unrealistic limits (>100 req/min)
 - Ignore 429/blocking responses
@@ -1092,12 +1114,14 @@ rate_limiting:
 ### 4. Caching Strategy
 
 **✅ DO:**
+
 - Enable caching for development/testing
 - Use appropriate TTL (24h for news)
 - Monitor cache hit rates
 - Invalidate stale cache
 
 **❌ DON'T:**
+
 - Cache production data indefinitely
 - Use same cache for dev and prod
 - Forget to install/start Redis
@@ -1123,12 +1147,14 @@ cache = RedisCache(ttl_hours=8760)  # 1 year TTL!
 ### 5. Monitoring
 
 **✅ DO:**
+
 - Monitor all production scraping
 - Set alert thresholds
 - Export metrics regularly
 - Review performance trends
 
 **❌ DON'T:**
+
 - Run production without monitoring
 - Ignore alerts
 - Skip metric collection
@@ -1156,12 +1182,14 @@ result = scrape()  # What if it fails?
 ### 6. Security
 
 **✅ DO:**
+
 - Always use `safe_load_yaml()`
 - Sanitize XPath selectors
 - Use environment variables for credentials
 - Rotate user agents
 
 **❌ DON'T:**
+
 - Use `yaml.load()` (code execution risk!)
 - Hardcode credentials
 - Use same user agent always
@@ -1190,29 +1218,33 @@ xpath = user_xpath  # Injection risk!
 #### 1. Configuration Validation Fails
 
 **Error:**
+
 ```
 ❌ [kurdsat] Missing required field: 'base_url'
 ```
 
 **Solution:**
+
 ```yaml
 # Add missing field
 kurdsat:
-  name: "Kurdsat"
-  base_url: "https://kurdsat.tv"  # Add this
+  name: 'Kurdsat'
+  base_url: 'https://kurdsat.tv' # Add this
   categories:
     politics:
-      url: "https://kurdsat.tv/politics"
+      url: 'https://kurdsat.tv/politics'
 ```
 
 #### 2. Redis Connection Error
 
 **Error:**
+
 ```
 ❌ Redis connection failed: ConnectionRefusedError
 ```
 
 **Solution:**
+
 ```bash
 # Start Redis server
 redis-server
@@ -1225,15 +1257,17 @@ caching:
 #### 3. Rate Limit Exceeded
 
 **Error:**
+
 ```
 ⏳ Rate limit reached (30 req/min). Waiting 5.2s...
 ```
 
 **Solution:**
+
 ```yaml
 # Increase limit (if website allows)
 rate_limiting:
-  max_requests_per_minute: 60  # Increase
+  max_requests_per_minute: 60 # Increase
 
 # Or accept the wait (recommended)
 ```
@@ -1241,11 +1275,13 @@ rate_limiting:
 #### 4. Proxy Connection Failed
 
 **Error:**
+
 ```
 ⚠️ High failure rate for proxy proxy1.example.com:8080 (75.0%)
 ```
 
 **Solution:**
+
 ```
 # Check proxy file
 cat proxies.txt
@@ -1262,11 +1298,13 @@ proxy:
 #### 5. Empty Results
 
 **Error:**
+
 ```
 ⚠️ LOW SENTENCE COUNT: kurdsat.politics got only 0 sentences
 ```
 
 **Solution:**
+
 ```python
 # Check selectors
 # Enable debug mode
@@ -1279,11 +1317,13 @@ document.querySelectorAll('div.article-card')  # Should find elements
 #### 6. Timeout Errors
 
 **Error:**
+
 ```
 TimeoutException: Element not found after 10s
 ```
 
 **Solution:**
+
 ```yaml
 # Increase timeout
 wait:
@@ -1499,7 +1539,7 @@ for article in articles:
         article['title'],
         article['content']
     )
-    
+
     if not is_dup:
         unique_articles.append(article)
 
@@ -1512,14 +1552,14 @@ print(f"Original: {len(articles)}, Unique: {len(unique_articles)}")
 
 ### Documentation Files
 
-| Document | Purpose |
-|----------|---------|
-| `README.md` | Overview and quick reference |
-| `USAGE_DOCUMENTATION.md` | This file - complete usage guide |
-| `docs/PRODUCTION_READINESS.md` | Production deployment guide |
-| `docs/SCRAPER_QUICK_START.md` | Quick start tutorial |
-| `docs/URL_FILTERING_EASY_GUIDE.md` | URL filtering guide |
-| `docs/ADVANCED_FEATURES.md` | Advanced features deep dive |
+| Document                           | Purpose                          |
+| ---------------------------------- | -------------------------------- |
+| `README.md`                        | Overview and quick reference     |
+| `USAGE_DOCUMENTATION.md`           | This file - complete usage guide |
+| `docs/PRODUCTION_READINESS.md`     | Production deployment guide      |
+| `docs/SCRAPER_QUICK_START.md`      | Quick start tutorial             |
+| `docs/URL_FILTERING_EASY_GUIDE.md` | URL filtering guide              |
+| `docs/ADVANCED_FEATURES.md`        | Advanced features deep dive      |
 
 ### Code Examples
 

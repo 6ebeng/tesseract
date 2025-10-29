@@ -29,6 +29,7 @@ python config_validator.py configs/websites/kurdsat.yaml
 ```
 
 **Expected Output:**
+
 ```
 ✅ kurdsat.yaml is VALID
 ```
@@ -137,20 +138,20 @@ pytest test_scraper_framework.py::TestConfigValidator -v
 ### Configuration Structure
 
 ```yaml
-name: "Website Name"
-base_url: "https://example.com"
+name: 'Website Name'
+base_url: 'https://example.com'
 
 selectors:
-  article_list: "div.article"
-  article_link: "a"
-  article_title: "h1"
-  article_content: "div.content"
+  article_list: 'div.article'
+  article_link: 'a'
+  article_title: 'h1'
+  article_content: 'div.content'
 
 categories:
   politics:
-    url: "https://example.com/politics"
+    url: 'https://example.com/politics'
   economy:
-    url: "https://example.com/economy"
+    url: 'https://example.com/economy'
 ```
 
 ### Selector Types
@@ -236,7 +237,7 @@ document.querySelectorAll('div.article')
 ```yaml
 # Increase delay
 rate_limiting:
-  max_requests_per_minute: 20  # Lower = slower but safer
+  max_requests_per_minute: 20 # Lower = slower but safer
 ```
 
 ---
