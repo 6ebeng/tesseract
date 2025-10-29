@@ -192,8 +192,16 @@ class GenericScraper:
         if self.config_path.is_dir():
             logger.info(f"Loading configurations from directory: {self.config_path}")
             
+            # Check for websites subdirectory (new structure)
+            websites_dir = self.config_path / 'websites'
+            if websites_dir.exists() and websites_dir.is_dir():
+                logger.info(f"  Using websites subdirectory: {websites_dir}")
+                config_dir = websites_dir
+            else:
+                config_dir = self.config_path
+            
             # Load all YAML files from directory
-            yaml_files = sorted(self.config_path.glob('*.yaml'))
+            yaml_files = sorted(config_dir.glob('*.yaml'))
             yaml_files = [f for f in yaml_files if f.name != 'index.yaml']  # Skip index
             
             for yaml_file in yaml_files:
@@ -419,8 +427,13 @@ class GenericScraper:
             
             # Save tracked URLs if debugging was enabled
             if self.url_debug_mode and self.tracked_urls:
-                filename = f"tracked_urls_{website_name}.txt"
-                self.save_tracked_urls(filename)
+                # Create tracked_urls directory if it doesn't exist
+                from pathlib import Path
+                tracked_dir = Path(__file__).parent / 'tracked_urls'
+                tracked_dir.mkdir(exist_ok=True)
+                
+                filename = tracked_dir / f"tracked_urls_{website_name}.txt"
+                self.save_tracked_urls(str(filename))
                 analysis = self.analyze_urls()
                 logger.info(f"\n📊 URL Analysis:")
                 logger.info(f"   Total URLs: {analysis['total_urls']}")
@@ -569,6 +582,25 @@ class GenericScraper:
             )
         
         logger.info(f"   ✅ Extracted {len(sentences)} sentences from {len(article_links)} articles\n")
+        
+        # Save tracked URLs if debugging was enabled
+        if self.url_debug_mode and self.tracked_urls:
+            # Create tracked_urls directory if it doesn't exist
+            from pathlib import Path
+            tracked_dir = Path(__file__).parent / 'tracked_urls'
+            tracked_dir.mkdir(exist_ok=True)
+            
+            filename = tracked_dir / f"tracked_urls_{website_name}_{category_name}.txt"
+            self.save_tracked_urls(str(filename))
+            analysis = self.analyze_urls()
+            logger.info(f"\n📊 URL Analysis:")
+            logger.info(f"   Total URLs: {analysis['total_urls']}")
+            logger.info(f"   Unique domains: {analysis['unique_domains']}")
+            logger.info(f"   Resource types: {analysis['resource_types']}")
+            if analysis['recommendations']:
+                logger.info(f"\n💡 Recommendations:")
+                for rec in analysis['recommendations']:
+                    logger.info(f"   • {rec}")
         
         return sentences
     

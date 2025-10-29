@@ -101,7 +101,7 @@ def list_websites(scraper):
     print(f"Total: {len(websites)} websites")
     print("="*60)
 
-def test_website(scraper, website_name, max_articles=5, state=None):
+def test_website(scraper, website_name, max_articles=5, state=None, track_urls=False, category_filter=None, pages_override=None, article_index=None):
     """Test a single website - all enabled categories
     
     Args:
@@ -109,6 +109,10 @@ def test_website(scraper, website_name, max_articles=5, state=None):
         website_name: Name of the website to test
         max_articles: Maximum articles to scrape per category
         state: Previous state dict for resume (optional)
+        track_urls: If True, limit to 1 category and override pagination for URL tracking
+        category_filter: If provided, test only this specific category
+        pages_override: If provided, override pagination pages count
+        article_index: If provided, test only specific article by index (1-based)
     """
     if website_name not in scraper.config:
         print(f"❌ Website '{website_name}' not found in configs")
@@ -138,6 +142,49 @@ def test_website(scraper, website_name, max_articles=5, state=None):
         print(f"⚠️  {website_name}: All categories disabled - skipping")
         return None
     
+    # Filter by specific category if requested
+    if category_filter:
+        if category_filter in enabled_categories:
+            enabled_categories = {category_filter: enabled_categories[category_filter]}
+            print(f"   🎯 Category Filter: Testing only '{category_filter}'")
+        else:
+            print(f"   ❌ Category '{category_filter}' not found or disabled")
+            available = ', '.join(enabled_categories.keys())
+            print(f"   Available categories: {available}")
+            return None
+    
+    # For URL tracking mode: limit to first enabled category only (unless specific category requested)
+    if track_urls and not category_filter:
+        first_category = list(enabled_categories.keys())[0]
+        enabled_categories = {first_category: enabled_categories[first_category]}
+        print(f"   📊 URL Tracking Mode: Testing only first category '{first_category}'")
+        max_articles = 1  # Override to 1 article for URL tracking
+        
+        # Temporarily override pagination to 1 page (both website and category level)
+        config_backup = config.get('pagination', {}).copy() if 'pagination' in config else None
+        if 'pagination' not in config:
+            config['pagination'] = {}
+        config['pagination']['pages'] = 1
+        
+        # Also override category-level pagination if it exists
+        category_config = enabled_categories[first_category]
+        category_pagination_backup = category_config.get('pagination', {}).copy() if 'pagination' in category_config else None
+        if 'pagination' not in category_config:
+            category_config['pagination'] = {}
+        category_config['pagination']['pages'] = 1
+    
+    # Override pages if requested (applies to all categories being tested)
+    if pages_override is not None:
+        print(f"   📄 Pages Override: Limiting to {pages_override} page(s)")
+        for cat_name, cat_config in enabled_categories.items():
+            if 'pagination' not in cat_config:
+                cat_config['pagination'] = {}
+            cat_config['pagination']['pages'] = pages_override
+        # Also set at website level
+        if 'pagination' not in config:
+            config['pagination'] = {}
+        config['pagination']['pages'] = pages_override
+    
     # Check if resuming from previous state
     completed_categories = set()
     if state and website_name in state.get('completed', {}):
@@ -153,6 +200,17 @@ def test_website(scraper, website_name, max_articles=5, state=None):
         remaining = len(enabled_categories) - len(completed_categories)
         print(f"   Remaining: {remaining} categories to test")
     print(f"{'='*60}")
+    
+    # Handle article index selection
+    actual_max_articles = max_articles
+    article_skip = 0
+    if article_index is not None:
+        if article_index < 1:
+            print(f"   ❌ Invalid article index: {article_index} (must be >= 1)")
+            return None
+        print(f"   🎯 Article Index: Testing only article #{article_index}")
+        article_skip = article_index - 1  # Number of articles to skip
+        actual_max_articles = article_index  # Need to fetch up to this article
     
     all_sentences = []
     category_results = {}
@@ -170,11 +228,19 @@ def test_website(scraper, website_name, max_articles=5, state=None):
         try:
             start_time = datetime.now()
             
+            # Adjust max_articles if testing specific article index
+            scrape_max = actual_max_articles if article_index else max_articles
+            
             sentences = scraper.scrape_category(
                 website_name,
                 cat_name,
-                max_articles=max_articles
+                max_articles=scrape_max
             )
+            
+            # If testing specific article index, we can't easily filter individual articles
+            # from combined sentences, so we note this limitation
+            if article_index:
+                print(f"      ℹ️  Note: Fetched up to article #{article_index} (sentences may include previous articles)")
             
             end_time = datetime.now()
             duration = (end_time - start_time).total_seconds()
@@ -201,6 +267,23 @@ def test_website(scraper, website_name, max_articles=5, state=None):
             }
     
     overall_duration = (datetime.now() - overall_start).total_seconds()
+    
+    # Restore pagination config if we modified it for URL tracking
+    if track_urls:
+        # Restore website-level pagination
+        if 'config_backup' in locals() and config_backup is not None:
+            config['pagination'] = config_backup
+        elif 'config_backup' in locals() and config_backup is None and 'pagination' in config:
+            del config['pagination']
+        
+        # Restore category-level pagination
+        if 'category_pagination_backup' in locals():
+            first_category = list(enabled_categories.keys())[0]
+            category_config = enabled_categories[first_category]
+            if category_pagination_backup is not None:
+                category_config['pagination'] = category_pagination_backup
+            elif 'pagination' in category_config:
+                del category_config['pagination']
     
     # Summary for this website
     successful_cats = [c for c, r in category_results.items() if r['success']]
@@ -244,6 +327,11 @@ Examples:
   %(prog)s --resume                  # Resume from last run
   %(prog)s --fresh                   # Start fresh (clear previous state)
   %(prog)s --list                    # List all available websites
+  %(prog)s --track-urls              # Enable URL tracking for all tests
+  %(prog)s govkrd --category activities --max-articles 5  # Test specific category
+  %(prog)s rudaw --pages 2           # Override pagination to 2 pages
+  %(prog)s nrt --category news --article-index 3  # Test only 3rd article
+  %(prog)s govkrd --category activities --pages 1 --article-index 2  # 2nd article from page 1
         """
     )
     
@@ -284,6 +372,30 @@ Examples:
         help='Start fresh (ignore previous state)'
     )
     
+    parser.add_argument(
+        '--track-urls',
+        action='store_true',
+        help='Enable URL tracking for performance analysis (saves tracked_urls_*.txt files)'
+    )
+    
+    parser.add_argument(
+        '--category',
+        type=str,
+        help='Test only specific category (e.g., --category news)'
+    )
+    
+    parser.add_argument(
+        '--pages',
+        type=int,
+        help='Override number of pages to scrape (e.g., --pages 3)'
+    )
+    
+    parser.add_argument(
+        '--article-index',
+        type=int,
+        help='Test only specific article by index (1-based, e.g., --article-index 3 for 3rd article)'
+    )
+    
     args = parser.parse_args()
     
     # Handle fresh start
@@ -293,6 +405,11 @@ Examples:
     # Initialize scraper
     print("\n🔧 Initializing Generic Scraper...")
     scraper = GenericScraper('scrapers/configs/')
+    
+    # Enable URL tracking if requested
+    if args.track_urls:
+        scraper.url_debug_mode = True
+        print("📊 URL tracking enabled - will save tracked_urls_*.txt files")
     
     # List websites if requested
     if args.list:
@@ -317,11 +434,13 @@ Examples:
         websites_to_test = args.websites
         print(f"\n📝 Testing {len(websites_to_test)} specific website(s)")
     else:
-        # Test all websites (exclude examples/templates)
+        # Test all websites (exclude examples/templates/presets)
         exclude_patterns = ['EXAMPLE', 'TEMPLATE', 'TEST']
+        exclude_exact = ['url_filtering_presets']  # Exact matches to exclude
         websites_to_test = sorted([
             w for w in scraper.config.keys()
             if not any(pattern in w.upper() for pattern in exclude_patterns)
+            and w not in exclude_exact
         ])
         
         if args.enabled_only:
@@ -373,7 +492,16 @@ Examples:
             print(f"Progress: {i}/{len(websites_to_test)}")
             print(f"{'='*60}")
             
-            result = test_website(scraper, website, args.max_articles, state)
+            result = test_website(
+                scraper, 
+                website, 
+                args.max_articles, 
+                state, 
+                track_urls=args.track_urls,
+                category_filter=args.category,
+                pages_override=args.pages,
+                article_index=args.article_index
+            )
             results[website] = result
             
             # Update state after each website

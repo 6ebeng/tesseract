@@ -1,0 +1,29 @@
+# Tracked URLs (17 total)
+# Tracked on: 2025-10-29 12:17:54
+
+# HTML Pages (1)
+https://lvinpress.com/cdn-cgi/rum?
+
+# Scripts (4)
+https://lvinpress.com/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js
+https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015
+https://lvinpress.com/cdn-cgi/challenge-platform/scripts/jsd/main.js
+https://lvinpress.com/cdn-cgi/challenge-platform/h/b/scripts/jsd/c88755b0cddc/main.js?
+
+# Styles (2)
+https://lvinpress.com/wp-content/litespeed/css/f850e109adc2024c40842e327d208331.css?ver=4a15e
+https://lvinpress.com/wp-content/litespeed/css/135160c985bf48f211e759a5722652dc.css?ver=4a15e
+
+# Images (1)
+https://lvinpress.com/wp-content/uploads/2024/06/cropped-Group_-1-32x32.png
+
+# Other (9)
+https://lvinpress.com/category/news/kurdistan
+https://lvinpress.com/wp-content/uploads/2024/06/Greta-Arabic-Bold.ttf
+https://lvinpress.com/wp-content/uploads/2024/10/Rabar_038.ttf
+https://lvinpress.com/wp-content/uploads/2024/10/Rabar_021.ttf
+https://lvinpress.com/wp-content/plugins/litespeed-cache/guest.vary.php
+https://lvinpress.com/cdn-cgi/challenge-platform/h/b/jsd/r/0.9867617784876213:1761728914:g7T5REOeTrlhrwS7jJA2AntkcFCE1yuiCwoeGR58j-Q/996194a90e84e44f
+https://lvinpress.com/news/kurdistan/7457
+https://lvinpress.com/wp-content/uploads/2025/07/GretaTextArabicBold.woff
+https://lvinpress.com/wp-content/uploads/2025/07/GretaTextArabicRegular.woff
