@@ -158,6 +158,10 @@ class GenericScraper:
         self.driver = None
         self.current_website = None
         self.flaresolverr_session = None  # FlareSolverr session ID
+        
+        # Article link deduplication (tracks scraped URLs to skip duplicates)
+        self.scraped_article_links = set()  # URLs that have been scraped
+        self.article_link_db_path = Path('scraped_articles.db')  # Persistent storage
         self.stats = {
             'articles_processed': 0,
             'sentences_extracted': 0,
@@ -491,6 +495,11 @@ class GenericScraper:
             raise ValueError(f"Category '{category_name}' not found for {website_name}")
         
         category_config = categories[category_name]
+
+        # Load previously scraped articles for deduplication
+        if not hasattr(self, '_scraped_articles_loaded'):
+            self.load_scraped_articles()
+            self._scraped_articles_loaded = True
 
         # Enable URL debugging when requested at website level (category run)
         if website_config.get('debug_urls', False) and not self.url_debug_mode:
@@ -897,6 +906,11 @@ class GenericScraper:
         
         for i, link in enumerate(article_links):
             try:
+                # Skip if article already scraped
+                if self.is_article_scraped(link):
+                    logger.debug(f"   ⏭️  Skipping already scraped article: {link}")
+                    continue
+                
                 # Navigate to article (use FlareSolverr if available)
                 if self.flaresolverr_session:
                     html = self._flaresolverr_get(link)
@@ -1100,6 +1114,9 @@ class GenericScraper:
                         logger.info(f"      Adding {len(article_text)} paragraphs as sentences")
                         sentences.extend(article_text)
                     self.stats['articles_processed'] += 1
+                    
+                    # Mark article as scraped for deduplication
+                    self.save_scraped_article(link)
                 
                 if (i + 1) % 10 == 0:
                     logger.info(f"   Processed {i + 1}/{len(article_links)} articles...")
@@ -1172,6 +1189,11 @@ class GenericScraper:
                     article_url = element.get_attribute('href')
                 except:
                     article_url = "unknown"
+                
+                # Skip if article already scraped
+                if article_url != "unknown" and self.is_article_scraped(article_url):
+                    logger.debug(f"   ⏭️  Skipping already scraped article: {article_url}")
+                    continue
                 
                 # Click the article element
                 try:
@@ -1256,6 +1278,10 @@ class GenericScraper:
                         sentences.extend(article_text)
                     
                     self.stats['articles_processed'] += 1
+                    
+                    # Mark article as scraped for deduplication
+                    if article_url != "unknown":
+                        self.save_scraped_article(article_url)
                 
                 # Navigate back to list page using browser back button (FAST!)
                 self.driver.back()
@@ -1800,6 +1826,70 @@ class GenericScraper:
             duration=0,
             error=reason
         )
+    
+    # ========================================================================
+    # Article Link Deduplication
+    # ========================================================================
+    
+    def load_scraped_articles(self):
+        """Load previously scraped article links from database"""
+        try:
+            import sqlite3
+            if not self.article_link_db_path.exists():
+                return
+            
+            conn = sqlite3.connect(str(self.article_link_db_path))
+            cursor = conn.cursor()
+            cursor.execute("SELECT url FROM scraped_articles")
+            self.scraped_article_links = set(row[0] for row in cursor.fetchall())
+            conn.close()
+            
+            logger.info(f"📚 Loaded {len(self.scraped_article_links)} previously scraped article URLs")
+        except Exception as e:
+            logger.warning(f"Could not load scraped articles: {e}")
+            self.scraped_article_links = set()
+    
+    def save_scraped_article(self, url: str):
+        """Save a scraped article URL to the database"""
+        try:
+            import sqlite3
+            self.scraped_article_links.add(url)
+            
+            conn = sqlite3.connect(str(self.article_link_db_path))
+            cursor = conn.cursor()
+            
+            # Create table if it doesn't exist
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS scraped_articles (
+                    url TEXT PRIMARY KEY,
+                    scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Insert the URL
+            cursor.execute(
+                "INSERT OR IGNORE INTO scraped_articles (url) VALUES (?)",
+                (url,)
+            )
+            
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.debug(f"Could not save scraped article: {e}")
+    
+    def clear_scraped_articles(self):
+        """Clear the scraped articles database"""
+        try:
+            if self.article_link_db_path.exists():
+                self.article_link_db_path.unlink()
+            self.scraped_article_links = set()
+            logger.info("🗑️  Cleared scraped articles database")
+        except Exception as e:
+            logger.warning(f"Could not clear scraped articles: {e}")
+    
+    def is_article_scraped(self, url: str) -> bool:
+        """Check if an article URL has already been scraped"""
+        return url in self.scraped_article_links
     
     # ========================================================================
     # URL Tracking & Whitelisting for Performance Optimization

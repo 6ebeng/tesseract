@@ -87,6 +87,11 @@ class DebugScraper:
         config_path = Path(__file__).parent / 'scrapers' / 'configs'
         self.scraper = GenericScraper(str(config_path))
         
+        # Disable article link deduplication for debugging (allows re-testing same articles)
+        self.scraper.scraped_article_links = set()  # Clear in-memory cache
+        self.scraper._scraped_articles_loaded = True  # Skip loading from database
+        logger.info("🔓 Article link deduplication disabled for debugging")
+        
         # Set verbose logging
         if verbose:
             logging.getLogger().setLevel(logging.DEBUG)

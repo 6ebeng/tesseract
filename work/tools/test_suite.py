@@ -396,6 +396,12 @@ Examples:
         help='Test only specific article by index (1-based, e.g., --article-index 3 for 3rd article)'
     )
     
+    parser.add_argument(
+        '--clear-scraped',
+        action='store_true',
+        help='Clear scraped articles database before testing (force re-scrape all articles)'
+    )
+    
     args = parser.parse_args()
     
     # Handle fresh start
@@ -405,6 +411,16 @@ Examples:
     # Initialize scraper
     print("\n🔧 Initializing Generic Scraper...")
     scraper = GenericScraper('scrapers/configs/')
+    
+    # Disable article link deduplication for testing (allows re-testing same articles)
+    scraper.scraped_article_links = set()  # Clear in-memory cache
+    scraper._scraped_articles_loaded = True  # Skip loading from database
+    print("🔓 Article link deduplication disabled for testing")
+    
+    # Clear scraped articles database if requested
+    if args.clear_scraped:
+        print("🗑️  Clearing scraped articles database...")
+        scraper.clear_scraped_articles()
     
     # Enable URL tracking if requested
     if args.track_urls:
