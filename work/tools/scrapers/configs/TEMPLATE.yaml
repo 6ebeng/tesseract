@@ -7,6 +7,14 @@ base_url: 'https://example.com'
 enabled: true  # Set to false to disable entire website
 
 # ============================================================================
+# OPTIONAL: URL Filtering (Presets + Overrides)
+# ============================================================================
+url_filtering:
+  preset: 'standard'
+  whitelist: []  # Add site-specific allowlist patterns when needed
+  blacklist: []  # Add site-specific blocklist patterns when needed
+
+# ============================================================================
 # OPTIONAL: Click-through navigation for anti-scraping protection
 # ============================================================================
 # click_through_navigation: true  # Use browser back button, preserves session

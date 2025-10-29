@@ -5,6 +5,71 @@
 name: 'Kurdistan Regional Government'
 base_url: 'https://gov.krd'
 enabled: true
+debug_urls: true  # Temporary: URL tracking for optimization
+
+# ============================================================================
+# URL FILTERING - Optimized for Performance
+# ============================================================================
+
+url_filtering:
+  preset: 'standard'
+  whitelist:
+    # Government content ONLY
+    - 'gov.krd/ka/activities/'
+    - 'gov.krd/ka/activities/news-and-press-releases/'
+    - 'gov.krd/ka/activities/categories/'
+    # Anti-bot protection (required)
+    - 'gov.krd/_Incapsula_Resource'
+  blacklist:
+    # Analytics and tracking (BLOCK ALL for performance)
+    - 'analytics.google.com'
+    - 'stats.g.doubleclick.net'
+    - 'www.googletagmanager.com'
+    - 'www.google-analytics.com'
+    - '*/gtm.js*'
+    - '*/gtag/*'
+    # Scripts (not needed for scraping text)
+    - 'code.jquery.com/*'
+    - 'cdnjs.cloudflare.com/*'
+    - 'maxcdn.bootstrapcdn.com/*'
+    - 'gov.krd/scripts/*'
+    - '*/recaptcha/*'
+    # Styles and fonts (visual only, not needed)
+    - '*.css'
+    - 'fonts.googleapis.com/*'
+    - 'fonts.gstatic.com/*'
+    - 'code.ionicframework.com/*'
+    - '*.woff*'
+    - '*.ttf*'
+    - '*favicon.ico'
+
+# ============================================================================
+# ADVANCED FEATURES - All Enabled
+# ============================================================================
+
+# Rate Limiting: Prevent server overload and IP blocking
+rate_limiting:
+  enabled: true
+  max_requests_per_minute: 30  # Polite scraping speed
+
+# Redis Caching: Speed up re-runs by caching page HTML and articles
+caching:
+  enabled: true
+  redis_host: 'localhost'
+  redis_port: 6379
+  ttl_hours: 24  # Cache for 24 hours
+
+# Retry Logic: Handle network errors and timeouts
+retry:
+  enabled: true
+  max_attempts: 3
+  delay_seconds: 2
+
+# Proxy Rotation: Bypass IP blocking (requires proxies.txt)
+proxy:
+  enabled: false  # Set to true when proxies.txt is available
+  file: 'proxies.txt'
+  strategy: 'round-robin'  # or 'random'
 
 
 # Universal pagination
@@ -17,11 +82,16 @@ pagination:
 selectors:
   article_list: 'div.item a[href*="/ka/activities/"]'
   article_title: ['h1.heading.main', 'h1', 'h2']
-  article_body: ['div.right-col p', 'p']  # Government content
+  article_body: ['div > p[dir="rtl"]', 'div.right-col p', 'p']  # Government content
 
 wait:
   selector: null
   timeout: 2
+
+# Article page needs extra wait for content rendering
+article_wait:
+  selector: '.entry-content, article, main'
+  timeout: 5
 
 # Government activities
 categories:

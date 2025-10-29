@@ -5,6 +5,15 @@
 name: 'Minimal News Site'
 base_url: 'https://example.com'
 
+# ============================================================================
+# URL FILTERING - Preset Based
+# ============================================================================
+
+url_filtering:
+  preset: 'standard'
+  whitelist: []
+  blacklist: []
+
 # Website-level defaults (all categories inherit these)
 defaults:
   type: 'pagination'        # All categories use pagination by default

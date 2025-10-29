@@ -170,12 +170,13 @@ class GenericScraper:
         self.tracked_urls = []  # List of all URLs requested
         self._tracked_url_set = set()  # Fast lookup for tracked URLs
         self.url_whitelist = []  # Whitelist of URL patterns to allow
-        self.blocked_resources = [  # Default blocked resources for faster loading
+        self._default_blocked_resources = [  # Default blocked resources for faster loading
             '.css', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.woff', '.woff2', 
             '.ttf', '.eot', '.mp4', '.mp3', '.webm', '.avi', '.mov', '.flv',
             'google-analytics.com', 'googletagmanager.com', 'doubleclick.net',
             'facebook.com/tr', 'twitter.com/i/adsct', 'ads', 'analytics', 'tracking'
         ]
+        self.blocked_resources = list(self._default_blocked_resources)
     
     def _load_config(self) -> Dict:
         """
@@ -634,6 +635,12 @@ class GenericScraper:
                     new_links = [l for l in links if l not in article_links]
                     article_links.extend(new_links)
                     logger.info(f"   Found {len(new_links)} new articles on page {page + 1}")
+                    
+                    # Early exit: if no new articles found on this page, skip remaining pages
+                    if not new_links and page > 0:
+                        logger.info(f"   No new articles found - skipping remaining pages")
+                        break
+                    
                     time.sleep(category_config.get('delay', 2))
                     continue  # Skip normal extraction below
                 else:
@@ -650,6 +657,11 @@ class GenericScraper:
             article_links.extend(new_links)
             
             logger.info(f"   Found {len(new_links)} new articles on page {page + 1}")
+            
+            # Early exit: if no new articles found on this page, skip remaining pages
+            if not new_links and page > 0:
+                logger.info(f"   No new articles found - skipping remaining pages")
+                break
             
             # Navigate to next page (if not using URL template)
             if not is_url_template and page < max_pages - 1:
@@ -859,53 +871,114 @@ class GenericScraper:
                     if not html:
                         continue
                     
-                    # Parse with BeautifulSoup
+                    # Parse with BeautifulSoup (and try lxml for XPath support)
                     from bs4 import BeautifulSoup
                     soup = BeautifulSoup(html, 'html.parser')
-                    
+
+                    # Attempt to load lxml.html for XPath selectors (optional)
+                    lxml_doc = None
+                    try:
+                        import lxml.html as lh
+                        lxml_doc = lh.fromstring(html)
+                    except Exception:
+                        lxml_doc = None
+
+                    # Helper: extract text from a potential lxml node or BeautifulSoup element
+                    def _node_text(node):
+                        try:
+                            # lxml element
+                            return node.text_content().strip()
+                        except Exception:
+                            try:
+                                # BeautifulSoup element
+                                return node.get_text(strip=True)
+                            except Exception:
+                                return ''
+
                     # Extract title
                     title = None
                     title_selector = selectors.get('article_title')
                     if title_selector:
-                        if isinstance(title_selector, list):
-                            for sel in title_selector:
-                                title_elem = soup.select_one(sel)
-                                if title_elem:
-                                    title = title_elem.get_text(strip=True)
-                                    break
-                        else:
-                            title_elem = soup.select_one(title_selector)
-                            if title_elem:
-                                title = title_elem.get_text(strip=True)
-                    
+                        # Normalize to list
+                        t_selectors = title_selector if isinstance(title_selector, list) else [title_selector]
+                        for sel in t_selectors:
+                            if not sel:
+                                continue
+                            # XPath selector - use lxml if available
+                            if (isinstance(sel, str) and (sel.startswith('//') or sel.startswith('/'))) and lxml_doc is not None:
+                                try:
+                                    res = lxml_doc.xpath(sel)
+                                    if res:
+                                        title = _node_text(res[0])
+                                        break
+                                except Exception:
+                                    pass
+                            else:
+                                try:
+                                    elem = soup.select_one(sel)
+                                    if elem:
+                                        title = elem.get_text(strip=True)
+                                        break
+                                except Exception:
+                                    continue
+
                     # Extract content using article_body
                     body_selector = selectors.get('article_body', 'p')
                     paragraphs = []
-                    
+
                     # Check if delimiter is specified in selector config
                     delimiter = None
                     if isinstance(body_selector, dict) and 'delimiter' in body_selector:
                         delimiter = body_selector.get('delimiter', '\\n')
                         if delimiter == '\\n':
                             delimiter = '\n'
-                    
+
                     # Handle dict format: {selector: '...', multiple: true, delimiter: '\n'}
                     actual_selector = body_selector
                     if isinstance(body_selector, dict):
                         actual_selector = body_selector.get('selector', 'p')
-                    
-                    if isinstance(actual_selector, list):
-                        for sel in actual_selector:
-                            paragraphs = soup.select(sel)
-                            if paragraphs:
-                                break
-                    else:
-                        paragraphs = soup.select(actual_selector)
-                    
+
+                    # Normalize selectors list
+                    sel_list = actual_selector if isinstance(actual_selector, list) else [actual_selector]
+
+                    # Try selectors in order; support XPath via lxml_doc when possible
+                    found = False
+                    for sel in sel_list:
+                        if not sel:
+                            continue
+                        # XPath
+                        if isinstance(sel, str) and (sel.startswith('//') or sel.startswith('/')):
+                            if lxml_doc is None:
+                                # Can't evaluate XPath without lxml; skip
+                                continue
+                            try:
+                                nodes = lxml_doc.xpath(sel)
+                                if nodes:
+                                    # lxml nodes
+                                    paragraphs = nodes
+                                    found = True
+                                    break
+                            except Exception:
+                                continue
+                        else:
+                            try:
+                                bs_nodes = soup.select(sel)
+                                if bs_nodes:
+                                    paragraphs = bs_nodes
+                                    found = True
+                                    break
+                            except Exception:
+                                continue
+
                     # Extract text from paragraphs
                     article_text = []
+                    
+                    # Include title as first sentence if available
+                    if title and len(title.strip()) > 20:
+                        article_text.append(title.strip())
+                    
                     for p in paragraphs:
-                        text = p.get_text(strip=True)
+                        text = _node_text(p)
                         if len(text) > 20:
                             article_text.append(text)
                     
@@ -934,12 +1007,22 @@ class GenericScraper:
                     
                     # Extract text from paragraphs
                     article_text = []
+                    
+                    # Include title as first sentence if available
+                    if title and len(title.strip()) > 20:
+                        article_text.append(title.strip())
+                    
                     for p in paragraphs:
                         text = p.text.strip()
                         # Clean HTML tags that might be in the text
                         text = re.sub(r'<[^>]+>', '', text)
                         if len(text) > 20:
                             article_text.append(text)
+                    
+                    # DEBUG: Log extraction results
+                    logger.info(f"   📝 Found title + {len(paragraphs)} paragraph elements, {len(article_text)} total with >20 chars")
+                    if article_text:
+                        logger.info(f"      First: {article_text[0][:80]}...")
                 
                 # Language detection
                 if article_text:
@@ -948,12 +1031,15 @@ class GenericScraper:
                     # Only detect language if detector is available
                     if self.lang_detector:
                         lang = self.lang_detector.detect(full_text)
+                        logger.info(f"   🌍 Detected language: {lang}")
                         
                         # Filter by language if configured
                         lang_filter = website_config.get('language_detection', {}).get('filter', [])
-                        if lang_filter and lang not in lang_filter:
-                            logger.debug(f"   Skipping article (language: {lang})")
-                            continue
+                        if lang_filter:
+                            logger.info(f"   📋 Language filter: {lang_filter}")
+                            if lang not in lang_filter:
+                                logger.info(f"   ⚠️  Skipping article (language '{lang}' not in filter {lang_filter})")
+                                continue
                     
                     # Deduplication check (if available)
                     if self.deduplicator:
@@ -965,18 +1051,21 @@ class GenericScraper:
                         )
                         
                         if is_dup:
-                            logger.debug(f"   Skipping duplicate: {reason}")
+                            logger.info(f"   ⚠️  Skipping duplicate: {reason}")
                             self.stats['duplicates_skipped'] += 1
                             continue
                     
+                    logger.info(f"   ➕ Adding sentences (delimiter={delimiter})...")
                     # Add sentences - split by delimiter if specified
                     if delimiter:
                         # Join all paragraphs and split by delimiter
                         combined_text = delimiter.join(article_text)
                         split_sentences = [s.strip() for s in combined_text.split(delimiter) if s.strip() and len(s.strip()) > 20]
+                        logger.info(f"      Split into {len(split_sentences)} sentences")
                         sentences.extend(split_sentences)
                     else:
                         # Use paragraphs as-is
+                        logger.info(f"      Adding {len(article_text)} paragraphs as sentences")
                         sentences.extend(article_text)
                     self.stats['articles_processed'] += 1
                 
@@ -1082,6 +1171,11 @@ class GenericScraper:
                 
                 # Extract text from paragraphs
                 article_text = []
+                
+                # Include title as first sentence if available
+                if title and len(title.strip()) > 20:
+                    article_text.append(title.strip())
+                
                 for p in paragraphs:
                     try:
                         text = p.text.strip()
@@ -1777,6 +1871,16 @@ class GenericScraper:
         """
         url_filtering = website_config.get('url_filtering', {})
         if not url_filtering:
+            self.blocked_resources = list(self._default_blocked_resources)
+            return
+
+        # Reset filters to defaults before applying overrides
+        self.blocked_resources = list(self._default_blocked_resources)
+        self.url_whitelist = []
+
+        if url_filtering.get('disabled'):
+            self.blocked_resources = []
+            logger.info("📭 URL filtering disabled for this website")
             return
         
         # Try to load presets file

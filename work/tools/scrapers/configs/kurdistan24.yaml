@@ -8,6 +8,45 @@ name: 'Kurdistan 24'
 base_url: 'https://www.kurdistan24.net'
 enabled: true  # FlareSolverr is running
 
+# Enable debug logging only when refining filters
+debug_urls: true  # Temporary: URL tracking for optimization
+
+# URL filtering tuned from captured network requests
+url_filtering:
+  preset: 'standard'
+  whitelist:
+    - 'https://www.kurdistan24.net/ckb/list/category/*'
+    - 'https://www.kurdistan24.net/ckb/story/*'
+  blacklist: []
+
+# ============================================================================
+# ADVANCED FEATURES - All Enabled
+# ============================================================================
+
+# Rate Limiting: Prevent server overload and IP blocking
+rate_limiting:
+  enabled: true
+  max_requests_per_minute: 30  # Polite scraping speed
+
+# Redis Caching: Speed up re-runs by caching page HTML and articles
+caching:
+  enabled: true
+  redis_host: 'localhost'
+  redis_port: 6379
+  ttl_hours: 24  # Cache for 24 hours
+
+# Retry Logic: Handle network errors and timeouts
+retry:
+  enabled: true
+  max_attempts: 3
+  delay_seconds: 2
+
+# Proxy Rotation: Bypass IP blocking (requires proxies.txt)
+proxy:
+  enabled: false  # Set to true when proxies.txt is available
+  file: 'proxies.txt'
+  strategy: 'round-robin'  # or 'random'
+
 # FlareSolverr Configuration (Cloudflare bypass)
 flaresolverr:
   enabled: true
@@ -24,9 +63,12 @@ pagination:
   page_param: 'page'  # Append ?page=N
 
 selectors:
-  article_list: ['article > div > a']  # Legacy: <article> tags with <h3>
-  article_title: "div.intro > h1"
-  article_body: ['div.news-content > p']  # Paragraphs inside content div
+  article_list: 'article a[href*="/story/"]'
+  article_title: 'article h1[itemprop="Title"]'
+  article_body:
+    selector: 'div.reader-content > p'
+    multiple: true
+    delimiter: '\n'
 
 wait:
   selector: null

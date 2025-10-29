@@ -5,13 +5,14 @@
 name: 'Rudaw News'
 base_url: 'https://www.rudaw.net'
 enabled: true
+debug_urls: true  # Temporary: URL tracking for optimization
 
 # ============================================================================
 # PERFORMANCE OPTIMIZATION
 # ============================================================================
 
 # URL Debugging: Track all URLs to optimize performance
-debug_urls: true  # Set to true only when analyzing, false for production
+# debug_urls: true  # Disabled for normal runs (enable only when analyzing)
 
 # URL filtering tuned from captured network traffic
 url_filtering:

@@ -1,0 +1,57 @@
+# Tracked URLs (45 total)
+# Tracked on: 2025-10-28 16:05:22
+
+# HTML Pages (11)
+https://www.googletagmanager.com/gtag/js?id=UA-59300040-1
+https://nrttv.com/WebResource.axd?d=pynGkmcFUV13He1Qd6_TZMBdpFxts78xIF_9X3_fXFosI-Hdp7x0Rd3QwjclNdj-8qVCG-RIfC2tNYS8GFaFvw2&t=638627955619783110
+https://nrttv.com/ScriptResource.axd?d=D9drwtSJ4hBA6O8UhT6CQiXDrfPvWQd7oUWbciq1G-nEJyot_OSuYnNaQjHZgB9KDyqGemdOZ5M7OwJpavPH1PbCQFK_4BBb7BV3NHysDYMPS0qXhcDYeYHa6x1Yr0JJpt3XZfesRB4hRHQyaszanvLGace6f0qpxpO2Hfn1i2E1&t=2a9d95e3
+https://nrttv.com/ScriptResource.axd?d=JnUc-DEDOM5KzzVKtsL1tWRon0jwhSyi_KqYc8m_exkVAj2i3FAQEv8VUBTT1tQBzUxpuMaZPIBHV_V3Hk9YTGNETPbbS-7q4-K4lJ8a7FXYOgkZB2Pjrk20vFnGeYdzOV6PjDHiGv2UIPtyqt4y_kELWWhg-o8ETVonj_1AfdRxo_mB19MZrnj4gRRna1AS0&t=2a9d95e3
+https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/fonts/fontawesome-webfont.woff2?v=4.7.0
+https://www.googletagmanager.com/gtag/js?id=G-NJCH5E29SB&cx=c&gtm=4e5ao1
+https://www.google-analytics.com/g/collect?v=2&tid=G-NJCH5E29SB&gtm=45je5ao1v9119047296za200&_p=1761656656390&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1762147883.1761656657&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAI&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527907~104528501~104684208~104684211~104948813~115480709~115616985~115938466~115938468~116217636~116217638&sid=1761656657&sct=1&seg=0&dl=https%3A%2F%2Fnrttv.com%2Fkurd&dt=NRTTV%20%D8%A6%DB%8E%D9%86%20%D8%A6%D8%A7%DA%95%20%D8%AA%DB%8C&en=page_view&_fv=1&_ss=1&tfd=2440
+https://www.google-analytics.com/g/collect?v=2&tid=G-NJCH5E29SB&gtm=45je5ao1v9119047296za200&_p=1761656656390&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1762147883.1761656657&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAIAAQ&_s=2&tag_exp=101509157~103116026~103200004~103233427~104527907~104528501~104684208~104684211~104948813~115480709~115616985~115938466~115938468~116217636~116217638&sid=1761656657&sct=1&seg=1&dl=https%3A%2F%2Fnrttv.com%2Fkurd&dt=NRTTV%20%D8%A6%DB%8E%D9%86%20%D8%A6%D8%A7%DA%95%20%D8%AA%DB%8C&en=user_engagement&_et=53733&tfd=56180
+https://www.google-analytics.com/g/collect?v=2&tid=G-NJCH5E29SB&gtm=45je5ao1v9119047296za200&_p=1761656711252&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1762147883.1761656657&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAIAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527907~104528501~104684208~104684211~104948813~115480709~115583767~115938465~115938468~116217636~116217638&sid=1761656657&sct=1&seg=1&dl=https%3A%2F%2Fnrttv.com%2Fdetail%2F53943&dt=%D9%A2%D9%A0%20%D9%BE%D8%A7%D8%B1%DA%86%D9%87%E2%80%8C%20%D8%B2%D9%87%E2%80%8C%D9%88%DB%8C%20%D8%A8%DB%86%20%D8%AF%D8%A7%D9%86%D8%A7%D9%86%DB%8C%20%D9%88%D8%B2%D9%87%E2%80%8C%DB%8C%20%D8%AE%DB%86%D8%B1%20%D8%AA%D9%87%E2%80%8C%D8%B1%D8%AE%D8%A7%D9%86%D8%AF%D9%87%E2%80%8C%D9%83%D8%B1%DB%8E%D9%86&en=page_view&tfd=5301
+https://www.google-analytics.com/g/collect?v=2&tid=G-NJCH5E29SB&gtm=45je5ao1v9119047296za200&_p=1761656711252&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1762147883.1761656657&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAIAAQ&_s=2&tag_exp=101509157~103116026~103200004~103233427~104527907~104528501~104684208~104684211~104948813~115480709~115583767~115938465~115938468~116217636~116217638&sid=1761656657&sct=1&seg=1&dl=https%3A%2F%2Fnrttv.com%2Fdetail%2F53943&dt=%D9%A2%D9%A0%20%D9%BE%D8%A7%D8%B1%DA%86%D9%87%E2%80%8C%20%D8%B2%D9%87%E2%80%8C%D9%88%DB%8C%20%D8%A8%DB%86%20%D8%AF%D8%A7%D9%86%D8%A7%D9%86%DB%8C%20%D9%88%D8%B2%D9%87%E2%80%8C%DB%8C%20%D8%AE%DB%86%D8%B1%20%D8%AA%D9%87%E2%80%8C%D8%B1%D8%AE%D8%A7%D9%86%D8%AF%D9%87%E2%80%8C%D9%83%D8%B1%DB%8E%D9%86&en=user_engagement&_et=5767&tfd=6070
+https://www.google-analytics.com/g/collect?v=2&tid=G-NJCH5E29SB&gtm=45je5ao1v9119047296za200&_p=1761656717134&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1762147883.1761656657&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAIAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527907~104528501~104684208~104684211~104948813~115480710~115938466~115938468~116217636~116217638&sid=1761656657&sct=1&seg=1&dl=https%3A%2F%2Fnrttv.com%2Fdetail%2F53942&dt=%DA%A9%DB%86%D9%85%D8%B3%DB%8C%DB%86%D9%86%3A%20%D9%85%D9%84%DB%8C%DB%86%D9%86%DB%8E%DA%A9%20%DA%AF%DB%95%D9%86%D8%AC%20%DA%A9%DB%95%20%DB%8C%DB%95%DA%A9%DB%95%D9%85%D8%AC%D8%A7%D8%B1%DB%8C%D8%A7%D9%86%DB%95%20%D8%AF%DB%95%D9%86%DA%AF%D8%A8%D8%AF%DB%95%D9%86%20%DA%A9%D8%A7%D8%B1%D8%AA%DB%8C%20%D8%A8%D8%A7%DB%8C%DB%86%D9%85%DB%8E%D8%AA%D8%B1%DB%8C%DB%8C%D8%A7%D9%86%20%D9%88%DB%95%D8%B1%DA%AF%D8%B1%D8%AA%D9%88%D9%88%DB%95%D8%AA%DB%95%D9%88%DB%95&en=page_view&tfd=5601
+
+# Scripts (15)
+https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js
+https://nrttv.com/js/jquery.li-scroller.1.0.js
+https://nrttv.com/js/jquery.tinycarousel.js
+https://nrttv.com/WriterScript/js/typewriter.js
+https://nrttv.com/secondary-expandable-navigation/js/modernizr.js
+https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js
+https://nrttv.com/js/langsubmenu.js
+https://nrttv.com/secondary-expandable-navigation/js/main.js
+https://nrttv.com/js/owl.carousel.js
+https://nrttv.com/js/jquery.pwstabs-1.1.4.js
+https://certify-js.alexametrics.com/atrk.js
+https://cse.google.com/cse.js?cx=013557301245411302927:ptqwp4s-aou
+https://www.google-analytics.com/analytics.js
+https://nrttv.com/detail/WriterScript/js/typewriter.js
+https://s7.addthis.com/js/300/addthis_widget.js
+
+# Styles (13)
+https://nrttv.com/wene/StyleSheet3.css
+https://nrttv.com/css/li-scroller.css
+https://nrttv.com/css/bootstrap.css
+https://nrttv.com/css/owl2.carousel.css
+https://nrttv.com/css/owl2.theme.default.min.css
+https://nrttv.com/css/jquery.pwstabs.css
+https://nrttv.com/css/tinycarousel.css
+https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css
+https://nrttv.com/secondary-expandable-navigation/css/style.css
+https://nrttv.com/js-slide-down-menu/css/webslidemenu.css
+https://nrttv.com/wene/StyleSheet.css
+https://nrttv.com/css/owl.carousel.css
+https://nrttv.com/css/owl.theme.default.min.css
+
+# Images (0)
+
+# Other (6)
+https://nrttv.com/kurd
+https://nrttv.com/wene/903778077-NRT-Reg.ttf
+https://nrttv.com/wene/370239258-NRT-Bd.ttf
+https://nrttv.com/wene/favicon.ico
+https://nrttv.com/detail/53943
+https://nrttv.com/detail/53942
