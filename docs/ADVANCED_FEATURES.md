@@ -29,25 +29,29 @@ All advanced features are now fully integrated and configurable per-website via 
 Polite scraping with configurable request rate per minute. Prevents IP blocking and server overload.
 
 **Configuration:**
+
 ```yaml
 # configs/websites/example.yaml
 rate_limiting:
   enabled: true
-  max_requests_per_minute: 30  # Adjust based on website tolerance
+  max_requests_per_minute: 30 # Adjust based on website tolerance
 ```
 
 **Output:**
+
 ```
 ✅ Rate limiting enabled: 30 requests/min
 ```
 
 **Features:**
+
 - Configurable requests per minute
 - Burst handling (allows temporary spikes)
 - Per-website configuration
 - Automatic waiting between requests
 
 **When to use:**
+
 - All production scraping (recommended)
 - Websites with strict rate limits
 - To avoid IP blocking
@@ -59,6 +63,7 @@ rate_limiting:
 24-hour cache for scraped articles. Dramatically speeds up re-runs and reduces server load.
 
 **Prerequisites:**
+
 ```bash
 # Install Redis
 sudo apt install redis-server
@@ -68,31 +73,36 @@ sudo systemctl start redis
 ```
 
 **Configuration:**
+
 ```yaml
 caching:
   enabled: true
-  redis_host: localhost  # Or remote Redis server
+  redis_host: localhost # Or remote Redis server
   redis_port: 6379
-  ttl_hours: 24  # Cache duration
+  ttl_hours: 24 # Cache duration
 ```
 
 **Output:**
+
 ```
 ✅ Redis cache connected: localhost:6379 (TTL: 24h)
 ✅ Redis caching enabled: localhost:6379 (TTL: 24h)
 ```
 
 **Features:**
+
 - 24-hour article cache
 - Automatic cache invalidation
 - Per-category caching
 - Graceful degradation (works without Redis)
 
 **Performance:**
+
 - First run: Normal speed
 - Cached run: **60x faster** (< 1 minute vs 60 minutes)
 
 **When to use:**
+
 - Development/testing (avoid re-scraping same content)
 - Daily updates (re-scrape only after 24h)
 - High-volume scraping
@@ -104,25 +114,29 @@ caching:
 Automatic retry on failures with configurable attempts and exponential backoff.
 
 **Configuration:**
+
 ```yaml
 retry:
   enabled: true
   max_attempts: 3
-  delay_seconds: 2  # Initial delay, doubles on each retry
+  delay_seconds: 2 # Initial delay, doubles on each retry
 ```
 
 **Output:**
+
 ```
 ✅ Retry logic enabled: 3 attempts, 2s delay
 ```
 
 **Features:**
+
 - Automatic retry on network errors
 - Exponential backoff (2s, 4s, 8s)
 - Configurable max attempts
 - Detailed error logging
 
 **When to use:**
+
 - Unreliable network connections
 - Websites with intermittent errors
 - Production environments (recommended)
@@ -135,6 +149,7 @@ Round-robin or random proxy selection with automatic failure detection and track
 
 **Prerequisites:**
 Create `proxies.txt` with your proxy list:
+
 ```
 # proxies.txt
 # Format: protocol://host:port or host:port (assumes http)
@@ -148,20 +163,23 @@ socks5://proxy2.example.com:1080
 ```
 
 **Configuration:**
+
 ```yaml
 proxy:
   enabled: true
   file: proxies.txt
-  strategy: round-robin  # or 'random'
+  strategy: round-robin # or 'random'
 ```
 
 **Output:**
+
 ```
 ✅ Proxy rotation enabled: proxies.txt (round-robin)
 🔀 Using proxy: http://proxy1.example.com:8080
 ```
 
 **Features:**
+
 - Round-robin or random rotation
 - Automatic failure detection
 - Success/failure tracking per proxy
@@ -170,12 +188,14 @@ proxy:
 - Warning when proxy failure rate exceeds 50%
 
 **When to use:**
+
 - IP blocking bypass
 - Geographic distribution
 - High-volume scraping
 - Websites with strict IP limits
 
 **Testing:**
+
 ```bash
 # Verify proxy rotation works
 python test_proxy_rotation.py
@@ -215,11 +235,11 @@ proxy:
   enabled: true
   file: proxies.txt
   strategy: round-robin
-
 # ... rest of config (categories, selectors, etc.)
 ```
 
 **Expected Output:**
+
 ```
 ✅ Rate limiting enabled: 30 requests/min
 ✅ Redis cache connected: localhost:6379 (TTL: 24h)
@@ -238,6 +258,7 @@ All features are initialized in `_init_advanced_features()` and integrated with 
 - **Clear Logging**: Easy to see which features are active
 
 **See Documentation:**
+
 - `scrapers/PHASE5_TEST_RESULTS.md` - Complete test results
 - `scrapers/PROXY_ROTATION_IMPLEMENTATION.md` - Proxy rotation guide
 - `scrapers/PHASE5_FEATURES_IMPLEMENTATION.md` - Implementation details

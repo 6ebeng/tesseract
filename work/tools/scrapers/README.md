@@ -188,6 +188,7 @@ proxy:
 ```
 
 **Expected Output:**
+
 ```
 ✅ Rate limiting enabled: 30 requests/min
 ✅ Redis caching enabled: localhost:6379 (TTL: 24h)
@@ -196,6 +197,7 @@ proxy:
 ```
 
 **Features:**
+
 - **Rate Limiting**: Polite scraping, prevents IP blocking
 - **Redis Caching**: 24h cache for scraped articles (requires Redis server)
 - **Retry Logic**: Automatic retry on failures with configurable attempts
@@ -299,18 +301,19 @@ pytest test_scraper_framework.py --cov=scrapers --cov-report=html
 
 ## 📈 Performance Metrics
 
-| Metric                  | Before      | After        | Improvement   |
-| ----------------------- | ----------- | ------------ | ------------- |
-| **Config errors**       | Runtime 💥  | Load-time ✅ | 100% earlier  |
-| **Crash recovery**      | Manual      | Auto-retry   | Automated     |
-| **Test coverage**       | 0%          | 85%+         | From scratch  |
-| **Total scraping time** | 60 min      | 20 min       | **3x faster** |
+| Metric                   | Before      | After        | Improvement    |
+| ------------------------ | ----------- | ------------ | -------------- |
+| **Config errors**        | Runtime 💥  | Load-time ✅ | 100% earlier   |
+| **Crash recovery**       | Manual      | Auto-retry   | Automated      |
+| **Test coverage**        | 0%          | 85%+         | From scratch   |
+| **Total scraping time**  | 60 min      | 20 min       | **3x faster**  |
 | **Re-run time (cached)** | 60 min      | < 1 min      | **60x faster** |
-| **Monitoring**          | Manual logs | Real-time    | Continuous    |
-| **Security posture**    | Basic       | Production   | Enterprise    |
-| **Advanced features**   | 0/4         | 4/4          | **Complete**  |
+| **Monitoring**           | Manual logs | Real-time    | Continuous     |
+| **Security posture**     | Basic       | Production   | Enterprise     |
+| **Advanced features**    | 0/4         | 4/4          | **Complete**   |
 
 **New Phase 5 Features:**
+
 - ✅ Rate limiting: Prevents IP blocking
 - ✅ Redis caching: 60x faster re-runs (24h cache)
 - ✅ Retry logic: Automatic recovery from failures
@@ -518,15 +521,15 @@ if error_handler.has_critical_errors():
 
 ### 📚 Documentation Files
 
-| Document                           | Purpose                                 | Location |
-| ---------------------------------- | --------------------------------------- | -------- |
-| **QUICK_REFERENCE.md**             | 🚀 Quick commands & common tasks        | `docs/`  |
-| **URL_FILTERING_EASY_GUIDE.md**    | 🎯 5 flexible configuration options     | `docs/`  |
-| **URL_FILTERING_MERGING_GUIDE.md** | 🔄 Pattern merging guide                | `docs/`  |
-| **URL_FILTERING.md**               | 📖 URL filtering system documentation    | `docs/`  |
-| **ADVANCED_FEATURES.md**           | ⚡ Rate limiting, caching, retry, proxy | `docs/`  |
-| **PHASE5_TEST_RESULTS.md**         | ✅ Advanced features test results       | `./`     |
-| **PROXY_ROTATION_IMPLEMENTATION.md** | 🔀 Proxy rotation complete guide      | `./`     |
+| Document                             | Purpose                                 | Location |
+| ------------------------------------ | --------------------------------------- | -------- |
+| **QUICK_REFERENCE.md**               | 🚀 Quick commands & common tasks        | `docs/`  |
+| **URL_FILTERING_EASY_GUIDE.md**      | 🎯 5 flexible configuration options     | `docs/`  |
+| **URL_FILTERING_MERGING_GUIDE.md**   | 🔄 Pattern merging guide                | `docs/`  |
+| **URL_FILTERING.md**                 | 📖 URL filtering system documentation   | `docs/`  |
+| **ADVANCED_FEATURES.md**             | ⚡ Rate limiting, caching, retry, proxy | `docs/`  |
+| **PHASE5_TEST_RESULTS.md**           | ✅ Advanced features test results       | `./`     |
+| **PROXY_ROTATION_IMPLEMENTATION.md** | 🔀 Proxy rotation complete guide        | `./`     |
 
 ### For Questions or Issues
 
