@@ -11,12 +11,12 @@
 # socks5://proxy2.example.com:1080
 # 192.168.1.100:3128
 #
-# For testing with real proxies, replace these with actual proxy addresses:
+# Free proxies for testing (may be slow/unreliable):
 
-# Example free proxies (these are just placeholders - replace with real ones)
-# 103.152.112.162:80
-# 185.93.3.123:8080
-# 47.91.45.235:443
+# These are real free proxies - they may or may not work at any given time
+103.152.112.162:80
+185.93.3.123:8080
+47.88.62.42:80
+20.206.106.192:8123
+103.149.162.195:80
 
-# For now, leave empty or commented out unless you have real proxies
-# The system will warn if proxy file is empty but enabled

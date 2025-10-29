@@ -64,7 +64,7 @@ retry:
 
 # Proxy Rotation: Bypass IP blocking (requires proxies.txt)
 proxy:
-  enabled: false  # Set to true when proxies.txt is available
+  enabled: false  # Disabled - free proxies unreliable. Enable with paid proxies.
   file: 'proxies.txt'
   strategy: 'round-robin'  # or 'random'
 

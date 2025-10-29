@@ -295,24 +295,61 @@ class DriverMixin:
     # ========================================================================
     
     def _safe_get(self, url: str, delay: int = 2) -> bool:
-        """Safely navigate to URL with error handling."""
-        try:
-            if not self.driver:
-                self._init_stealth_driver()
-            
-            # Track URL if debugging is enabled
-            if self.url_debug_mode and url not in self._tracked_url_set:
-                self.tracked_urls.append(url)
-                self._tracked_url_set.add(url)
-                logger.debug(f"📍 Tracked: {url}")
-            
-            self.driver.get(url)
-            time.sleep(delay)
-            self._capture_network_logs()
-            return True
-        except Exception as e:
-            logger.error(f"Failed to load {url}: {e}")
-            return False
+        """Safely navigate to URL with error handling and proxy rotation."""
+        max_proxy_retries = 3  # Try up to 3 different proxies
+        
+        for attempt in range(max_proxy_retries):
+            try:
+                if not self.driver:
+                    self._init_stealth_driver()
+                
+                # Track URL if debugging is enabled
+                if self.url_debug_mode and url not in self._tracked_url_set:
+                    self.tracked_urls.append(url)
+                    self._tracked_url_set.add(url)
+                    logger.debug(f"📍 Tracked: {url}")
+                
+                self.driver.get(url)
+                time.sleep(delay)
+                self._capture_network_logs()
+                
+                # Mark proxy as successful if using proxy rotation
+                self._mark_proxy_success()
+                
+                return True
+                
+            except Exception as e:
+                error_msg = str(e)
+                
+                # Check if it's a proxy connection error
+                is_proxy_error = any(err in error_msg for err in [
+                    'ERR_PROXY_CONNECTION_FAILED',
+                    'ERR_TUNNEL_CONNECTION_FAILED',
+                    'ERR_PROXY_AUTH_UNSUPPORTED',
+                    'net::ERR_PROXY',
+                    'proxy'
+                ])
+                
+                if is_proxy_error and hasattr(self, 'proxy_rotator') and self.proxy_rotator:
+                    if attempt < max_proxy_retries - 1:
+                        logger.warning(f"⚠️  Proxy connection failed for {url}")
+                        logger.info(f"🔄 Trying next proxy (attempt {attempt + 2}/{max_proxy_retries})...")
+                        
+                        # Rotate to next proxy and restart driver
+                        if self._rotate_proxy_and_restart_driver():
+                            continue  # Retry with new proxy
+                        else:
+                            logger.error(f"❌ Failed to rotate proxy")
+                            return False
+                    else:
+                        logger.error(f"❌ All {max_proxy_retries} proxies failed for {url}")
+                        return False
+                else:
+                    # Not a proxy error or no proxy rotation available
+                    logger.error(f"Failed to load {url}: {e}")
+                    return False
+        
+        return False
     
     def _wait_for_page(
         self,
