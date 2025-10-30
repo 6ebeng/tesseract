@@ -1,11 +1,12 @@
-# Tracked URLs (208 total)
-# Tracked on: 2025-10-30 11:19:34
+# Tracked URLs (209 total)
+# Tracked on: 2025-10-30 13:27:44
 
-# HTML Pages (104)
+# HTML Pages (105)
+https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2Fkurdsatnews%2Fvideos%2F1380014106817699%2F&show_text=false&width=560&t=0
 https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2Fkurdsatnews%2Fvideos%2F805586755785210%2F&show_text=false&width=560&t=0
 https://www.googletagmanager.com/gtag/js?id=G-4KZF55B061&cx=c&gtm=4e5as0
 https://www.clarity.ms/tag/rc7jiqfkx9?ref=gtm
-https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298z89218300720za200zb9218300720zd9218300720&_p=1761812325836&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1866276972.1761812326&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528500~104684208~104684211~104948813~105322303~105424848~115480710~115583767~115938465~115938469~116217636~116217638&sid=1761812326&sct=1&seg=0&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fnews&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=page_view&_fv=1&_nsi=1&_ss=1&tfd=1591
+https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298z89218300720za200zb9218300720zd9218300720&_p=1761820013743&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1308972567.1761820014&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~105322302~115480710~115583767~115616985~115938465~115938468~116217636~116217638&sid=1761820014&sct=1&seg=0&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fnews&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=page_view&_fv=1&_nsi=1&_ss=1&tfd=1871
 https://kurdsat.tv/?_rsc=ywzu1
 https://kurdsat.tv/categories/7?_rsc=ywzu1
 https://kurdsat.tv/categories/17?_rsc=ywzu1
@@ -19,8 +20,8 @@ https://kurdsat.tv/kurdbin/5?_rsc=ywzu1
 https://kurdsat.tv/kurdbin/6?_rsc=ywzu1
 https://kurdsat.tv/about?_rsc=ywzu1
 https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2Fkurdsatnews%2Fvideos%2F1156242803142856%2F&show_text=false&width=560&t=0
-https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298za200zb9218300720zd9218300720&_p=1761812325836&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1866276972.1761812326&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AEAAAAQ&_s=2&tag_exp=101509157~103116026~103200004~103233427~104527906~104528500~104684208~104684211~104948813~105322303~105424848~115480710~115583767~115938465~115938469~116217636~116217638&sid=1761812326&sct=1&seg=0&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fnews&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=scroll&epn.percent_scrolled=90&_et=8827&tfd=15421
-https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298za200zb9218300720zd9218300720&_p=1761812325836&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1866276972.1761812326&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AAAAAAQ&_s=3&tag_exp=101509157~103116026~103200004~103233427~104527906~104528500~104684208~104684211~104948813~105322303~105424848~115480710~115583767~115938465~115938469~116217636~116217638&sid=1761812326&sct=1&seg=1&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fnews&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=user_engagement&_et=17152&tfd=27575
+https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298za200zb9218300720zd9218300720&_p=1761820013743&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1308972567.1761820014&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AEAAAAQ&_s=2&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~105322302~115480710~115583767~115616985~115938465~115938468~116217636~116217638&sid=1761820014&sct=1&seg=0&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fnews&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=scroll&epn.percent_scrolled=90&_et=7411&tfd=14284
+https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298za200zb9218300720zd9218300720&_p=1761820013743&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1308972567.1761820014&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AAAAAAQ&_s=3&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~105322302~115480710~115583767~115616985~115938465~115938468~116217636~116217638&sid=1761820014&sct=1&seg=1&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fnews&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=user_engagement&_et=17312&tfd=26602
 https://kurdsat.tv/?_rsc=7xdpt
 https://kurdsat.tv/categories/7?_rsc=7xdpt
 https://kurdsat.tv/categories/17?_rsc=7xdpt
@@ -41,7 +42,7 @@ https://kurdsat.tv/articles/447?_rsc=7xdpt
 https://kurdsat.tv/articles/488?_rsc=7xdpt
 https://kurdsat.tv/articles/444?_rsc=7xdpt
 https://kurdsat.tv/articles/442?_rsc=7xdpt
-https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298z89218300720za200zb9218300720zd9218300720&_p=1761812352253&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1866276972.1761812326&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AAAAAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527907~104528500~104684208~104684211~104948813~105424848~115480709~115583767~115616985~115938466~115938468~116217636~116217638~116254369&sid=1761812326&sct=1&seg=1&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fcategories%2F8&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=page_view&tfd=5373
+https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298z89218300720za200zb9218300720zd9218300720&_p=1761820039325&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1308972567.1761820014&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AAAAAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~115480710~115583767~115938466~115938469~116217636~116217638&sid=1761820014&sct=1&seg=1&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fcategories%2F8&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=page_view&tfd=5423
 https://kurdsat.tv/?_rsc=ya6fh
 https://kurdsat.tv/categories/7?_rsc=ya6fh
 https://kurdsat.tv/categories/17?_rsc=ya6fh
@@ -62,7 +63,7 @@ https://kurdsat.tv/kurdbin/2?_rsc=ya6fh
 https://kurdsat.tv/kurdbin/5?_rsc=ya6fh
 https://kurdsat.tv/kurdbin/6?_rsc=ya6fh
 https://kurdsat.tv/about?_rsc=ya6fh
-https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298z89218300720za200zb9218300720zd9218300720&_p=1761812357779&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1866276972.1761812326&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AAAAAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528500~104684208~104684211~104948813~105424848~115480710~115583767~115616985~115938466~115938468~116217636~116217638&sid=1761812326&sct=1&seg=1&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fcategories%2F16&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=page_view&tfd=5455
+https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298z89218300720za200zb9218300720zd9218300720&_p=1761820044658&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1308972567.1761820014&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AAAAAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~105322303~115480710~115583767~115616985~115938465~115938469~116217636~116217638&sid=1761820014&sct=1&seg=1&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fcategories%2F16&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=page_view&tfd=5277
 https://kurdsat.tv/?_rsc=1rw87
 https://kurdsat.tv/categories/7?_rsc=1rw87
 https://kurdsat.tv/categories/17?_rsc=1rw87
@@ -83,25 +84,25 @@ https://kurdsat.tv/articles/425?_rsc=1rw87
 https://kurdsat.tv/articles/416?_rsc=1rw87
 https://kurdsat.tv/articles/406?_rsc=1rw87
 https://kurdsat.tv/articles/403?_rsc=1rw87
-https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298z89218300720za200zb9218300720zd9218300720&_p=1761812363178&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1866276972.1761812326&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AAAAAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~105424848~115480709~115583767~115938466~115938468~116217636~116217638&sid=1761812326&sct=1&seg=1&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fcategories%2F9&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=page_view&tfd=5351
-https://www.googletagmanager.com/gtag/js?id=G-MPDBDPYBRR&cx=c&gtm=4e5as0
-https://www.clarity.ms/tag/rc7hnsa79m?ref=gtm
+https://www.google-analytics.com/g/collect?v=2&tid=G-4KZF55B061&gtm=45je5as0v9218306298z89218300720za200zb9218300720zd9218300720&_p=1761820049999&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1308972567.1761820014&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AAAAAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528500~104684208~104684211~104948813~115480710~115583767~115616986~115938465~115938469~116217636~116217638&sid=1761820014&sct=1&seg=1&dl=https%3A%2F%2Fkurdsat.tv%2Fckb%2Fcategories%2F9&dt=%DA%A9%DB%95%D9%86%D8%A7%DA%B5%DB%8C%20%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA&en=page_view&tfd=5277
 https://news.kurdsat.tv/ckb?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/reports?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/programs?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/watch-live?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/52482?_rsc=1ca6c
+https://www.googletagmanager.com/gtag/js?id=G-MPDBDPYBRR&cx=c&gtm=4e5at0h2
+https://www.clarity.ms/tag/rc7hnsa79m?ref=gtm
 https://news.kurdsat.tv/ckb/opinions/52452?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/52254?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/52124?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/51991?_rsc=1ca6c
-https://www.google-analytics.com/g/collect?v=2&tid=G-MPDBDPYBRR&gtm=45je5as0v9218301902z89218299824za200zb9218299824zd9218299824&_p=1761812369855&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1866276972.1761812326&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527907~104528501~104684208~104684211~104948813~115480709~115583767~115616986~115938465~115938468~116217636~116217638&sid=1761812370&sct=1&seg=0&dl=https%3A%2F%2Fnews.kurdsat.tv%2Fckb%2Fopinions&dt=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA%20%D9%86%DB%8C%D9%88%D8%B2&en=page_view&_fv=1&_ss=1&tfd=1884
 https://news.kurdsat.tv/ckb/opinions/51971?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/51872?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/51861?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/51723?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/51662?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/51581?_rsc=1ca6c
+https://www.google-analytics.com/g/collect?v=2&tid=G-MPDBDPYBRR&gtm=45je5at0h2v9218301902z89218299824za200zb9218299824zd9218299824&_p=1761820059261&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1308972567.1761820014&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527907~104528500~104684208~104684211~104948813~105322302~115480710~115583767~115938466~115938468~116217636~116217638~116253084~116253086~116254369&sid=1761820059&sct=1&seg=0&dl=https%3A%2F%2Fnews.kurdsat.tv%2Fckb%2Fopinions&dt=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%A7%D8%AA%20%D9%86%DB%8C%D9%88%D8%B2&en=page_view&_fv=1&_ss=1&tfd=4668
 https://news.kurdsat.tv/ckb/opinions/51473?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/51168?_rsc=1ca6c
 https://news.kurdsat.tv/ckb/opinions/51043?_rsc=1ca6c
@@ -132,10 +133,10 @@ https://kurdsat.tv/_next/static/chunks/app/%5Blocale%5D/page-965a66abecb73c61.js
 https://www.googletagmanager.com/gtm.js?id=GTM-NSVW6DT8
 https://kurdsat.tv/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js
 https://scripts.clarity.ms/0.8.38/clarity.js
-https://kurdsat.tv/cdn-cgi/challenge-platform/scripts/jsd/main.js
-https://kurdsat.tv/cdn-cgi/challenge-platform/h/b/scripts/jsd/c88755b0cddc/main.js?
 https://kurdsat.tv/_next/static/chunks/app/%5Blocale%5D/categories/%5Bid%5D/page-b14400b922a42024.js
 https://kurdsat.tv/_next/static/chunks/app/%5Blocale%5D/kurdbin/%5Bid%5D/page-eebbcaae7d55094c.js
+https://kurdsat.tv/cdn-cgi/challenge-platform/scripts/jsd/main.js
+https://kurdsat.tv/cdn-cgi/challenge-platform/h/b/scripts/jsd/c88755b0cddc/main.js?
 https://news.kurdsat.tv/_next/static/chunks/webpack-71831a4a2258a529.js
 https://news.kurdsat.tv/_next/static/chunks/fd9d1056-d36f9e0a2b0a458e.js
 https://news.kurdsat.tv/_next/static/chunks/7023-141f20d1c4a5ca99.js
@@ -170,20 +171,20 @@ https://kurdsat.tv/ckb/news
 https://kurdsat.tv/_next/static/media/af1bb7f20b1f15f8-s.p.ttf
 https://kurdsat.tv/_next/static/media/e4af272ccee01ff0-s.p.woff2
 https://d.clarity.ms/collect
-https://kurdsat.tv/cdn-cgi/challenge-platform/h/b/jsd/r/0.5398027603291949:1761808890:VFaO0EIBrxCRPu8ulRT79t5f4UZEjaE6a64VwtFU0Cc/99697bd7bbfedfb0
-https://kurdsat.tv/ckb/categories/17
 https://kurdsat.tv/ckb
 https://kurdsat.tv/ckb/categories/7
+https://kurdsat.tv/ckb/categories/17
 https://kurdsat.tv/ckb/categories/8
 https://kurdsat.tv/ckb/categories/16
-https://kurdsat.tv/ckb/kurdbin/1
 https://kurdsat.tv/ckb/categories/9
+https://kurdsat.tv/ckb/kurdbin/1
+https://kurdsat.tv/cdn-cgi/challenge-platform/h/b/jsd/r/0.33008085443939783:1761816392:DafNirTo2NmgxQYldPi6dkQoJE3Gwkj2MmQQeQU6RN0/996a3789a8573cc0
 https://kurdsat.tv/ckb/kurdbin/2
 https://kurdsat.tv/ckb/kurdbin/5
 https://kurdsat.tv/ckb/kurdbin/6
 https://kurdsat.tv/ckb/about
-https://kurdsat.tv/ckb/articles/466
 https://kurdsat.tv/ckb/articles/509
+https://kurdsat.tv/ckb/articles/466
 https://kurdsat.tv/ckb/articles/469
 https://kurdsat.tv/ckb/articles/463
 https://kurdsat.tv/ckb/articles/451

@@ -531,6 +531,7 @@ def scrape_website_wrapper(website_name, worker_id, display, config_path):
     success = False
     articles = 0
     sentences = 0
+    all_sentences = []
     
     try:
         # Register start
@@ -539,15 +540,55 @@ def scrape_website_wrapper(website_name, worker_id, display, config_path):
         # Create independent scraper instance
         scraper = GenericScraper(config_path)
         
-        # Scrape
-        result = scraper.scrape_website(website_name)
+        # Scrape website and collect sentences
+        website_config = scraper.config[website_name]
         
-        # Extract result data with proper error handling
-        if result:
-            # Try multiple attribute names for compatibility
-            success = getattr(result, 'success', True)
-            articles = getattr(result, 'articles_scraped', getattr(result, 'article_count', 0))
-            sentences = getattr(result, 'sentences_extracted', getattr(result, 'sentence_count', 0))
+        # Set current website context for the scraper
+        scraper.current_website = website_name
+        
+        # Log website start for context tracking
+        logging.info(f"🌐 Scraping Website: {website_config.get('name', website_name)}")
+        
+        categories = [
+            cat_name for cat_name, cat_config 
+            in website_config.get('categories', {}).items()
+            if cat_config.get('enabled', True)
+        ]
+        
+        # Scrape each category and collect sentences
+        for category_name in categories:
+            try:
+                category_sentences = scraper.scrape_category(website_name, category_name)
+                all_sentences.extend(category_sentences)
+                
+                # Save category sentences to corpus file
+                if category_sentences:
+                    corpus_dir = Path('corpus') / website_name
+                    corpus_dir.mkdir(parents=True, exist_ok=True)
+                    corpus_file = corpus_dir / f"{category_name}.txt"
+                    
+                    with open(corpus_file, 'a', encoding='utf-8') as f:
+                        for sentence in category_sentences:
+                            f.write(sentence + '\n')
+                    
+                    logging.info(f"💾 Saved {len(category_sentences)} sentences to {corpus_file}")
+                
+            except Exception as e:
+                logging.error(f"Error scraping {website_name}/{category_name}: {e}")
+        
+        # Calculate result metrics
+        success = True
+        articles = scraper.stats.get('articles_processed', 0)
+        sentences = len(all_sentences)
+        
+        # Create result object for compatibility
+        class ScrapeResult:
+            def __init__(self):
+                self.success = success
+                self.articles_scraped = articles
+                self.sentences_extracted = sentences
+        
+        result = ScrapeResult()
         
     except Exception as e:
         logging.error(f"❌ [{worker_id}] {website_name:15s} | EXCEPTION: {str(e)[:50]}")

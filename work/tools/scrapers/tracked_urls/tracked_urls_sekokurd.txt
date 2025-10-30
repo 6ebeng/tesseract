@@ -1,5 +1,5 @@
-# Tracked URLs (104 total)
-# Tracked on: 2025-10-30 09:08:14
+# Tracked URLs (112 total)
+# Tracked on: 2025-10-30 13:37:51
 
 # HTML Pages (6)
 https://sekokurd.org/?page_id=874
@@ -9,7 +9,7 @@ https://sekokurd.org/wp-content/plugins/smooth-back-to-top-button/assets/fonts/w
 https://fonts.googleapis.com/css?family=Noto%20Naskh%20Arabic&display=swap
 https://sekokurd.org/?page_id=1614
 
-# Scripts (32)
+# Scripts (35)
 https://sekokurd.org/wp-includes/js/jquery/jquery.min.js?ver=3.7.1
 https://sekokurd.org/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1
 https://sekokurd.org/wp-content/plugins/happy-elementor-addons/assets/vendor/dom-purify/purify.min.js?ver=3.1.6
@@ -42,8 +42,11 @@ https://sekokurd.org/wp-content/plugins/anwp-post-grid-for-elementor/public/js/p
 https://sekokurd.org/wp-content/plugins/elementor/assets/js/shared-frontend-handlers.4c8abccc3e268b0767b2.bundle.min.js
 https://sekokurd.org/wp-content/plugins/elementor/assets/js/section-frontend-handlers.d85ab872da118940910d.bundle.min.js
 https://sekokurd.org/wp-content/plugins/elementor/assets/js/text-editor.abc8f59c62f2820dc25a.bundle.min.js
+https://sekokurd.org/wp-content/uploads/essential-addons-elementor/eael-409.js?ver=1697290028
+https://sekokurd.org/wp-content/uploads/essential-addons-elementor/eael-424.js?ver=1697290028
+https://sekokurd.org/wp-content/uploads/essential-addons-elementor/eael-4415.js?ver=1697290028
 
-# Styles (54)
+# Styles (58)
 https://sekokurd.org/wp-content/plugins/anwp-post-grid-for-elementor/public/css/styles-rtl.min.css?ver=1.3.3
 https://sekokurd.org/wp-includes/js/mediaelement/mediaelementplayer-legacy.min.css?ver=4.2.17
 https://sekokurd.org/wp-includes/js/mediaelement/wp-mediaelement.min.css?ver=6.8.3
@@ -98,11 +101,15 @@ https://sekokurd.org/wp-content/uploads/elementor/google-fonts/css/notonaskharab
 https://sekokurd.org/wp-content/uploads/elementor/google-fonts/css/droidarabicnaskh.css?ver=1742253111
 https://sekokurd.org/wp-content/uploads/essential-addons-elementor/eael-4415.css?ver=1697289879
 https://sekokurd.org/wp-content/uploads/elementor/css/post-4415.css?ver=1761754269
+https://sekokurd.org/wp-content/uploads/elementor/css/post-1614.css?ver=1761762806
+https://sekokurd.org/wp-content/uploads/essential-addons-elementor/eael-409.css?ver=1697290028
+https://sekokurd.org/wp-content/uploads/essential-addons-elementor/eael-424.css?ver=1697290028
+https://sekokurd.org/wp-content/uploads/essential-addons-elementor/eael-4415.css?ver=1697290028
 
 # Images (1)
 https://i0.wp.com/sekokurd.org/wp-content/uploads/2023/07/cropped-seko-web-header.png?fit=32%2C32&ssl=1
 
-# Other (11)
+# Other (12)
 https://fonts.gstatic.com/s/opensans/v44/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVI.woff2
 https://sekokurd.org/wp-content/uploads/elementor/google-fonts/fonts/notonaskharabic-rrqkbpv-9dd1b1oaga6m9pkyduvben2dhv20lg.woff2
 https://sekokurd.org/wp-content/plugins/elementor/assets/lib/font-awesome/webfonts/fa-solid-900.woff2
@@ -114,3 +121,4 @@ https://sekokurd.org/wp-content/uploads/elementor/google-fonts/fonts/poppins-pxi
 https://sekokurd.org/wp-content/uploads/elementor/google-fonts/fonts/roboto-kfo7cnqeu92fr1me7ksn66agldtyluama3yuba.woff2
 https://fonts.gstatic.com/s/notonaskharabic/v40/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwvc5Uq6cy.woff2
 https://fonts.gstatic.com/s/notonaskharabic/v40/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwvc5Urqcyx_M.woff2
+https://sekokurd.org/wp-admin/admin-ajax.php

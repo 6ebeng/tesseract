@@ -1,21 +1,21 @@
 # Tracked URLs (34 total)
-# Tracked on: 2025-10-30 11:17:41
+# Tracked on: 2025-10-30 13:25:48
 
 # HTML Pages (14)
 https://gov.krd/ka/activities/?page=1
 https://fonts.googleapis.com/css?family=Playfair+Display:400,400italic,700,700italic|Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic
 https://www.googletagmanager.com/gtag/js?id=UA-141365896-1
-https://gov.krd/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=650153604
+https://gov.krd/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=1770571920
 https://code.ionicframework.com/ionicons/2.0.1/fonts/ionicons.ttf?v=2.0.1
-https://www.googletagmanager.com/gtag/js?id=UA-141365896-1&cx=c&gtm=4e5at0h2
+https://www.googletagmanager.com/gtag/js?id=UA-141365896-1&cx=c&gtm=4e5as0
 https://www.googletagmanager.com/gtag/js?id=G-D585923K9P&cx=c&gtm=4e5as0
-https://analytics.google.com/g/collect?v=2&tid=G-D585923K9P&gtm=45je5as0v9115789842za200zd9178763247&_p=1761812235226&_gaz=1&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1749898828.1761812236&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAI&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~105322303~115480710~115583767~115616986~115938466~115938469~116217636~116217638&sid=1761812235&sct=1&seg=0&dl=https%3A%2F%2Fgov.krd%2Fka%2Factivities%2F%3Fpage%3D1&dt=%D8%AD%DA%A9%D9%88%D9%85%DB%95%D8%AA%DB%8C%20%D9%87%DB%95%D8%B1%DB%8E%D9%85%DB%8C%20%D9%83%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86%20%7C%20%D8%A6%DB%95%D9%83%D8%A7%D8%AF%DB%8C%D9%85%DB%8C%D8%A7%D9%89%20%D9%83%D9%88%D8%B1%D8%AF%D9%89&en=page_view&_fv=1&_ss=1&tfd=1644
-https://stats.g.doubleclick.net/g/collect?v=2&tid=G-D585923K9P&cid=1749898828.1761812236&gtm=45je5as0v9115789842za200zd9178763247&aip=1&dma=0&gcd=13l3l3l3l1l1&npa=0&frm=0&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~105322303~115480710~115583767~115616986~115938466~115938469~116217636~116217638
+https://analytics.google.com/g/collect?v=2&tid=G-D585923K9P&gtm=45je5as0v9115789842za200zd9178763247&_p=1761819922110&_gaz=1&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1539371790.1761819923&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAI&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~105322304~115480710~115583767~115616986~115938466~115938468~116217636~116217638~116254369&sid=1761819923&sct=1&seg=0&dl=https%3A%2F%2Fgov.krd%2Fka%2Factivities%2F%3Fpage%3D1&dt=%D8%AD%DA%A9%D9%88%D9%85%DB%95%D8%AA%DB%8C%20%D9%87%DB%95%D8%B1%DB%8E%D9%85%DB%8C%20%D9%83%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86%20%7C%20%D8%A6%DB%95%D9%83%D8%A7%D8%AF%DB%8C%D9%85%DB%8C%D8%A7%D9%89%20%D9%83%D9%88%D8%B1%D8%AF%D9%89&en=page_view&_fv=1&_nsi=1&_ss=1&tfd=2505
+https://stats.g.doubleclick.net/g/collect?v=2&tid=G-D585923K9P&cid=1539371790.1761819923&gtm=45je5as0v9115789842za200zd9178763247&aip=1&dma=0&gcd=13l3l3l3l1l1&npa=0&frm=0&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~105322304~115480710~115583767~115616986~115938466~115938468~116217636~116217638~116254369
 https://gov.krd/ka/activities/?page=2
 https://gov.krd/ka/activities/?page=3
-https://analytics.google.com/g/collect?v=2&tid=G-D585923K9P&gtm=45je5as0v9115789842za200zd9178763247&_p=1761812242306&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1749898828.1761812236&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAIAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528500~104684208~104684211~104948813~115480709~115583767~115938465~115938469~116217636~116217638&sid=1761812235&sct=1&seg=1&dl=https%3A%2F%2Fgov.krd%2Fka%2Factivities%2F%3Fpage%3D2&dt=%D8%AD%DA%A9%D9%88%D9%85%DB%95%D8%AA%DB%8C%20%D9%87%DB%95%D8%B1%DB%8E%D9%85%DB%8C%20%D9%83%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86%20%7C%20%D8%A6%DB%95%D9%83%D8%A7%D8%AF%DB%8C%D9%85%DB%8C%D8%A7%D9%89%20%D9%83%D9%88%D8%B1%D8%AF%D9%89&en=page_view&tfd=5379
+https://analytics.google.com/g/collect?v=2&tid=G-D585923K9P&gtm=45je5as0v9115789842za200zd9178763247&_p=1761819929757&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1539371790.1761819923&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAIAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527907~104528500~104684208~104684211~104948813~115480709~115583767~115938465~115938468~116217636~116217638&sid=1761819923&sct=1&seg=1&dl=https%3A%2F%2Fgov.krd%2Fka%2Factivities%2F%3Fpage%3D2&dt=%D8%AD%DA%A9%D9%88%D9%85%DB%95%D8%AA%DB%8C%20%D9%87%DB%95%D8%B1%DB%8E%D9%85%DB%8C%20%D9%83%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86%20%7C%20%D8%A6%DB%95%D9%83%D8%A7%D8%AF%DB%8C%D9%85%DB%8C%D8%A7%D9%89%20%D9%83%D9%88%D8%B1%D8%AF%D9%89&en=page_view&tfd=5315
 https://gov.krd/ka/activities/?page=4
-https://analytics.google.com/g/collect?v=2&tid=G-D585923K9P&gtm=45je5as0v9115789842za200zd9178763247&_p=1761812248762&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1749898828.1761812236&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAIAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~115480709~115583767~115616986~115938465~115938469~116217636~116217638&sid=1761812235&sct=1&seg=1&dl=https%3A%2F%2Fgov.krd%2Fka%2Factivities%2F%3Fpage%3D3&dt=%D8%AD%DA%A9%D9%88%D9%85%DB%95%D8%AA%DB%8C%20%D9%87%DB%95%D8%B1%DB%8E%D9%85%DB%8C%20%D9%83%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86%20%7C%20%D8%A6%DB%95%D9%83%D8%A7%D8%AF%DB%8C%D9%85%DB%8C%D8%A7%D9%89%20%D9%83%D9%88%D8%B1%D8%AF%D9%89&en=page_view&tfd=5265
+https://analytics.google.com/g/collect?v=2&tid=G-D585923K9P&gtm=45je5as0v9115789842za200zd9178763247&_p=1761819936248&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1539371790.1761819923&ul=en-us&sr=800x600&ir=1&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EAAIAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528500~104684208~104684211~104948813~105322304~115480709~115583767~115938466~115938468~116217636~116217638&sid=1761819923&sct=1&seg=1&dl=https%3A%2F%2Fgov.krd%2Fka%2Factivities%2F%3Fpage%3D3&dt=%D8%AD%DA%A9%D9%88%D9%85%DB%95%D8%AA%DB%8C%20%D9%87%DB%95%D8%B1%DB%8E%D9%85%DB%8C%20%D9%83%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86%20%7C%20%D8%A6%DB%95%D9%83%D8%A7%D8%AF%DB%8C%D9%85%DB%8C%D8%A7%D9%89%20%D9%83%D9%88%D8%B1%D8%AF%D9%89&en=page_view&tfd=5321
 
 # Scripts (12)
 https://code.jquery.com/jquery-2.2.2.min.js
@@ -28,7 +28,7 @@ https://gov.krd/scripts/application.js?v=2.234
 https://gov.krd/scripts/jquery.unobtrusive-ajax.min.js
 https://www.google.com/recaptcha/api.js
 https://www.googletagmanager.com/gtm.js?id=GTM-PG45MLKJ
-https://www.gstatic.com/recaptcha/releases/-PgDGgfmUF0ySmnjMTJjzqak/recaptcha__en.js
+https://www.gstatic.com/recaptcha/releases/cLm1zuaUXPLFw7nzKiQTH1dX/recaptcha__en.js
 https://www.google-analytics.com/analytics.js
 
 # Styles (5)
