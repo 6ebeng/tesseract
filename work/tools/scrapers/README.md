@@ -1,274 +1,535 @@
-# Scraper Framework - Production-Ready Tools
+# Kurdish News Scraper - Production System# Scraper Framework - Production-Ready Tools
 
-## 🎯 Quick Reference
+## 🎯 Overview## 🎯 Quick Reference
 
-This directory contains **production-ready utilities** for the scraper refactoring project.
+Production-ready web scraping system for Kurdish news websites with live monitoring dashboard, parallel processing, and intelligent deduplication.This directory contains **production-ready utilities** for the scraper refactoring project.
 
----
+**Status:** ✅ Production Ready ---
 
-## 📁 Files
+**Version:** 1.0.0
 
-| File                        | Purpose                | Lines | Status      |
+**Last Updated:** October 30, 2025## 📁 Files
+
+---| File | Purpose | Lines | Status |
+
 | --------------------------- | ---------------------- | ----- | ----------- |
-| `config_validator.py`       | Validate YAML configs  | 370   | ✅ Complete |
-| `error_handler.py`          | Error handling & retry | 485   | ✅ Complete |
-| `test_scraper_framework.py` | Test suite             | 380   | ✅ Complete |
-| `performance_utils.py`      | Performance tools      | 520   | ✅ Complete |
-| `scraper_monitor.py`        | Monitoring & metrics   | 465   | ✅ Complete |
-| `security_utils.py`         | Security utilities     | 490   | ✅ Complete |
-| `integration_example.py`    | Integration demo       | 240   | ✅ Complete |
 
-**Total:** 2,950 lines of production code
+## 📚 Documentation| `config_validator.py` | Validate YAML configs | 370 | ✅ Complete |
 
----
+| `error_handler.py` | Error handling & retry | 485 | ✅ Complete |
 
-## 🚀 Quick Start
+### Main Documentation| `test_scraper_framework.py` | Test suite | 380 | ✅ Complete |
 
-### 1. Validate Configuration
+- **[PRODUCTION_SCRAPER_USAGE.md](PRODUCTION_SCRAPER_USAGE.md)** - Complete usage guide with all features and examples| `performance_utils.py` | Performance tools | 520 | ✅ Complete |
 
-```bash
+| `scraper_monitor.py` | Monitoring & metrics | 465 | ✅ Complete |
+
+### Quick Reference| `security_utils.py` | Security utilities | 490 | ✅ Complete |
+
+```bash| `integration_example.py` | Integration demo | 240 | ✅ Complete |
+
+# Production mode - scrape all websites
+
+./scrape.sh**Total:** 2,950 lines of production code
+
+# Or directly---
+
+python3 run_production_display.py --config configs/websites --all --parallel --workers 3
+
+````## 🚀 Quick Start
+
+
+
+---### 1. Validate Configuration
+
+
+
+## ✨ Key Features```bash
+
 python config_validator.py ../../../config/websites.yaml
-```
 
-**Output:**
+### Live Dashboard```
 
-```
+- ✅ Real-time metrics updating every 2 seconds
+
+- ✅ Fixed header with time, workers, sentence rate**Output:**
+
+- ✅ Scrolling logs with color-coded status
+
+- ✅ Fixed footer with progress, ETA, statistics```
+
 ✅ websites.yaml is VALID
 
-⚠️  1 Warning(s):
-   • [nrt].wait_times.element_timeout Very long wait time (60s) - intentional?
-```
+### Performance
+
+- ✅ Parallel processing (3 workers)⚠️  1 Warning(s):
+
+- ✅ Smart deduplication (SQLite database)   • [nrt].wait_times.element_timeout Very long wait time (60s) - intentional?
+
+- ✅ Redis caching (24h TTL)```
+
+- ✅ Rate limiting (30 req/min per site)
 
 ### 2. Run Tests
 
-```bash
-pytest test_scraper_framework.py -v
-```
+### Monitoring
 
-### 3. See Complete Example
+- ✅ Live article counter```bash
 
-```bash
-python integration_example.py
-```
+- ✅ Live sentence counter  pytest test_scraper_framework.py -v
 
----
+- ✅ Success rate percentage```
 
-## 📚 Usage Examples
+- ✅ Performance averages (sent/site, time/site)
 
-### Configuration Validation
+- ✅ Accurate ETA calculation### 3. See Complete Example
 
-```python
-from config_validator import validate_config_file
 
-# Validate on startup - fail fast
+
+### Reliability```bash
+
+- ✅ Automatic retry logic (3 attempts)python integration_example.py
+
+- ✅ Graceful error handling```
+
+- ✅ Clean shutdown (single Ctrl+C)
+
+- ✅ Comprehensive logging---
+
+
+
+---## 📚 Usage Examples
+
+
+
+## 🚀 Quick Start### Configuration Validation
+
+
+
+### 1. Install Dependencies```python
+
+```bashfrom config_validator import validate_config_file
+
+pip install -r requirements.txt
+
+```# Validate on startup - fail fast
+
 if not validate_config_file('websites.yaml'):
-    sys.exit(1)
-```
 
-### Error Handling
+### 2. Start Redis (Optional but Recommended)    sys.exit(1)
 
-```python
-from error_handler import ScraperErrorHandler
+```bash```
 
-handler = ScraperErrorHandler(max_retries=3)
+redis-server
 
-# Automatic retry with exponential backoff
-result = handler.safe_scrape(
-    scraper.scrape_category,
-    'politics',
-    pages=5
-)
+```### Error Handling
+
+
+
+### 3. Run Scraper```python
+
+```bashfrom error_handler import ScraperErrorHandler
+
+# Interactive menu
+
+./scrape.shhandler = ScraperErrorHandler(max_retries=3)
+
+
+
+# Direct command# Automatic retry with exponential backoff
+
+python3 run_production_display.py \result = handler.safe_scrape(
+
+    --config configs/websites \    scraper.scrape_category,
+
+    --all \    'politics',
+
+    --parallel \    pages=5
+
+    --workers 3)
+
+````
 
 # Print error summary
-handler.print_summary()
+
+---handler.print_summary()
+
 ```
+
+## 📊 Dashboard Preview
 
 ### Monitoring
 
-```python
-from scraper_monitor import ScraperMonitor, ScrapeResult
+```
 
-monitor = ScraperMonitor(log_dir='logs')
+==================================================================================```python
 
-# Record results
-result = ScrapeResult(
-    website='kurdsat',
-    category='politics',
-    success=True,
-    article_count=15,
-    sentence_count=450,
-    duration_seconds=45.2
-)
+🚀 PRODUCTION SCRAPER | Time: 02:19 | Workers: 3/13 | Rate: 9.1 sent/minfrom scraper_monitor import ScraperMonitor, ScrapeResult
 
-monitor.record_scrape_result('kurdsat', 'politics', result)
+▶ Active: W0:avanews, W1:awene, W2:balinde
 
-# Generate report
+==================================================================================monitor = ScraperMonitor(log_dir='logs')
+
+TIMESTAMP STATUS WEBSITE CATEGORY SCRAPE LOGS
+
+----------------------------------------------------------------------------------# Record results
+
+12:51:04 DATA AvaNews news Found 19 new articlesresult = ScrapeResult(
+
+12:51:04 INFO Awene politics Adding 2 paragraphs website='kurdsat',
+
+[... scrolling logs ...] category='politics',
+
+================================================================================== success=True,
+
+■ Progress: [██████░░░░░░░░░░░░░░░░░░░░░░░░] 23% | 3/13 sites | ETA: 8m 23s article_count=15,
+
+■ Collected: 1,234 articles, 5,678 sentences | Success: 100% sentence_count=450,
+
+■ Performance: Avg: 1,893 sent/site, 186s/site | Failed: 0 duration_seconds=45.2
+
+```)
+
+
+
+---monitor.record_scrape_result('kurdsat', 'politics', result)
+
+
+
+## 📁 Project Structure# Generate report
+
 monitor.print_summary()
 
-# Export metrics
-monitor.export_metrics('metrics.json')
 ```
 
-### Performance Optimization
+scrapers/# Export metrics
 
-```python
-from performance_utils import (
-    ParallelScraper,
-    IncrementalScraper,
-    ScraperCache
-)
+├── run_production_display.py # Main production scrapermonitor.export_metrics('metrics.json')
 
-# Parallel scraping (3x faster)
-parallel = ParallelScraper(max_workers=3)
-results = parallel.scrape_all(registry)
+├── run_fixed_display.py # Development version```
 
-# Incremental updates (50-80% time savings)
-incremental = IncrementalScraper()
-if incremental.is_article_new(url):
-    scrape_article(url)
-    incremental.mark_article_scraped(url, 'kurdsat', 'politics')
+├── scrape.sh # Interactive launcher
 
-# Caching
-cache = ScraperCache(max_size=1000, ttl_seconds=3600)
-cached_data = cache.get(key)
+├── generic_scraper.py # Core scraper engine### Performance Optimization
+
+│
+
+├── core/ # Scraper mixins```python
+
+│ ├── base_scraper.pyfrom performance_utils import (
+
+│ ├── pagination_mixin.py ParallelScraper,
+
+│ ├── extraction_mixin.py IncrementalScraper,
+
+│ └── url_filtering_mixin.py ScraperCache
+
+│)
+
+├── configs/ # Website configurations
+
+│ └── websites/# Parallel scraping (3x faster)
+
+│ ├── avanews.yamlparallel = ParallelScraper(max_workers=3)
+
+│ ├── awene.yamlresults = parallel.scrape_all(registry)
+
+│ └── ...
+
+│# Incremental updates (50-80% time savings)
+
+├── corpus/ # Output (scraped text)incremental = IncrementalScraper()
+
+│ └── {website}/{category}.txtif incremental.is_article_new(url):
+
+│ scrape_article(url)
+
+├── logs/ # Log files incremental.mark_article_scraped(url, 'kurdsat', 'politics')
+
+│ └── scraper\_\*.log
+
+│# Caching
+
+└── PRODUCTION_SCRAPER_USAGE.md # Complete documentationcache = ScraperCache(max_size=1000, ttl_seconds=3600)
+
+````cached_data = cache.get(key)
+
 if cached_data is None:
-    cached_data = expensive_operation()
+
+---    cached_data = expensive_operation()
+
     cache.set(key, cached_data)
-```
 
-### Security
+## 🎯 Supported Websites```
 
-```python
-from security_utils import (
-    safe_load_yaml,
-    sanitize_xpath,
-    RateLimiter
-)
 
-# Safe YAML loading (CRITICAL!)
-config = safe_load_yaml('websites.yaml')  # ✅ SAFE
-# Never: yaml.load() - can execute arbitrary code! ❌
 
-# XPath injection prevention
+13 Kurdish news websites enabled:### Security
+
+- AvaNews
+
+- Awene```python
+
+- Balindefrom security_utils import (
+
+- BasNews    safe_load_yaml,
+
+- KNN    sanitize_xpath,
+
+- KurdPress    RateLimiter
+
+- Kurdsat)
+
+- NRT
+
+- PeyamNu# Safe YAML loading (CRITICAL!)
+
+- PUKMediaconfig = safe_load_yaml('websites.yaml')  # ✅ SAFE
+
+- Rudaw# Never: yaml.load() - can execute arbitrary code! ❌
+
+- Xendan
+
+- Xelat# XPath injection prevention
+
 safe_xpath = sanitize_xpath("//div[@class='content']", allow_predicates=True)
-
-# Rate limiting
-limiter = RateLimiter(requests_per_minute=20)
-for url in urls:
-    limiter.wait_if_needed()
-    scrape(url)
-```
-
-### Advanced Features (Phase 5) ✅
-
-All 4 advanced features are now fully implemented and tested!
-
-```python
-# All features configured in YAML, initialized automatically
-# configs/websites/example.yaml:
-rate_limiting:
-  enabled: true
-  max_requests_per_minute: 30
-
-caching:
-  enabled: true
-  redis_host: localhost
-  redis_port: 6379
-  ttl_hours: 24
-
-retry:
-  enabled: true
-  max_attempts: 3
-  delay_seconds: 2
-
-proxy:
-  enabled: true
-  file: proxies.txt
-  strategy: round-robin  # or 'random'
-```
-
-**Expected Output:**
-
-```
-✅ Rate limiting enabled: 30 requests/min
-✅ Redis caching enabled: localhost:6379 (TTL: 24h)
-✅ Retry logic enabled: 3 attempts, 2s delay
-✅ Proxy rotation enabled: proxies.txt (round-robin)
-```
-
-**Features:**
-
-- **Rate Limiting**: Polite scraping, prevents IP blocking
-- **Redis Caching**: 24h cache for scraped articles (requires Redis server)
-- **Retry Logic**: Automatic retry on failures with configurable attempts
-- **Proxy Rotation**: Round-robin or random proxy selection with failure tracking
-
-**See:** `PHASE5_TEST_RESULTS.md` and `PROXY_ROTATION_IMPLEMENTATION.md` for complete details.
 
 ---
 
-## 🧪 Testing
+# Rate limiting
 
-### Run All Tests
+## 📖 Full Documentationlimiter = RateLimiter(requests_per_minute=20)
+
+for url in urls:
+
+See **[PRODUCTION_SCRAPER_USAGE.md](PRODUCTION_SCRAPER_USAGE.md)** for:    limiter.wait_if_needed()
+
+- Complete command-line reference    scrape(url)
+
+- All configuration options```
+
+- Dashboard layout explained
+
+- Status indicators guide### Advanced Features (Phase 5) ✅
+
+- Performance benchmarks
+
+- Troubleshooting guideAll 4 advanced features are now fully implemented and tested!
+
+- Production checklist
+
+```python
+
+---# All features configured in YAML, initialized automatically
+
+# configs/websites/example.yaml:
+
+## 🔧 Configurationrate_limiting:
+
+  enabled: true
+
+### Command-Line Options  max_requests_per_minute: 30
+
+
+
+| Argument | Description | Required |caching:
+
+|----------|-------------|----------|  enabled: true
+
+| `--config` | Path to website configs | ✅ Yes |  redis_host: localhost
+
+| `--all` | Scrape all enabled websites | No |  redis_port: 6379
+
+| `--parallel` | Enable parallel scraping | No |  ttl_hours: 24
+
+| `--workers` | Number of parallel workers | No (default: 3) |
+
+| `--websites` | Comma-separated website list | No |retry:
+
+| `--fresh` | Clear deduplication database | No |  enabled: true
+
+  max_attempts: 3
+
+### Examples  delay_seconds: 2
 
 ```bash
+
+# Production: All websitesproxy:
+
+python3 run_production_display.py --config configs/websites --all --parallel --workers 3  enabled: true
+
+  file: proxies.txt
+
+# Specific websites  strategy: round-robin  # or 'random'
+
+python3 run_production_display.py --config configs/websites --websites avanews,awene --parallel --workers 2```
+
+
+
+# Single website (testing)**Expected Output:**
+
+python3 run_production_display.py --config configs/websites --websites avanews --workers 1
+
+````
+
+# Fresh scrape (clear deduplication)✅ Rate limiting enabled: 30 requests/min
+
+python3 run_production_display.py --config configs/websites --all --parallel --workers 3 --fresh✅ Redis caching enabled: localhost:6379 (TTL: 24h)
+
+````✅ Retry logic enabled: 3 attempts, 2s delay
+
+✅ Proxy rotation enabled: proxies.txt (round-robin)
+
+---```
+
+
+
+## 📈 Performance Metrics**Features:**
+
+
+
+| Metric | Value |- **Rate Limiting**: Polite scraping, prevents IP blocking
+
+|--------|-------|- **Redis Caching**: 24h cache for scraped articles (requires Redis server)
+
+| Average sentences/site | ~1,400 |- **Retry Logic**: Automatic retry on failures with configurable attempts
+
+| Average time/site | ~3 minutes |- **Proxy Rotation**: Round-robin or random proxy selection with failure tracking
+
+| Parallel workers (optimal) | 3 |
+
+| Total websites | 13 |**See:** `PHASE5_TEST_RESULTS.md` and `PROXY_ROTATION_IMPLEMENTATION.md` for complete details.
+
+| Full run time | 15-20 minutes |
+
+| Success rate (typical) | >90% |---
+
+
+
+---## 🧪 Testing
+
+
+
+## 🛠️ Development Files### Run All Tests
+
+
+
+For developers and advanced users:```bash
+
 pytest test_scraper_framework.py -v
-```
 
-### Run Specific Test Categories
+| File | Purpose |```
 
-```bash
-# Unit tests only
-pytest test_scraper_framework.py::TestSelectorResolution -v
+|------|---------|
 
-# Integration tests
+| `advanced_features.py` | Redis cache, retry, proxy features |### Run Specific Test Categories
+
+| `feature_registry.py` | Feature management system |
+
+| `driver_factory.py` | Selenium WebDriver factory |```bash
+
+| `config_validator.py` | YAML config validation |# Unit tests only
+
+| `cli_tools.py` | Developer CLI utilities |pytest test_scraper_framework.py::TestSelectorResolution -v
+
+| `integration_example.py` | Integration examples |
+
+| `dashboard/` | Alternative web interface |# Integration tests
+
 pytest test_scraper_framework.py -m integration
 
-# Regression tests
-pytest test_scraper_framework.py -m regression
+---
 
-# With coverage
-pytest test_scraper_framework.py --cov=scrapers --cov-report=html
-```
+# Regression tests
+
+## 🆘 Troubleshootingpytest test_scraper_framework.py -m regression
+
+
+
+### Low Success Rate# With coverage
+
+- Check internet connectionpytest test_scraper_framework.py --cov=scrapers --cov-report=html
+
+- Verify website availability```
+
+- Review logs for specific errors
 
 ### Test Fixtures Available
 
-- `sample_config` - Basic configuration
-- `fallback_chain_config` - Fallback selector chains
-- `xpath_multiple_nodes_config` - XPath multiple node extraction
+### Sentence Rate Too Low
+
+- Increase workers (3-5)- `sample_config` - Basic configuration
+
+- Check network speed- `fallback_chain_config` - Fallback selector chains
+
+- Verify extraction patterns- `xpath_multiple_nodes_config` - XPath multiple node extraction
+
 - `wait_for_config` - Wait conditions
 
----
+### Display Issues
 
-## 📊 Key Features
+- Use standard terminal (not minimal)---
 
-### 1. Configuration Validation ✅
+- Ensure ANSI support
 
-- **Validates:** Required fields, types, URLs, ranges
+- Check terminal size (min 80x24)## 📊 Key Features
+
+
+
+See **[PRODUCTION_SCRAPER_USAGE.md](PRODUCTION_SCRAPER_USAGE.md)** for complete troubleshooting guide.### 1. Configuration Validation ✅
+
+
+
+---- **Validates:** Required fields, types, URLs, ranges
+
 - **Catches:** Typos, invalid values, missing fields
-- **CLI tool:** `python config_validator.py <file>`
+
+## 📞 Support- **CLI tool:** `python config_validator.py <file>`
+
 - **Pre-commit:** Can be integrated with Git hooks
 
-### 2. Error Handling ✅
+For detailed information, see:
 
-- **Automatic retry:** 3 attempts with exponential backoff
+- **Usage Guide**: `PRODUCTION_SCRAPER_USAGE.md`### 2. Error Handling ✅
+
+- **Logs**: Check `logs/scraper_*.log`
+
+- **Output**: Check `corpus/` directory- **Automatic retry:** 3 attempts with exponential backoff
+
 - **Crash recovery:** WebDriver reinitialization
-- **Error tracking:** Classification and severity levels
+
+---- **Error tracking:** Classification and severity levels
+
 - **Summary reports:** Detailed error analysis
+
+## ✅ Production Checklist
 
 ### 3. Monitoring ✅
 
-- **Structured logging:** JSON + text formats
-- **Metrics:** Success rate, articles, sentences, duration
-- **Alerting:** Configurable thresholds
-- **Analytics:** By website and category
-- **Export:** JSON metrics for dashboards
+Before deploying:
 
-### 4. Performance ✅
+- [ ] Redis server running (localhost:6379)- **Structured logging:** JSON + text formats
 
-- **Parallel scraping:** 3x faster (3 workers)
+- [ ] Sufficient disk space for corpus- **Metrics:** Success rate, articles, sentences, duration
+
+- [ ] All website configs tested- **Alerting:** Configurable thresholds
+
+- [ ] Network connection stable- **Analytics:** By website and category
+
+- [ ] Deduplication database exists (or use --fresh)- **Export:** JSON metrics for dashboards
+
+
+
+---### 4. Performance ✅
+
+
+
+**Happy Scraping!** 🚀- **Parallel scraping:** 3x faster (3 workers)
+
 - **Incremental updates:** 50-80% time savings
-- **Caching:** LRU cache with TTL
+
+**Status**: ✅ Production Ready - Deploy with confidence!- **Caching:** LRU cache with TTL
+
 - **Profiling:** Detect slow operations
 
 ### 5. Security ✅
@@ -340,7 +601,7 @@ config = safe_load_yaml('websites.yaml')
 error_handler = ScraperErrorHandler(max_retries=3)
 monitor = ScraperMonitor(log_dir='logs')
 rate_limiter = RateLimiter(requests_per_minute=20)
-```
+````
 
 ### Step 2: Wrap Scraping Functions
 

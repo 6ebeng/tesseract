@@ -1,0 +1,61 @@
+# Tracked URLs (49 total)
+# Tracked on: 2025-10-29 18:59:32
+
+# HTML Pages (10)
+https://yariga.net/
+https://yariga.net/wp-content/themes/yariga/assets/fonts/tielabs-fonticon/tielabs-fonticon.woff2?ciufdj1
+https://www.googletagmanager.com/gtag/js?id=G-TWPMVKN3V4&cx=c&gtm=4e5ar0
+https://api.yariga-ads.com/api/ads/productionAds?page_name=home
+https://www.google-analytics.com/g/collect?v=2&tid=G-TWPMVKN3V4&gtm=45je5ar0v9115544756z8839313200za200zb839313200zd839313200&_p=1761753530091&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=1982843230.1761753531&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528501~104684208~104684211~104948813~115480710~115938465~115938468~116217636~116217638~116254370&sid=1761753530&sct=1&seg=0&dl=https%3A%2F%2Fyariga.net%2F&dt=Yariga%20-%20%DB%8C%D8%A7%D8%B1%DB%8C%DA%AF%D8%A7&en=page_view&_fv=1&_nsi=1&_ss=1&tfd=1653
+https://yariga.net/234798/
+https://api.yariga-ads.com/api/ads/productionAds?page_name=news
+https://yariga.net/234797/
+https://platform.twitter.com/widgets/widget_iframe.2f70fb173b9000da126c79afe2098f02.html?origin=https%3A%2F%2Fyariga.net
+https://platform.twitter.com/embed/Tweet.html?dnt=false&embedId=twitter-widget-0&features=eyJ0ZndfdGltZWxpbmVfbGlzdCI6eyJidWNrZXQiOltdLCJ2ZXJzaW9uIjpudWxsfSwidGZ3X2ZvbGxvd2VyX2NvdW50X3N1bnNldCI6eyJidWNrZXQiOnRydWUsInZlcnNpb24iOm51bGx9LCJ0ZndfdHdlZXRfZWRpdF9iYWNrZW5kIjp7ImJ1Y2tldCI6Im9uIiwidmVyc2lvbiI6bnVsbH0sInRmd19yZWZzcmNfc2Vzc2lvbiI6eyJidWNrZXQiOiJvbiIsInZlcnNpb24iOm51bGx9LCJ0ZndfZm9zbnJfc29mdF9pbnRlcnZlbnRpb25zX2VuYWJsZWQiOnsiYnVja2V0Ijoib24iLCJ2ZXJzaW9uIjpudWxsfSwidGZ3X21peGVkX21lZGlhXzE1ODk3Ijp7ImJ1Y2tldCI6InRyZWF0bWVudCIsInZlcnNpb24iOm51bGx9LCJ0ZndfZXhwZXJpbWVudHNfY29va2llX2V4cGlyYXRpb24iOnsiYnVja2V0IjoxMjA5NjAwLCJ2ZXJzaW9uIjpudWxsfSwidGZ3X3Nob3dfYmlyZHdhdGNoX3Bpdm90c19lbmFibGVkIjp7ImJ1Y2tldCI6Im9uIiwidmVyc2lvbiI6bnVsbH0sInRmd19kdXBsaWNhdGVfc2NyaWJlc190b19zZXR0aW5ncyI6eyJidWNrZXQiOiJvbiIsInZlcnNpb24iOm51bGx9LCJ0ZndfdXNlX3Byb2ZpbGVfaW1hZ2Vfc2hhcGVfZW5hYmxlZCI6eyJidWNrZXQiOiJvbiIsInZlcnNpb24iOm51bGx9LCJ0ZndfdmlkZW9faGxzX2R5bmFtaWNfbWFuaWZlc3RzXzE1MDgyIjp7ImJ1Y2tldCI6InRydWVfYml0cmF0ZSIsInZlcnNpb24iOm51bGx9LCJ0ZndfbGVnYWN5X3RpbWVsaW5lX3N1bnNldCI6eyJidWNrZXQiOnRydWUsInZlcnNpb24iOm51bGx9LCJ0ZndfdHdlZXRfZWRpdF9mcm9udGVuZCI6eyJidWNrZXQiOiJvbiIsInZlcnNpb24iOm51bGx9fQ%3D%3D&frame=false&hideCard=false&hideThread=false&id=1983513897614106861&lang=en&maxWidth=560px&origin=https%3A%2F%2Fyariga.net%2F234797%2F&sessionId=e79a4247cc02b6466b77d7354874f45b1e606ceb&theme=light&widgetsVersion=2615f7e52b7e0%3A1702314776716&width=550px
+
+# Scripts (21)
+https://yariga.net/wp-includes/js/jquery/jquery.min.js?ver=3.7.1
+https://yariga.net/wp-content/litespeed/js/89f13cab9016ce60593c5671f069fd69.js?ver=49e9a
+https://cdn.jsdelivr.net/gh/rastikerdar/sahel-font@v3.4.0/dist/font-face.css
+https://yariga.net/wp-content/litespeed/js/987bdf5446f103e0d1c16860e828d531.js?ver=287b8
+https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js?ver=4.5.2
+https://yariga.net/wp-content/litespeed/js/6d8bc3eb383044b68f9141e8063869c7.js?ver=03c5b
+https://yariga.net/wp-content/litespeed/js/c1ac5e80849d20bfca650d9350f265ab.js?ver=97149
+https://yariga.net/wp-content/litespeed/js/305746500aeac0f1e5de2bb2aafd70c0.js?ver=88c70
+https://yariga.net/wp-content/litespeed/js/3b9afc694900d30e5f74800a83280c0c.js?ver=0e40b
+https://yariga.net/wp-content/litespeed/js/92db41b55cc461cde0cfc100eb22a177.js?ver=9ebfa
+https://yariga.net/wp-content/litespeed/js/e4eca51fe871f58daea2c88ce2ae4385.js?ver=6bacf
+https://yariga.net/wp-content/litespeed/js/90349a5b5ce0af0e660ef0a852c754f0.js?ver=7b0ad
+https://www.googletagmanager.com/gtm.js?id=GTM-T53TTLG
+https://cdn.jsdelivr.net/gh/rastikerdar/sahel-font@v3.4.0/dist/Sahel-SemiBold.woff2
+https://cdn.jsdelivr.net/gh/rastikerdar/sahel-font@v3.4.0/dist/Sahel-Bold.woff2
+https://cdn.jsdelivr.net/gh/rastikerdar/sahel-font@v3.4.0/dist/Sahel.woff2
+https://www.youtube.com/s/player/5cf6312f/www-widgetapi.vflset/www-widgetapi.js
+https://yariga.net/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js
+https://yariga.net/wp-content/litespeed/js/bed3d52b8ed2706f13a396defb1f01ae.js?ver=95cd5
+https://platform.twitter.com/widgets.js
+https://platform.twitter.com/js/tweet.d7aeb21a88e025d2ea5f5431a103f586.js
+
+# Styles (14)
+https://yariga.net/wp-content/litespeed/css/908e58a8f9dfb8617ddbf14c4ab6f3b9.css?ver=3a2d5
+https://yariga.net/wp-content/litespeed/css/1ab3dabda6dfd538ab321d8908c99b34.css?ver=6a5e1
+https://yariga.net/wp-content/litespeed/css/6b6682450cdef487dcddc41747c6fe16.css?ver=3114e
+https://yariga.net/wp-content/litespeed/css/ec9547f95347b2032126ebfd951dafbe.css?ver=e9081
+https://yariga.net/wp-content/litespeed/css/a93149439cf3c30c1e4a0c2cc80a5d1e.css?ver=5139c
+https://yariga.net/wp-content/litespeed/css/2b60b19f24bf1942af5a1c24d2d732f8.css?ver=771e8
+https://yariga.net/wp-content/litespeed/css/f1419f5602985967f84430b281c05584.css?ver=73d4e
+https://yariga.net/wp-content/litespeed/css/ce16d7249b062bbda72f5897588d9fb9.css?ver=3de9f
+https://yariga.net/wp-content/litespeed/css/591248ca4c20dbda24db98ca5492b697.css?ver=b1236
+https://yariga.net/wp-content/litespeed/css/6524614fba06dfc50bb68014d758ff84.css?ver=8ff84
+https://yariga.net/wp-content/litespeed/css/2c5bc8723e82afe894da1f7817ae194d.css?ver=ea3b1
+https://yariga.net/wp-content/plugins/youtube-feed-pro/css/sb-youtube-common.min.css
+https://yariga.net/wp-content/litespeed/css/3b811db6d1c6d1ebb2a4430d7e500b10.css?ver=279f6
+https://yariga.net/wp-content/litespeed/css/a4598fe79dbe26bf2053fbc97fc89b08.css?ver=dc1fb
+
+# Images (1)
+https://yariga.net/wp-content/uploads/2023/04/cropped-favicon-32x32.png
+
+# Other (3)
+https://www.youtube.com/iframe_api
+https://api.yariga-ads.com/api/user-tracking
+https://yariga.net/wp-admin/admin-ajax.php

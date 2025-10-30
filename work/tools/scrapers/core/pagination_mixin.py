@@ -14,6 +14,7 @@ Usage:
 
 import time
 import logging
+from typing import Optional
 from typing import Dict, List
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,8 @@ class PaginationMixin:
     def _scrape_pagination(
         self,
         website_config: Dict,
-        category_config: Dict
+        category_config: Dict,
+        max_articles: Optional[int] = None
     ) -> List[str]:
         """
         Scrape articles from paginated list.
@@ -46,6 +48,7 @@ class PaginationMixin:
         Args:
             website_config: Website configuration
             category_config: Category configuration (with defaults applied)
+            max_articles: Maximum articles to collect (optional override)
         
         Returns:
             List of article URLs
@@ -104,7 +107,12 @@ class PaginationMixin:
             new_links = [l for l in links if l not in article_links]
             article_links.extend(new_links)
             
-            logger.info(f"   Found {len(new_links)} new articles on page {page + 1}")
+            logger.info(f"   Found {len(new_links)} new articles on page {page + 1} (total: {len(article_links)})")
+            
+            # Early exit: if max_articles specified and we have enough, stop
+            if max_articles and len(article_links) >= max_articles:
+                logger.info(f"   Reached max_articles limit ({max_articles}) - stopping pagination")
+                break
             
             # Early exit: if no new articles found, skip remaining pages
             if not new_links and page > 0:
@@ -125,7 +133,8 @@ class PaginationMixin:
     def _scrape_infinite_scroll(
         self,
         website_config: Dict,
-        category_config: Dict
+        category_config: Dict,
+        max_articles: Optional[int] = None
     ) -> List[str]:
         """
         Scrape articles from infinite scroll page.
@@ -135,6 +144,7 @@ class PaginationMixin:
         Args:
             website_config: Website configuration
             category_config: Category configuration (with defaults applied)
+            max_articles: Maximum articles to collect (optional override)
         
         Returns:
             List of article URLs
@@ -154,7 +164,12 @@ class PaginationMixin:
                 break
             
             article_links.extend(new_links)
-            logger.info(f"   Scroll {scroll + 1}/{max_scrolls}: {len(new_links)} new articles")
+            logger.info(f"   Scroll {scroll + 1}/{max_scrolls}: {len(new_links)} new articles (total: {len(article_links)})")
+            
+            # Early exit if we have enough articles
+            if max_articles and len(article_links) >= max_articles:
+                logger.info(f"   Reached max_articles limit ({max_articles}) - stopping scrolling")
+                break
             
             # Scroll down
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -166,7 +181,8 @@ class PaginationMixin:
     def _scrape_click_load_more(
         self,
         website_config: Dict,
-        category_config: Dict
+        category_config: Dict,
+        max_articles: Optional[int] = None
     ) -> List[str]:
         """
         Scrape articles by clicking 'Load More' button.
@@ -176,6 +192,7 @@ class PaginationMixin:
         Args:
             website_config: Website configuration
             category_config: Category configuration (with defaults applied)
+            max_articles: Maximum articles to collect (optional override)
         
         Returns:
             List of article URLs
@@ -192,7 +209,12 @@ class PaginationMixin:
             new_links = [l for l in links if l not in article_links]
             article_links.extend(new_links)
             
-            logger.info(f"   Click {click + 1}/{max_clicks}: {len(new_links)} new articles")
+            logger.info(f"   Click {click + 1}/{max_clicks}: {len(new_links)} new articles (total: {len(article_links)})")
+            
+            # Early exit if we have enough articles
+            if max_articles and len(article_links) >= max_articles:
+                logger.info(f"   Reached max_articles limit ({max_articles}) - stopping clicks")
+                break
             
             # Click load more button
             try:

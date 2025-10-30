@@ -1,0 +1,18 @@
+# Tracked URLs (6 total)
+# Tracked on: 2025-10-30 09:52:13
+
+# HTML Pages (6)
+https://www.ava.news/kurdistan?page=1
+https://www.ava.news/business?page=1
+https://www.ava.news/culture?page=1
+https://www.ava.news/environment?page=1
+https://www.ava.news/health?page=1
+https://www.ava.news/opinion?page=1
+
+# Scripts (0)
+
+# Styles (0)
+
+# Images (0)
+
+# Other (0)

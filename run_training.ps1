@@ -1,6 +1,6 @@
 param(
     [switch]$NoClear,
-    [ValidateSet('Clean', 'Generate', 'GenerateTrain', 'Train', 'SmokeTest', 'SmokeTestBest', 'SmokeTestFast', 'Bootstrap', 'BuildCorpus', 'ExpandCorpus', 'Eval', 'All')]
+    [ValidateSet('Clean', 'Generate', 'GenerateTrain', 'Train', 'SmokeTest', 'SmokeTestBest', 'SmokeTestFast', 'Bootstrap', 'BuildCorpus', 'ExpandCorpus', 'ScrapeCorpus', 'Eval', 'All')]
     [string]$Mode = '',
     [switch]$Deep = $false,
     [string]$ImagePath = '',
@@ -35,6 +35,11 @@ param(
     # Corpus builder options
     [switch]$UseFixer,
     [int]$CorpusMinCount,
+    # Scraper options
+    [switch]$ScraperAll,
+    [string]$ScraperWebsites,
+    [int]$ScraperWorkers = 3,
+    [switch]$ScraperFresh,
     # All-mode options
     [switch]$SkipEval,
     [string]$EvalPSMs,
@@ -321,6 +326,73 @@ function Invoke-ExpandCorpus {
     }
 }
 
+function Invoke-ScrapeCorpus {
+    Write-Host "`n╔══════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "║      KURDISH CORPUS SCRAPING - PRODUCTION MODE      ║" -ForegroundColor Cyan
+    Write-Host "╚══════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
+    
+    # Build scraper command
+    $scraperDir = Convert-ToWslPath (Join-Path $workDirWin 'tools\scrapers')
+    $configPath = 'configs/websites'
+    $workers = if ($ScraperWorkers -gt 0) { $ScraperWorkers } else { 3 }
+    
+    # Build arguments
+    $argsList = @('python3', 'run_production_display.py', '--config', $configPath)
+    
+    if ($ScraperAll) {
+        $argsList += '--all'
+        Write-Host "Scraping all 13 enabled Kurdish news websites" -ForegroundColor Yellow
+    }
+    elseif ($ScraperWebsites) {
+        $argsList += '--websites'
+        $argsList += $ScraperWebsites
+        Write-Host "Scraping websites: $ScraperWebsites" -ForegroundColor Yellow
+    }
+    else {
+        Write-Host "Error: Must specify -ScraperAll or -ScraperWebsites <list>" -ForegroundColor Red
+        return
+    }
+    
+    $argsList += '--parallel'
+    $argsList += '--workers'
+    $argsList += $workers
+    
+    if ($ScraperFresh) {
+        $argsList += '--fresh'
+        Write-Host "Fresh scrape: Clearing deduplication database" -ForegroundColor Yellow
+    }
+    
+    Write-Host "Workers: $workers parallel" -ForegroundColor White
+    Write-Host "Deduplication: $(if ($ScraperFresh) { 'OFF (fresh)' } else { 'ON' })" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Starting production scraper..." -ForegroundColor Green
+    Write-Host ""
+    
+    # Join arguments and run
+    $cmd = ($argsList -join ' ')
+    wsl -d Ubuntu -- bash -lc "cd '$scraperDir'; $cmd"; $code = $LASTEXITCODE
+    
+    if ($code -ne 0) {
+        Write-Host "`n⚠️  Scraping completed with errors (exit code: $code)" -ForegroundColor DarkYellow
+        Write-Host "Check logs at: work/tools/scrapers/logs/" -ForegroundColor White
+    }
+    else {
+        Write-Host "`n✅ Scraping completed successfully!" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Results saved to:" -ForegroundColor Yellow
+        Write-Host "  - Corpus files: work/tools/scrapers/corpus/{website}/{category}.txt" -ForegroundColor White
+        Write-Host "  - Logs: work/tools/scrapers/logs/scraper_*.log" -ForegroundColor White
+        Write-Host "  - Dedup DB: work/tools/scrapers/article_dedup.db" -ForegroundColor White
+        Write-Host ""
+        Write-Host "Next steps:" -ForegroundColor Yellow
+        Write-Host "  1. Review scraped text files in corpus/" -ForegroundColor White
+        Write-Host "  2. Combine with existing corpus (if needed)" -ForegroundColor White
+        Write-Host "  3. Run: .\run_training.ps1 -Mode BuildCorpus" -ForegroundColor White
+        Write-Host "  4. Run: .\run_training.ps1 -Mode GenerateTrain" -ForegroundColor White
+    }
+}
+
 function Invoke-EvalReal {
     Write-Host "`nEvaluating real-world CER..." -ForegroundColor Yellow
     $psmArg = ''
@@ -467,6 +539,9 @@ if ($Mode) {
         'ExpandCorpus' {
             try { Invoke-ExpandCorpus; Write-Host "`nDone." -ForegroundColor Green; exit 0 } catch { Write-Host $_ -ForegroundColor Red; exit 1 }
         }
+        'ScrapeCorpus' {
+            try { Invoke-ScrapeCorpus; Write-Host "`nDone." -ForegroundColor Green; exit 0 } catch { Write-Host $_ -ForegroundColor Red; exit 1 }
+        }
         'Generate' {
             try {
                 Invoke-GenerateOnly
@@ -524,12 +599,13 @@ Write-Host "5. Smoke test (best only)" -ForegroundColor White
 Write-Host "6. Smoke test (fast only)" -ForegroundColor White
 Write-Host "7. Verify ckb.traineddata covers Kurdish chars" -ForegroundColor White
 Write-Host "8. Build balanced corpus (uses fixer)" -ForegroundColor White
-Write-Host "9. Evaluate real-world CER (real_gt/eval)" -ForegroundColor White
-Write-Host "10. Bootstrap WSL training toolchain" -ForegroundColor White
-Write-Host "11. All: Corpus → Generate → Train → Eval" -ForegroundColor White
+Write-Host "9. Scrape Kurdish news corpus (production scraper)" -ForegroundColor White
+Write-Host "10. Evaluate real-world CER (real_gt/eval)" -ForegroundColor White
+Write-Host "11. Bootstrap WSL training toolchain" -ForegroundColor White
+Write-Host "12. All: Corpus → Generate → Train → Eval" -ForegroundColor White
 Write-Host "" 
 
-$choice = Read-Host "Enter your choice (1-11)"
+$choice = Read-Host "Enter your choice (1-12)"
 
 switch ($choice) {
     "1" {
@@ -609,12 +685,46 @@ switch ($choice) {
         catch { Write-Host $_ -ForegroundColor Red }
     }
     "9" {
-        try { Invoke-EvalReal } catch { Write-Host $_ -ForegroundColor Red }
+        # Scrape Kurdish news corpus
+        Write-Host "`nProduction scraper options:" -ForegroundColor Yellow
+        Write-Host "1. Scrape all 13 websites (recommended)" -ForegroundColor White
+        Write-Host "2. Scrape specific websites" -ForegroundColor White
+        $scraperChoice = Read-Host "Enter choice (1-2)"
+        
+        try {
+            if ($scraperChoice -eq "1") {
+                $script:ScraperAll = $true
+            }
+            elseif ($scraperChoice -eq "2") {
+                $websiteList = Read-Host "Enter websites (comma-separated, e.g., avanews,awene,rudaw)"
+                if (-not $websiteList) {
+                    Write-Host "No websites specified. Aborting." -ForegroundColor Red
+                    break
+                }
+                $script:ScraperWebsites = $websiteList
+            }
+            else {
+                Write-Host "Invalid choice. Aborting." -ForegroundColor Red
+                break
+            }
+            
+            $workersInput = Read-Host "Number of parallel workers (default: 3)"
+            if ($workersInput) { $script:ScraperWorkers = [int]$workersInput }
+            
+            $freshInput = Read-Host "Clear deduplication database (fresh scrape)? (y/N)"
+            $script:ScraperFresh = ($freshInput -match '^(y|yes)$')
+            
+            Invoke-ScrapeCorpus
+        }
+        catch { Write-Host $_ -ForegroundColor Red }
     }
     "10" {
-        try { Invoke-Bootstrap } catch { Write-Host $_ -ForegroundColor Red }
+        try { Invoke-EvalReal } catch { Write-Host $_ -ForegroundColor Red }
     }
     "11" {
+        try { Invoke-Bootstrap } catch { Write-Host $_ -ForegroundColor Red }
+    }
+    "12" {
         try { Invoke-All } catch { Write-Host $_ -ForegroundColor Red }
     }
     default {

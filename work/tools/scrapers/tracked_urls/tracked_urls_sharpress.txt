@@ -1,0 +1,62 @@
+# Tracked URLs (50 total)
+# Tracked on: 2025-10-29 18:57:26
+
+# HTML Pages (26)
+https://www.sharpress.net/all-hawal.aspx?Cor=Herem&Nawnishan=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86
+https://www.sharpress.net/WebResource.axd?d=M3L7C-xmOHknXltzT7kVhg7K5gpq7rEKLAqgwlfu3y-xabyeIhApDo0UyFA3MIgNESjwY2OjhkfnBJYZPxh8GVsKIypjhMqVPk9aoB4eqVI1&t=638901644248157332
+https://www.sharpress.net/ScriptResource.axd?d=pLY7oYAD1QP5f2xkrdAZ7cUBHXqV-_BQ7kuDXrcHDqCrTs4ncXNKmIdMplXY_TC9duCmqfuuDpg5xO9qcbxj_KV8EFNb5TQlXrj1zgvXf1e2OekL1TVcvI-DgTux-CVpXgZSYQCcR-CB15Q-1NML7g2&t=51e37521
+https://www.sharpress.net/ScriptResource.axd?d=d-Mkm77TNf_0PcATUlnXOwmbmKBMX-RLkG9Mg8C5SThT6QQkcVL_KU_15hD_rvItjAMXiJqT20yHlj3y8xTPjUJPZMFqww6wDuzq9_YRB6gJITHOUWlohJgl4z7PJcJ5tqJM8TzxFAyU7ShHSxNYBQ2&t=51e37521
+https://www.google-analytics.com/j/collect?v=1&_v=j102&a=1083905283&t=pageview&_s=1&dl=https%3A%2F%2Fwww.sharpress.net%2Fall-hawal.aspx%3FCor%3DHerem%26Nawnishan%3D%25DA%25A9%25D9%2588%25D8%25B1%25D8%25AF%25D8%25B3%25D8%25AA%25D8%25A7%25D9%2586&ul=en-us&dt=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86&sr=800x600&vp=1905x993&_u=IEBAAAABAAAAACAAI~&jid=447634880&gjid=1664372337&cid=2076823261.1761753386&tid=UA-40297844-1&_gid=985732360.1761753386&_r=1&_slc=1&z=622893087
+https://www.googletagmanager.com/gtag/js?id=G-BDBMQM4E0Q&cx=c&_slc=1
+https://www.google-analytics.com/g/collect?v=2&tid=G-BDBMQM4E0Q&gtm=45je5ar0v9123767697za200&_p=1761753386204&gcd=13l3l3l3l2l1&npa=0&dma=0&ul=en-us&sr=800x600&cid=2076823261.1761753386&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=ABAI&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527907~104528500~104684208~104684211~104948813~115480709~115583767~115616986~115938465~115938468~116217636~116217638&dl=https%3A%2F%2Fwww.sharpress.net%2Fall-hawal.aspx%3FCor%3DHerem%26Nawnishan%3D%25DA%25A9%25D9%2588%25D8%25B1%25D8%25AF%25D8%25B3%25D8%25AA%25D8%25A7%25D9%2586&dt=%DA%A9%D9%88%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86&sid=1761753386&sct=1&seg=0&_tu=wAQ&en=page_view&_fv=1&_ss=1&_ee=1&tfd=1621
+https://www.sharpress.net/all-hawal.aspx?Cor=Herem&Nawnishan=%u06a9%u0648%u0631%u062f%u0633%u062a%u0627%u0646
+https://www.sharpress.net/all-detail.aspx?Jimare=246879
+https://www.google-analytics.com/j/collect?v=1&_v=j102&a=1980728646&t=pageview&_s=1&dl=https%3A%2F%2Fwww.sharpress.net%2Fall-detail.aspx%3FJimare%3D246879&ul=en-us&dt=%DA%A9%DB%8E%D8%B4%DB%95%DB%8C%20%D9%85%D9%88%DA%86%DB%95%20%D8%B3%DB%95%D8%B1%D9%87%DB%95%DA%B5%D8%AF%DB%95%D8%AF%D8%A7%D8%AA%DB%95%D9%88%DB%95&sr=800x600&vp=1905x993&_u=AACAAAABAAAAACAAI~&jid=&gjid=&cid=2076823261.1761753386&tid=UA-40297844-1&_gid=985732360.1761753386&_slc=1&z=977065295
+https://platform.twitter.com/widgets/widget_iframe.2f70fb173b9000da126c79afe2098f02.html?origin=https%3A%2F%2Fwww.sharpress.net
+https://www.sharpress.net/all-detail.aspx?Jimare=246864
+https://www.google-analytics.com/g/collect?v=2&tid=G-BDBMQM4E0Q&gtm=45je5ar0v9123767697za200&_p=1761753406610&gcd=13l3l3l3l2l1&npa=0&dma=0&ul=en-us&sr=800x600&cid=2076823261.1761753386&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=ABAIAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528500~104684208~104684211~104948813~115480709~115583769~115938465~115938469~116217636~116217638&dl=https%3A%2F%2Fwww.sharpress.net%2Fall-detail.aspx%3FJimare%3D246879&dt=%DA%A9%DB%8E%D8%B4%DB%95%DB%8C%20%D9%85%D9%88%DA%86%DB%95%20%D8%B3%DB%95%D8%B1%D9%87%DB%95%DA%B5%D8%AF%DB%95%D8%AF%D8%A7%D8%AA%DB%95%D9%88%DB%95&sid=1761753386&sct=1&seg=1&_tu=wAQ&en=page_view&_ee=1&tfd=5480
+https://www.google-analytics.com/j/collect?v=1&_v=j102&a=1135905136&t=pageview&_s=1&dl=https%3A%2F%2Fwww.sharpress.net%2Fall-detail.aspx%3FJimare%3D246864&ul=en-us&dt=%D8%B3%D8%A8%DB%95%DB%8C%D9%86%DB%8E%20%D9%84%DB%95%D9%85%20%D9%86%D8%A7%D9%88%DA%86%D8%A7%D9%86%DB%95%20%D9%86%DB%95%D9%88%D8%AA%DB%8C%20%D8%B3%D9%BE%DB%8C%20%D8%AF%D8%A7%D8%A8%DB%95%D8%B4%D8%AF%DB%95%D9%83%D8%B1%DB%8E%D8%AA&sr=800x600&vp=1905x993&_u=AACAAAABAAAAACAAI~&jid=&gjid=&cid=2076823261.1761753386&tid=UA-40297844-1&_gid=985732360.1761753386&_slc=1&z=1057964580
+https://www.sharpress.net/all-hawal.aspx?Cor=K%C3%BClt%C3%BCr&Nawnishan=%DA%A9%D9%88%D9%84%D8%AA%D9%88%D9%88%D8%B1
+https://www.google-analytics.com/j/collect?v=1&_v=j102&a=1722639736&t=pageview&_s=1&dl=https%3A%2F%2Fwww.sharpress.net%2Fall-hawal.aspx%3FCor%3DK%25C3%25BClt%25C3%25BCr%26Nawnishan%3D%25DA%25A9%25D9%2588%25D9%2584%25D8%25AA%25D9%2588%25D9%2588%25D8%25B1&ul=en-us&dt=%DA%A9%D9%88%D9%84%D8%AA%D9%88%D9%88%D8%B1&sr=800x600&vp=1905x993&_u=AACAAAABAAAAACAAI~&jid=&gjid=&cid=2076823261.1761753386&tid=UA-40297844-1&_gid=985732360.1761753386&_slc=1&z=260586189
+https://ep1.adtrafficquality.google/getconfig/sodar?sv=200&tid=afs&tv=1234567890&st=env&sjk=VZyoPapHQyuwzynDS3fVmw==&sde=1
+https://ep2.adtrafficquality.google/sodar/sodar2/237/runner.html
+https://www.google-analytics.com/g/collect?v=2&tid=G-BDBMQM4E0Q&gtm=45je5ar0v9123767697za200&_p=1761753417485&gcd=13l3l3l3l2l1&npa=0&dma=0&ul=en-us&sr=800x600&cid=2076823261.1761753386&uaa=&uab=&uafvl=&uamb=0&uam=&uap=Linux&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=ABAIAAQ&_s=1&tag_exp=101509157~103116026~103200004~103233427~104527906~104528500~104684208~104684211~104948813~115480709~115938466~115938469~116217636~116217638&dl=https%3A%2F%2Fwww.sharpress.net%2Fall-hawal.aspx%3FCor%3DK%25C3%25BClt%25C3%25BCr%26Nawnishan%3D%25DA%25A9%25D9%2588%25D9%2584%25D8%25AA%25D9%2588%25D9%2588%25D8%25B1&dt=%DA%A9%D9%88%D9%84%D8%AA%D9%88%D9%88%D8%B1&sid=1761753386&sct=1&seg=1&_tu=wAQ&en=page_view&_ee=1&tfd=5359
+https://www.sharpress.net/all-hawal.aspx?Cor=K%u00fclt%u00fcr&Nawnishan=%u06a9%u0648%u0644%u062a%u0648%u0648%u0631
+https://www.sharpress.net/all-detail.aspx?Jimare=246543
+https://www.google-analytics.com/j/collect?v=1&_v=j102&a=2034832585&t=pageview&_s=1&dl=https%3A%2F%2Fwww.sharpress.net%2Fall-detail.aspx%3FJimare%3D246543&ul=en-us&dt=%DA%86%DB%86%D9%86%20%D8%A8%DB%95%D8%AE%DB%8E%D8%B1%D8%A7%DB%8C%DB%8C%20%D9%86%DB%8C%D8%B4%D8%A7%D9%86%DB%95%DA%A9%D8%A7%D9%86%DB%8C%20%D8%B3%DB%95%DA%A9%D8%AA%DB%95%DB%8C%20%D9%85%DB%8E%D8%B4%DA%A9%20%D8%A8%D9%86%D8%A7%D8%B3%DB%8C%D9%86%DB%95%D9%88%DB%95%D8%9F&sr=800x600&vp=1905x993&_u=AACAAAABAAAAACAAI~&jid=&gjid=&cid=2076823261.1761753386&tid=UA-40297844-1&_gid=985732360.1761753386&_slc=1&z=455356721
+https://ep1.adtrafficquality.google/getconfig/sodar?sv=200&tid=afs&tv=1234567890&st=env&sjk=FSLJV7txTNawQUbuI9aVAw==&sde=1
+https://www.sharpress.net/all-detail.aspx?Jimare=246499
+https://www.google-analytics.com/j/collect?v=1&_v=j102&a=1470486120&t=pageview&_s=1&dl=https%3A%2F%2Fwww.sharpress.net%2Fall-detail.aspx%3FJimare%3D246499&ul=en-us&dt=%D9%BE%DB%95%DB%8C%D9%88%DB%95%D9%86%D8%AF%DB%8C%DB%8C%20%D9%84%DB%95%D9%86%DB%8E%D9%88%D8%A7%D9%86%20%D9%87%DB%95%D9%88%D8%A7%DB%8C%20%D9%BE%DB%8C%D8%B3%E2%80%8C%D9%88%20%D8%AF%D8%B1%DB%95%D9%86%DA%AF%20%DA%AF%DB%95%D8%B4%DB%95%DA%A9%D8%B1%D8%AF%D9%86%DB%8C%20%D9%85%DB%8E%D8%B4%DA%A9%DB%8C%20%DA%A9%DB%86%D8%B1%D9%BE%DB%95%D9%84%DB%95%20%DA%86%DB%8C%DB%8C%DB%95%D8%9F&sr=800x600&vp=1905x993&_u=AACAAAABAAAAACAAI~&jid=&gjid=&cid=2076823261.1761753386&tid=UA-40297844-1&_gid=985732360.1761753386&_slc=1&z=925253923
+https://ep1.adtrafficquality.google/getconfig/sodar?sv=200&tid=afs&tv=1234567890&st=env&sjk=8wXdxyheR5i4D22El4Hl5g==&sde=1
+
+# Scripts (13)
+https://www.sharpress.net/js/jquery-2.1.1.js
+https://code.jquery.com/jquery-3.1.1.min.js
+https://www.sharpress.net/js/script.js
+https://www.sharpress.net/js/jquery.min.js
+https://www.sharpress.net/js/owl.carousel.js
+https://cse.google.com/cse.js?cx=009459787130631626967:xsvfq5ddxtc
+https://www.google-analytics.com/analytics.js
+https://www.google.com/cse/static/element/6467658b9628de43/cse_element__ar.js?usqp=CAI%3D
+https://cse.google.com/adsense/search/async-ads.js
+https://s7.addthis.com/js/300/addthis_widget.js
+https://www.instagram.com/embed.js
+https://platform.twitter.com/widgets.js
+https://ep2.adtrafficquality.google/sodar/sodar2.js
+
+# Styles (5)
+https://www.sharpress.net/wene/stylesheet.css
+https://www.sharpress.net/wene/css/all.css
+https://www.sharpress.net/css/owl.carousel.css
+https://www.google.com/cse/static/element/6467658b9628de43/default+ar.css
+https://www.google.com/cse/static/style/look/v4/default.css
+
+# Images (0)
+
+# Other (6)
+https://www.sharpress.net/wene/webfonts/fa-brands-400.woff2
+https://www.sharpress.net/wene/fonts/Reg.ttf
+https://www.sharpress.net/wene/fonts/Bold.ttf
+https://www.sharpress.net/wene/webfonts/fa-solid-900.woff2
+https://www.sharpress.net/wene/webfonts/fa-regular-400.woff2
+https://www.sharpress.net/css/favicon.ico

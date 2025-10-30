@@ -1,0 +1,15 @@
+# Tracked URLs (3 total)
+# Tracked on: 2025-10-30 09:06:37
+
+# HTML Pages (3)
+https://www.awene.com/part?section=2&page=1
+https://www.awene.com/culture?page=1
+https://www.awene.com/aburi?page=1
+
+# Scripts (0)
+
+# Styles (0)
+
+# Images (0)
+
+# Other (0)
