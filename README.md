@@ -55,109 +55,296 @@ tesseract/
 
 ### 1. Test Web Scrapers
 
-# Kurdish OCR Training Project
+```bash
+# Test all 14 websites (3 articles each) - from work/tools directory
+cd work/tools
+wsl -d Ubuntu -- bash -lc "cd '/mnt/c/tesseract/work/tools' && python3 test_suite.py --max-articles 3"
 
-Last updated: November 1, 2025
+# Test specific website
+python3 test_suite.py yariga --max-articles 10
 
-The repository contains the training and evaluation pipeline for a Central Kurdish (Sorani) Tesseract model. The pipeline is orchestrated from Windows PowerShell via `run_training.ps1`, executes work inside Ubuntu WSL, and produces models in `tessdata/best` and `tessdata/fast`.
+# Debug website selectors
+python3 test_debug.py kurdistan24 --category politics --test-selectors
+```
 
-## Current Status
+### 2. Generate Training Data
 
-- `tessdata/best/ckb.traineddata` and `tessdata/fast/ckb.traineddata` originate from **Phase 4 (Farsi base)** and remain the most reliable checkpoints.
-- `mgk.tif` real-document benchmark (2,632 chars, biography layout) continues to plateau at **71.69 % accuracy / 0.2831 CER** when evaluated with `--psm 6` despite multiple corpus strategies.
-- A high-ZWNJ corpus experiment (Batch 5, 1,313 sentences @ 11.68 % ZWNJ, perfectly matching the target document) reproduced the plateau, disproving ZWNJ density as the primary driver of errors.
-- Modern Kurdish news images (≈9 % ZWNJ, short paragraphs) consistently achieve **≈76.9 % accuracy**, confirming the model is production-ready for contemporary layouts.
-- Recommendation: deploy the current model for modern text, document the `mgk.tif` limitation, and treat any further improvement as a new research effort focusing on long-paragraph corpora or alternate architectures.
+```powershell
+# Windows (PowerShell)
+.\run_training.ps1 -Mode BuildCorpus
 
-## Environment & Prerequisites
+# WSL/Linux
+cd work
+bash execute_ckb_training.sh
+```
 
-- Windows 10/11 with WSL2 and Ubuntu 20.04+ installed.
-- Python 3.8+ and Tesseract OCR 4.1+ available inside WSL (most scripts use `/usr/bin/python3`).
-- PowerShell 5.1+ on Windows (repository tasks invoke PowerShell).
-- Optional: Docker + FlareSolverr for Cloudflare-protected scraping targets.
+### 3. Train Model
 
-## Key Files & Directories
+```powershell
+# Full training pipeline
+.\run_training.ps1 -Mode GenerateTrain
 
-- `run_training.ps1` – PowerShell entry point with modes: `ScrapeCorpus`, `BuildCorpus`, `GenerateTrain`, `Train`, `Eval`, `SmokeTest(S)`, `Verify`, `Clean`, `All`.
-- `cleanup_project.ps1` – archives or prunes legacy artifacts (`archive/` contains historical material).
-- `work/` – WSL workspace:
-  - `corpus/` (active corpora such as `ckb_high_zwnj.training_text` and filters including `filter_high_zwnj.py`).
-  - `tools/scrapers/` (production scraper, configs, and utilities documented in `docs/PRODUCTION_READINESS.md`).
-  - `tools/eval_real_cer.py` and supporting scripts used by evaluation tasks.
-- `docs/` – current references:
-  - `PRODUCTION_READINESS.md` (scraper deployment & monitoring).
-  - `SCRAPER_QUICK_START.md` (adding or tuning websites).
-  - `kurdish_characters.md` (glyph coverage reference).
-- `archive/` – preserved Phase 1-5 and experimental notes. Everything else in root reflects the current workflow.
+# Smoke test trained model
+.\run_training.ps1 -Mode SmokeTest
+```
 
-## Typical Workflow
+### 4. Verify Kurdish Character Coverage
 
-1. **Scrape / Refresh Corpus**
+```powershell
+# Verify traineddata includes all Kurdish characters
+.\run_training.ps1 -Mode Verify
 
-   - Interactive: `.
-un_training.ps1` then choose menu option **9**.
-   - Non-interactive: `.
-un_training.ps1 -Mode ScrapeCorpus -ScraperAll -ScraperWorkers 3 [-ScraperFresh]`.
-   - See `docs/PRODUCTION_READINESS.md` for monitoring, alerts, and troubleshooting.
+# Or directly in WSL
+cd work
+python3 verify_ckb_traineddata.py --traineddata /mnt/c/tesseract/tessdata/best/ckb.traineddata
+```
 
-2. **Build Balanced Corpus**
+---
 
-   - `.
-un_training.ps1 -Mode BuildCorpus -UseFixer -BalanceDigits -BalanceLatinDigits -BalancePuncs -CorpusMinCount 1`
-   - Produces `work/corpus/ckb.training_text` and validation reports in `work/logs/`.
+## 📊 Current Status
 
-3. **Generate Training Data & Train**
+### Training Quality Metrics
 
-   - Recommended one-step task: select VS Code task **“CKB: Generate + Train”** or run `.
-un_training.ps1 -Mode GenerateTrain [-LatinDigits]`.
-   - Generation and training happen inside WSL via `work/execute_ckb_training.sh`.
+**Current Model Performance:**
 
-4. **Evaluate**
+- ✅ **76.9% accuracy** on modern Kurdish news text
+- ⚠️ **71.69% accuracy** on dense biographical text
+- ✅ **ZWNJ density:** 9.331% in training corpus (excellent quality)
+- ✅ **Model ready for production deployment**
 
-   - Quick regression: `.
-un_training.ps1 -Mode SmokeTest` (auto best→fast) or `-Mode SmokeTestBest` / `-Mode SmokeTestFast` with optional `-ImagePath`.
-   - Full benchmark: `.
-un_training.ps1 -Mode Eval -EvalPSMs "6,11,7,13"` (invokes `tools/eval_real_cer.py` for real ground truth).
-   - VS Code task **“CKB: Regression Test”** runs Eval + optional real CER reporting.
+**Quality Indicators:**
 
-5. **Verification & Maintenance**
-   - Coverage: `.
-un_training.ps1 -Mode Verify -VerifyRequireLatinDigits` or the task **“CKB: Verify (Require Latin Digits)”**.
-   - Deep clean between large experiments: **“CKB: Clean (Deep)”** task (removes temporary output and obsolete corpora).
-   - Monitor long-running jobs using `monitor_training.ps1` or `check_training_progress.ps1`.
+- **ZWNJ (U+200C):** 9-11% density indicates proper Kurdish formatting
+- **Tatweel (U+0640):** ~0.025% (irrelevant for Kurdish OCR)
+- **News corpus:** High-quality source with proper ZWNJ usage
+- **Wikipedia:** Excluded due to low ZWNJ (0.106% = corrupted)
 
-## Model Performance History
+**See:** [UNICODE_CHARACTER_ANALYSIS.md](UNICODE_CHARACTER_ANALYSIS.md) for detailed quality analysis
 
-| Attempt (PSM 6)    | Corpus Summary                                     | ZWNJ % | Accuracy    | CER    | Notes                                   |
-| ------------------ | -------------------------------------------------- | ------ | ----------- | ------ | --------------------------------------- |
-| Phase 4 baseline   | 3,321 curated sentences (mixed news + biographies) | 8.15   | **71.69 %** | 0.2831 | Current production model.               |
-| Batch 4 (Oct 2025) | 5,686 sentences incl. Wikipedia biographies        | 5.78   | 71.69 %     | 0.2831 | Added data diluted ZWNJ; no gain.       |
-| Batch 5 (Nov 2025) | 1,313 high-ZWNJ sentences (11.68 %)                | 11.68  | 71.69 %     | 0.2831 | Matched target ZWNJ; plateau confirmed. |
+### Working Websites (13/14)
 
-Additional benchmark: modern news document set (≈9 % ZWNJ) returns **76.9 % accuracy** with the Phase 4 checkpoint; this is the recommended production scenario.
+| Website     | Categories | Sentences/Test | Speed | Notes                |
+| ----------- | ---------- | -------------- | ----- | -------------------- |
+| avanews     | 6          | 18             | 576s  | ✅ Full support      |
+| awene       | 3          | 126            | 127s  | ✅ Full support      |
+| balinde     | 2          | 330            | 88s   | ✅ Poetry & articles |
+| govkrd      | 1          | 19             | 45s   | ✅ Government news   |
+| kurdistan24 | 5          | 109            | 132s  | ✅ **FlareSolverr**  |
+| kurdsat     | 5          | 48             | 130s  | ✅ Full support      |
+| lvinpress   | 3          | 68             | 295s  | ✅ Full support      |
+| nrt         | 6          | 109            | 282s  | ✅ Full support      |
+| rudaw       | 3          | 68             | 79s   | ✅ Full support      |
+| sekokurd    | 2          | 113            | 78s   | ✅ Full support      |
+| sharpress   | 2          | 6              | 73s   | ✅ Full support      |
+| xendan      | 3          | 9              | 112s  | ✅ Full support      |
+| yariga      | 1          | 29             | 46s   | ✅ Full support      |
 
-## Lessons Learned & Open Questions
+**Disabled:** khak (API issues)
 
-- **ZWNJ distribution is not the limiting factor.** Batch 5 matched the target distribution yet produced identical results.
-- **Longest-line domain mismatch persists.** `mgk.tif` contains 700–1,200 character lines; future work should collect comparable paragraph-length Kurdish text or synthesize similar layouts.
-- **Fonts or aging artifacts may contribute.** Investigating historical Kurdish typefaces or document restoration could help if further accuracy gains are required.
-- **Next possible directions:**
-  1. Accept current accuracy for old dense texts and focus on deployment/documentation.
-  2. Collect long-form Kurdish biographies / legal texts (paragraph-length) and retrain with ≥8 k high-quality samples.
-  3. Explore architecture changes (larger context windows or alternative OCR engines) if long-form data is unavailable.
+## **Total:** 1,052 sentences per test run across 48 categories
 
-## Maintenance Checklist
+## 🔧 Configuration
 
-- Keep `archive/` intact; it contains Phase 1-5 and experimental references moved out of the root directory.
-- Use `cleanup_project.ps1` after large experiments to keep the working tree lightweight.
-- Monitor `work/logs/` and `logs/` for scraper or training anomalies.
-- Document any new evaluations in a single location (this README) to avoid the drift that previously occurred across many Markdown files.
+### Adding a New Website
 
-## Additional References
+1. Create YAML config in `work/tools/scrapers/configs/`:
 
-- `docs/PRODUCTION_READINESS.md` – scraper operations, monitoring, security, and deployment guidance.
-- `docs/SCRAPER_QUICK_START.md` – configuration-only workflow for adding or tuning websites.
-- `docs/kurdish_characters.md` – complete character coverage checklist.
-- `work/verify_ckb_traineddata.py` – standalone verifier for traineddata coverage.
+```yaml
+name: 'Website Name'
+base_url: 'https://example.com'
+enabled: true
 
-Questions or follow-up analyses should be added to this README or the `docs/` directory to keep the documentation unified. 2. Test it:
+selectors:
+  article_list: 'article.post'
+  article_title: 'h1.title'
+  article_body: 'div.content p'
+
+categories:
+  news:
+    url: 'https://example.com/news'
+    pagination:
+      type: 'url_template'
+      pages: 3
+      page_param: 'page'
+```
+
+2. Test it:
+
+```bash
+cd work/tools
+python3 test_suite.py your_website --max-articles 1
+```
+
+3. Debug if needed:
+
+```bash
+python3 test_debug.py your_website --test-selectors
+```
+
+See [docs/SCRAPER_QUICK_START.md](docs/SCRAPER_QUICK_START.md) for detailed configuration options.
+
+---
+
+## 📚 Documentation
+
+### User Guides
+
+- **[Quick Start](docs/SCRAPER_QUICK_START.md)** - Get started in 5 minutes
+- **[Advanced Features](docs/ADVANCED_FEATURES.md)** - FlareSolverr, deduplication, rate limiting
+- **[Network Features](docs/NETWORK_FEATURES.md)** - HTTP caching, retry, proxy support ✨NEW
+- **[Production Guide](docs/PRODUCTION_READINESS.md)** - Deployment best practices
+
+### Technical Docs
+
+- **[Generic Scraper](work/tools/scrapers/README.md)** - Framework documentation
+- **[Debug Tool](work/tools/scrapers/docs/DEBUG_TOOL_GUIDE.md)** - Debugging guide
+- **[Test Suite](work/tools/TEST_SUITE_RESUME.md)** - Test suite features
+
+### Reference
+
+- **[Kurdish Characters](docs/kurdish_characters.md)** - Script reference
+- **[Config Schema](work/tools/scrapers/configs/config.schema.json)** - YAML validation
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**FlareSolverr not running (for Kurdistan24):**
+
+```bash
+# Start FlareSolverr
+wsl -d Ubuntu -- sudo docker start flaresolverr
+
+# Or install it:
+docker run -d -p 8191:8191 --name flaresolverr ghcr.io/flaresolverr/flaresolverr:latest
+```
+
+**Selenium/ChromeDriver issues:**
+
+```bash
+# Install ChromeDriver in WSL
+wsl -d Ubuntu -- sudo apt install chromium-chromedriver
+```
+
+**Test suite interrupted:**
+
+```bash
+# Resume from where it left off
+cd work/tools
+python3 test_suite.py --resume
+
+# Start fresh
+python3 test_suite.py --fresh
+```
+
+**Website selectors not working:**
+
+```bash
+# Debug selectors
+python3 test_debug.py website_name --test-selectors --verbose
+
+# Test pagination
+python3 test_debug.py website_name --pagination-only
+
+# View config
+python3 test_debug.py website_name --config-only
+```
+
+See [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md#troubleshooting) for more solutions.
+
+---
+
+## 🧪 Testing
+
+```bash
+cd work/tools
+
+# Quick test (1 article per site)
+python3 test_suite.py --max-articles 1
+
+# Full test (all sites, 3 articles each)
+python3 test_suite.py --max-articles 3
+
+# Test specific sites
+python3 test_suite.py yariga rudaw nrt --max-articles 5
+
+# List available websites
+python3 test_suite.py --list
+
+# Debug specific website
+python3 test_debug.py kurdistan24 --category politics --test-selectors
+```
+
+---
+
+## 📈 Performance
+
+- **Average:** 13 websites in ~45 minutes (3 articles each)
+- **Fastest:** yariga (29 sentences in 46s)
+- **Slowest:** avanews (18 sentences in 576s - rate limited)
+- **FlareSolverr:** kurdistan24 (109 sentences in 132s)
+- **Total Output:** ~1,052 sentences per full test run
+
+---
+
+## 🛠️ Requirements
+
+### System Requirements
+
+- Windows 10/11 with WSL2
+- Ubuntu 20.04+ installed in WSL
+- Python 3.8+ in WSL
+- Tesseract OCR 4.1+ in WSL
+
+### Python Dependencies (in WSL)
+
+```bash
+# Install from work/tools directory
+cd work/tools
+pip3 install -r requirements.txt
+```
+
+### Optional: FlareSolverr (for Cloudflare-protected sites)
+
+```bash
+# Install Docker in WSL
+docker run -d -p 8191:8191 --name flaresolverr \
+  ghcr.io/flaresolverr/flaresolverr:latest
+```
+
+---
+
+## 🤝 Contributing
+
+### Adding a Website
+
+1. Create config file in `work/tools/scrapers/configs/`
+2. Test with `python3 test_suite.py your_site`
+3. Debug with `python3 test_debug.py your_site --test-selectors`
+4. Submit PR with config file only (no code changes!)
+
+### Improving Accuracy
+
+1. Update selectors in YAML config
+2. Test changes with test suite
+3. No code changes needed - pure configuration!
+
+---
+
+## 📄 License
+
+This project is for Kurdish language OCR training purposes.
+
+---
+
+## 🔗 Related Projects
+
+- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract)
+- [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr)
+- [Selenium](https://www.selenium.dev/)
+
+---
+
+**Questions?** See [docs/SCRAPER_QUICK_START.md](docs/SCRAPER_QUICK_START.md) or [docs/ADVANCED_FEATURES.md](docs/ADVANCED_FEATURES.md)
