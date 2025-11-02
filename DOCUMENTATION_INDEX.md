@@ -8,25 +8,25 @@
 
 ### Core Documentation
 
-| File | Purpose | When to Read |
-|------|---------|--------------|
-| **[README.md](README.md)** | Project overview and setup | First time setup |
-| **[PHASE6_COMPLETE.md](PHASE6_COMPLETE.md)** | Phase 6 final results and analysis | Understanding current state |
-| **[PHASE7_COMPLETE_GUIDE.md](PHASE7_COMPLETE_GUIDE.md)** | Complete Phase 7 workflow | **START HERE for Phase 7** ⭐ |
+| File                                                     | Purpose                            | When to Read                  |
+| -------------------------------------------------------- | ---------------------------------- | ----------------------------- |
+| **[README.md](README.md)**                               | Project overview and setup         | First time setup              |
+| **[PHASE6_COMPLETE.md](PHASE6_COMPLETE.md)**             | Phase 6 final results and analysis | Understanding current state   |
+| **[PHASE7_COMPLETE_GUIDE.md](PHASE7_COMPLETE_GUIDE.md)** | Complete Phase 7 workflow          | **START HERE for Phase 7** ⭐ |
 
 ### Technical Analysis
 
-| File | Purpose | When to Read |
-|------|---------|--------------|
+| File                                                               | Purpose                    | When to Read                        |
+| ------------------------------------------------------------------ | -------------------------- | ----------------------------------- |
 | **[UNICODE_CHARACTER_ANALYSIS.md](UNICODE_CHARACTER_ANALYSIS.md)** | Unicode character insights | Understanding ZWNJ/character issues |
-| **[ZWNJ_TATWEEL_SUMMARY.md](ZWNJ_TATWEEL_SUMMARY.md)** | ZWNJ analysis summary | Understanding quality metrics |
+| **[ZWNJ_TATWEEL_SUMMARY.md](ZWNJ_TATWEEL_SUMMARY.md)**             | ZWNJ analysis summary      | Understanding quality metrics       |
 
 ### Scraper System
 
-| File | Purpose | When to Read |
-|------|---------|--------------|
-| **[work/tools/scrapers/PRODUCTION_SCRAPER_USAGE.md](work/tools/scrapers/PRODUCTION_SCRAPER_USAGE.md)** | Complete scraper usage guide | Using the scraper system |
-| **[work/tools/scrapers/README.md](work/tools/scrapers/README.md)** | Scraper framework documentation | Understanding scraper architecture |
+| File                                                                                                   | Purpose                         | When to Read                       |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------- | ---------------------------------- |
+| **[work/tools/scrapers/PRODUCTION_SCRAPER_USAGE.md](work/tools/scrapers/PRODUCTION_SCRAPER_USAGE.md)** | Complete scraper usage guide    | Using the scraper system           |
+| **[work/tools/scrapers/README.md](work/tools/scrapers/README.md)**                                     | Scraper framework documentation | Understanding scraper architecture |
 
 ---
 
@@ -40,29 +40,29 @@
 
 ### Phase 7 Tools (work/tools/)
 
-| Tool | Purpose | Usage |
-|------|---------|-------|
-| **validate_source_quality.py** | ACCEPT/REJECT validation | `python work/tools/validate_source_quality.py sample.txt` |
-| **blend_corpus.py** | Blend sources to target ZWNJ | `python work/tools/blend_corpus.py --sources f1.txt f2.txt --output out.txt` |
-| **analyze_unicode_chars.py** | Detailed ZWNJ analysis | `python work/analyze_unicode_chars.py corpus.txt` |
+| Tool                           | Purpose                      | Usage                                                                        |
+| ------------------------------ | ---------------------------- | ---------------------------------------------------------------------------- |
+| **validate_source_quality.py** | ACCEPT/REJECT validation     | `python work/tools/validate_source_quality.py sample.txt`                    |
+| **blend_corpus.py**            | Blend sources to target ZWNJ | `python work/tools/blend_corpus.py --sources f1.txt f2.txt --output out.txt` |
+| **analyze_unicode_chars.py**   | Detailed ZWNJ analysis       | `python work/analyze_unicode_chars.py corpus.txt`                            |
 
 ### Corpus Processing Tools (work/)
 
-| Tool | Purpose |
-|------|---------|
-| **kurdish_character_fixer.py** | Fix character encoding/normalization |
-| **verify_ckb_traineddata.py** | Verify trained model |
-| **execute_ckb_training.sh** | WSL training script (called by run_training.ps1) |
-| **generate_ckb_training_data.sh** | WSL data generation script |
+| Tool                              | Purpose                                          |
+| --------------------------------- | ------------------------------------------------ |
+| **kurdish_character_fixer.py**    | Fix character encoding/normalization             |
+| **verify_ckb_traineddata.py**     | Verify trained model                             |
+| **execute_ckb_training.sh**       | WSL training script (called by run_training.ps1) |
+| **generate_ckb_training_data.sh** | WSL data generation script                       |
 
 ### Scraper Tools (work/tools/scrapers/)
 
-| Tool | Purpose |
-|------|---------|
+| Tool                          | Purpose                                |
+| ----------------------------- | -------------------------------------- |
 | **run_production_display.py** | Production scraper with live dashboard |
-| **scrape.sh** | Interactive scraper launcher |
-| **generic_scraper.py** | Core YAML-driven scraper |
-| **filter_corpus.py** | Filter scraped corpus |
+| **scrape.sh**                 | Interactive scraper launcher           |
+| **generic_scraper.py**        | Core YAML-driven scraper               |
+| **filter_corpus.py**          | Filter scraped corpus                  |
 
 ---
 
@@ -135,6 +135,7 @@ c:\tesseract\
 **Read:** [PHASE7_COMPLETE_GUIDE.md](PHASE7_COMPLETE_GUIDE.md) ⭐
 
 **Quick Steps:**
+
 1. Use scraper to get biographical content: `cd work/tools/scrapers && ./scrape.sh`
 2. Validate ZWNJ density: `python work/tools/validate_source_quality.py sample.txt`
 3. If ACCEPT (6-10% ZWNJ), proceed to training
@@ -147,6 +148,7 @@ c:\tesseract\
 **Read:** [work/tools/scrapers/PRODUCTION_SCRAPER_USAGE.md](work/tools/scrapers/PRODUCTION_SCRAPER_USAGE.md)
 
 **Quick Commands:**
+
 ```bash
 cd /mnt/c/tesseract/work/tools/scrapers
 
@@ -160,6 +162,7 @@ python3 run_production_display.py --config configs/websites --all --parallel --w
 ### For Training (After Corpus Ready)
 
 **Quick Commands:**
+
 ```powershell
 # Build corpus
 .\run_training.ps1 -Mode BuildCorpus -UseFixer -KeepRTLControls `
@@ -182,14 +185,17 @@ python3 run_production_display.py --config configs/websites --all --parallel --w
 ### Phase 6 (Completed)
 
 **Accuracy:**
+
 - News images: **76.9%** ✅
 - Biographical text (mgk.tif): **71.69%**
 
 **Corpus Quality:**
+
 - News corpus: **9.33% ZWNJ** ✅ (excellent)
 - Wikipedia: **0.11% ZWNJ** ❌ (rejected)
 
 **Model:**
+
 - Training: 5 batches completed
 - Status: Production-ready for news text
 - Next: Phase 7 to improve biographical accuracy
@@ -199,6 +205,7 @@ python3 run_production_display.py --config configs/websites --all --parallel --w
 **Goal:** Improve mgk.tif from 71.69% → 76%+
 
 **Approach:**
+
 1. Find biographical sources with 6-10% ZWNJ
 2. Use existing scraper (culture/poetry categories)
 3. Or find Kurdish books, academic papers, literature
@@ -206,6 +213,7 @@ python3 run_production_display.py --config configs/websites --all --parallel --w
 5. Train with blended corpus (news + biographical)
 
 **Tools Ready:**
+
 - ✅ Production scraper (14 websites)
 - ✅ Validation tool (validate_source_quality.py)
 - ✅ Blending tool (blend_corpus.py)
@@ -219,11 +227,11 @@ python3 run_production_display.py --config configs/websites --all --parallel --w
 
 **ZWNJ (Zero-Width Non-Joiner) is THE most important metric for Kurdish OCR:**
 
-| Corpus | ZWNJ Density | Result | Status |
-|--------|--------------|--------|--------|
-| News (scraped) | 9.33% | 76.9% accuracy | ✅ Excellent |
-| Wikipedia | 0.11% | Training failed | ❌ Rejected |
-| **Target for Phase 7** | **6-10%** | Expected 76%+ | 🎯 Required |
+| Corpus                 | ZWNJ Density | Result          | Status       |
+| ---------------------- | ------------ | --------------- | ------------ |
+| News (scraped)         | 9.33%        | 76.9% accuracy  | ✅ Excellent |
+| Wikipedia              | 0.11%        | Training failed | ❌ Rejected  |
+| **Target for Phase 7** | **6-10%**    | Expected 76%+   | 🎯 Required  |
 
 **Rule:** Always validate ZWNJ density BEFORE acquiring full text or training!
 
@@ -234,15 +242,18 @@ python3 run_production_display.py --config configs/websites --all --parallel --w
 ### What We Learned from Phase 6
 
 1. **ZWNJ Density is Critical**
+
    - 9.3% ZWNJ → 76.9% accuracy ✅
    - 0.1% ZWNJ → Failed ❌
    - More important than corpus size or domain
 
 2. **Quality Over Quantity**
+
    - 1,000 sentences at 8% ZWNJ > 10,000 sentences at 0.1% ZWNJ
    - Always validate BEFORE spending time on a source
 
 3. **Domain Matters (But ZWNJ Matters More)**
+
    - News corpus works great on news images
    - Need biographical corpus for biographical text
    - But both MUST have 6-10% ZWNJ density
@@ -288,17 +299,20 @@ The following documents have been archived to `archive/phase7_docs/`:
 ## 🎉 Documentation Status
 
 **Before Cleanup:**
+
 - Multiple overlapping Phase 7 docs (4 files)
 - Redundant scraper documentation (2 files removed)
 - Fragmented information
 
 **After Cleanup:**
+
 - ✅ Single comprehensive Phase 7 guide
 - ✅ Scraper usage integrated into main scraper docs
 - ✅ Clear documentation structure
 - ✅ Easy to navigate and maintain
 
 **Total Reduction:**
+
 - Removed 6 redundant files
 - Consolidated into 1 comprehensive guide
 - All information preserved
@@ -308,16 +322,19 @@ The following documents have been archived to `archive/phase7_docs/`:
 ## 📞 Getting Help
 
 ### For Phase 7 Questions
+
 - **Read first:** [PHASE7_COMPLETE_GUIDE.md](PHASE7_COMPLETE_GUIDE.md)
 - **Troubleshooting:** See troubleshooting section in complete guide
 - **Tools:** All Phase 7 tools documented in complete guide
 
 ### For Scraper Questions
+
 - **Read first:** [work/tools/scrapers/PRODUCTION_SCRAPER_USAGE.md](work/tools/scrapers/PRODUCTION_SCRAPER_USAGE.md)
 - **Quick start:** Use `./scrape.sh` interactive menu
 - **Phase 7 scraping:** See "Phase 7: Biographical Content" section
 
 ### For Training Questions
+
 - **Script help:** `Get-Help .\run_training.ps1 -Detailed`
 - **WSL commands:** See PHASE7_COMPLETE_GUIDE.md
 - **Logs:** Check `work/logs/training_*.log`

@@ -14,7 +14,7 @@ Before acquiring full text from a source, extract a 100-200 sentence sample and 
 4. **Validate:** `python work/tools/validate_source_quality.py samples/source_name_sample.txt`
 5. **Check Result:**
    - ✅ **ACCEPT** (6-10% ZWNJ) → Acquire full text
-   - ⚠️ **REVIEW** (borderline) → Check issues  
+   - ⚠️ **REVIEW** (borderline) → Check issues
    - ❌ **REJECT** (<6% ZWNJ) → Skip this source
 6. **Document:** Update `phase7_source_tracking.md`
 
@@ -46,12 +46,14 @@ python work/tools/validate_source_quality.py samples/*.txt
 ## What to Look For
 
 **Good sources (ACCEPT):**
+
 - ZWNJ: 6-10%
 - Kurdish script: >85%
 - Domain: Biographical, historical, literary
 - Quality: Natural Kurdish text
 
 **Bad sources (REJECT):**
+
 - ZWNJ: <6% (too low - will degrade model)
 - Lots of Latin/English text
 - Machine-translated text
@@ -60,6 +62,7 @@ python work/tools/validate_source_quality.py samples/*.txt
 ## Target
 
 Find **3-5 validated sources** with:
+
 - Total: 500-1,000 biographical sentences
 - ZWNJ: 7-9% (blended)
 - Quality: >85% Kurdish script

@@ -167,6 +167,7 @@ tail -f logs/scraper_*.log
 ### Why ZWNJ Matters
 
 ZWNJ (Zero-Width Non-Joiner) density is the **critical quality metric** for Kurdish OCR training:
+
 - News corpus (9.3% ZWNJ) → **76.9% accuracy** ✅
 - Wikipedia (0.1% ZWNJ) → **FAILED** ❌
 
@@ -176,14 +177,14 @@ ZWNJ (Zero-Width Non-Joiner) density is the **critical quality metric** for Kurd
 
 Based on scraper configurations, these websites have culture/biography categories:
 
-| Website | Categories | Best for Phase 7 |
-|---------|-----------|------------------|
-| **awene** | culture, poetry, society | ✅ Biography profiles |
-| **balinde** | culture, poetry | ✅ Cultural figures |
-| **kurdistan24** | culture, arts | ✅ Artist profiles |
-| **rudaw** | culture, lifestyle | ✅ Historical figures |
-| **nrt** | culture, society | ✅ Obituaries, bios |
-| **kurdsat** | culture | ⚠️ Limited content |
+| Website         | Categories               | Best for Phase 7      |
+| --------------- | ------------------------ | --------------------- |
+| **awene**       | culture, poetry, society | ✅ Biography profiles |
+| **balinde**     | culture, poetry          | ✅ Cultural figures   |
+| **kurdistan24** | culture, arts            | ✅ Artist profiles    |
+| **rudaw**       | culture, lifestyle       | ✅ Historical figures |
+| **nrt**         | culture, society         | ✅ Obituaries, bios   |
+| **kurdsat**     | culture                  | ⚠️ Limited content    |
 
 ### Scraping Biographical Content
 
@@ -238,6 +239,7 @@ python3 tools/validate_source_quality.py corpus/ckb_phase7_raw.txt
 ```
 
 **Expected output:**
+
 ```
 ✅ ACCEPT - High Quality Source
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -281,6 +283,7 @@ Once you have validated Phase 7 corpus:
 #### Problem: Scraped content has low ZWNJ (<6%)
 
 **Solutions:**
+
 1. Try `poetry` category instead of `culture`
 2. Try older news sites (more traditional language)
 3. Manually find Kurdish books/literature
@@ -289,6 +292,7 @@ Once you have validated Phase 7 corpus:
 #### Problem: Not enough sentences (<500)
 
 **Solutions:**
+
 1. Scrape more websites (add more to `--websites`)
 2. Enable pagination in config YAML files
 3. Run scraper multiple times over several days
@@ -297,6 +301,7 @@ Once you have validated Phase 7 corpus:
 #### Problem: Mixed content (news + biography)
 
 **Solutions:**
+
 1. Use `tools/blend_corpus.py` to mix sources:
    ```bash
    python3 tools/blend_corpus.py \
@@ -332,10 +337,12 @@ python3 tools/blend_corpus.py \
 ### Expected Results
 
 **Current (Phase 6):**
+
 - Biographical text (mgk.tif): **71.69%**
 - News images: **76.9%**
 
 **Phase 7 Target:**
+
 - Biographical text (mgk.tif): **76%+** (4.3% improvement)
 - News images: **≥76%** (maintain)
 

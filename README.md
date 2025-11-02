@@ -106,6 +106,7 @@ python3 verify_ckb_traineddata.py --traineddata /mnt/c/tesseract/tessdata/best/c
 ### Phase 6: Complete ✅ | Phase 7: Planning 🚀
 
 **Phase 6 Achievement:**
+
 - ✅ **76.9% accuracy** on modern Kurdish news text
 - ⚠️ **71.69% accuracy** on biographical text
 - ✅ **ZWNJ density:** 9.331% in training corpus (excellent quality)
@@ -113,6 +114,7 @@ python3 verify_ckb_traineddata.py --traineddata /mnt/c/tesseract/tessdata/best/c
 - ✅ **Unicode analysis complete** - discovered ZWNJ as THE quality metric
 
 **Phase 7 Goal:**
+
 - 🎯 Improve biographical accuracy from 71.69% → **76%+**
 - 🎯 Find sources with 6-10% ZWNJ density
 - 🎯 Target: 500-1,000 biographical sentences
@@ -124,7 +126,8 @@ python3 verify_ckb_traineddata.py --traineddata /mnt/c/tesseract/tessdata/best/c
 - **News corpus:** High-quality source with proper ZWNJ usage
 - **Wikipedia:** Excluded due to low ZWNJ (0.106% = corrupted)
 
-**See:** 
+**See:**
+
 - [PHASE6_COMPLETE.md](PHASE6_COMPLETE.md) - Phase 6 summary and strategic options
 - [PHASE7_QUICKSTART.md](PHASE7_QUICKSTART.md) - Start improving accuracy now!
 - [UNICODE_CHARACTER_ANALYSIS.md](UNICODE_CHARACTER_ANALYSIS.md) - Detailed quality analysis

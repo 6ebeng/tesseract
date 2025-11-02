@@ -9,6 +9,7 @@
 ## 🎯 Current Training
 
 ### Configuration
+
 - **Corpus:** ckb_scraped_filtered.training_text
 - **ZWNJ Density:** 9.33% ✅ (Excellent quality)
 - **Mode:** GenerateTrain (data generation + training)
@@ -16,6 +17,7 @@
 - **Fonts:** 9 Kurdish fonts
 
 ### Timeline
+
 - **Phase 1:** Data Generation (2-4 hours) ⏳ IN PROGRESS
 - **Phase 2:** LSTM Training (8-12 hours) ⏳ PENDING
 - **Phase 3:** Model Creation (< 1 hour) ⏳ PENDING
@@ -27,11 +29,13 @@
 ### Check Real-time Logs
 
 **PowerShell:**
+
 ```powershell
 Get-Content work\logs\training_*.log -Tail 50 -Wait
 ```
 
 **WSL:**
+
 ```bash
 wsl -d Ubuntu -- bash -c 'tail -f /mnt/c/tesseract/work/logs/training_*.log'
 ```
@@ -52,6 +56,7 @@ Get-ChildItem work\training_output\ckb\*
 ### What to Look For
 
 **Phase 1 (Data Generation):**
+
 - Font cache refreshing
 - Loading fonts
 - Generating training images
@@ -59,12 +64,14 @@ Get-ChildItem work\training_output\ckb\*
 - Status: "Generating training data for all fonts..."
 
 **Phase 2 (Training):**
+
 - "Starting training..."
 - Iteration numbers increasing (e.g., "At iteration 100")
 - Character error rate decreasing
 - Checkpoint files being created
 
 **Phase 3 (Finalization):**
+
 - "Training complete"
 - Creating .traineddata file
 - Model validation
@@ -91,6 +98,7 @@ cd c:\tesseract
 ```
 
 **Expected result:**
+
 - Current baseline: 71.69%
 - Target: 72-74%
 - Best case: 74%+
@@ -103,6 +111,7 @@ cd c:\tesseract
 ```
 
 **This will test:**
+
 - Multiple PSM modes (6, 11, 7, 13)
 - All test images in work/real_gt/eval/
 - Generate detailed accuracy reports
@@ -122,16 +131,19 @@ Get-Content work\logs\eval_*.log | Select-String "Accuracy"
 ## 🎯 Success Criteria
 
 ### Minimum Success ✅
+
 - mgk.tif: **≥72%** (0.3% improvement)
 - News images: **≥76%** (maintain)
 - **Decision:** Good enough for v1.0
 
 ### Target Success 🎯
+
 - mgk.tif: **74%** (2.3% improvement)
 - News images: **76-77%** (maintain/improve)
 - **Decision:** Excellent for v1.0 deployment
 
 ### Stretch Goal 🚀
+
 - mgk.tif: **≥75%** (3.3%+ improvement)
 - News images: **≥77%** (improvement)
 - **Decision:** Outstanding results
@@ -143,11 +155,13 @@ Get-Content work\logs\eval_*.log | Select-String "Accuracy"
 ### Training Appears Stuck
 
 **Check if still running:**
+
 ```powershell
 wsl -d Ubuntu -- bash -c "ps aux | grep -E '(text2image|lstmtraining)'"
 ```
 
 **Check logs for errors:**
+
 ```powershell
 Get-Content work\logs\training_*.log -Tail 100 | Select-String -Pattern "error|fail|exception" -CaseSensitive:$false
 ```
@@ -155,12 +169,14 @@ Get-Content work\logs\training_*.log -Tail 100 | Select-String -Pattern "error|f
 ### Training Failed
 
 **Common issues:**
+
 1. **Disk space:** Check free space (need 20+ GB)
 2. **Memory:** lstmtraining needs 4-8 GB RAM
 3. **Corpus issues:** Verify corpus file exists and is valid
 4. **Font issues:** Check font cache and font files
 
 **Recovery:**
+
 ```powershell
 # Restart training
 .\run_training.ps1 -Mode GenerateTrain -LatinDigits
@@ -169,6 +185,7 @@ Get-Content work\logs\training_*.log -Tail 100 | Select-String -Pattern "error|f
 ### Low Accuracy Results
 
 If results are < 72% on mgk.tif:
+
 1. Review training logs for anomalies
 2. Check corpus quality (should be 9.33% ZWNJ ✅)
 3. Verify training completed all iterations
@@ -211,6 +228,7 @@ Get-Content work\real_gt\eval\*_results.txt
 ## 📊 Expected Output Files
 
 ### During Training
+
 ```
 work/training_output/
 ├── ckb/
@@ -224,6 +242,7 @@ work/training_output/
 ```
 
 ### After Training
+
 ```
 work/training_output/
 └── ckb.traineddata                 # ✅ Final trained model
@@ -244,6 +263,7 @@ work/training_output/
 ### If Results Are Good (≥72%)
 
 **✅ Deploy as v1.0:**
+
 1. Copy model to production location
 2. Update documentation with final accuracy
 3. Create release notes
@@ -252,6 +272,7 @@ work/training_output/
 ### If Results Need Improvement (<72%)
 
 **Consider Phase 7 (Full):**
+
 1. Find traditional Kurdish books/literature
 2. Validate ZWNJ density 6-10%
 3. Blend with existing corpus
@@ -262,17 +283,20 @@ work/training_output/
 ## 💡 Notes
 
 ### Why This Corpus Works
+
 - **9.33% ZWNJ:** Perfect density for Kurdish OCR
 - **News content:** High quality, modern vocabulary
 - **Balanced:** Mix of topics and writing styles
 - **Tested:** Already validated in Phase 6
 
 ### Expected Improvements
+
 - **Biographical text:** 71.69% → 72-74% (better than Phase 6)
 - **News text:** 76.9% → 76-77% (maintain or improve)
 - **Overall:** More balanced model
 
 ### v1.0 Production Readiness
+
 - 76-77% on news: ✅ Excellent
 - 72-74% on biographical: ✅ Very good
 - Ready for production deployment

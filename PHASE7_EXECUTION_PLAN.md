@@ -8,6 +8,7 @@
 ## 🎯 Decision Point: What to Do Next?
 
 ### Current State
+
 - ✅ Phase 6 Complete: **76.9%** accuracy on news, **71.69%** on biographical
 - ✅ Excellent news corpus: `ckb_scraped_filtered.training_text` (394 KB, **9.33% ZWNJ**)
 - ✅ Production scraper ready: 14 websites, 6 with culture/poetry categories
@@ -34,12 +35,14 @@ cd c:\tesseract
 ```
 
 **What this does:**
+
 1. Uses existing `ckb_scraped_filtered.training_text` (9.33% ZWNJ ✅)
 2. Generates training images with text2image
 3. Trains LSTM model (8-12 hours)
 4. Outputs: `work/training_output/ckb.traineddata`
 
 ### Expected Results
+
 - News accuracy: **76-77%** (maintain or improve)
 - Biographical: **72-74%** (slight improvement from balanced training)
 
@@ -54,12 +57,14 @@ cd c:\tesseract
 ```
 
 ### ✅ Advantages
+
 - Fast path to results
 - Establishes baseline
 - Tests entire pipeline
 - Can deploy if results good enough
 
 ### ⚠️ Limitations
+
 - May not reach 76%+ on biographical text
 - News-heavy corpus (not ideal for biographical domain)
 
@@ -116,6 +121,7 @@ python3 tools/validate_source_quality.py corpus/ckb_phase7_biographical_raw.txt
 ```
 
 **Expected output:**
+
 ```
 ✅ ACCEPT - High Quality Source
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -126,6 +132,7 @@ Status: Ready for training 🚀
 ```
 
 **If REJECT (<6% ZWNJ):**
+
 - ❌ Don't use for training
 - Try different sources (books, academic papers, literature)
 - Consider Option A instead
@@ -159,6 +166,7 @@ cd c:\tesseract
 ```
 
 **What this does:**
+
 1. Combines all `.training_text` files in `work/corpus/`
 2. Applies character fixing
 3. Balances digits and punctuation
@@ -184,6 +192,7 @@ cd c:\tesseract
 ```
 
 **Timeline:**
+
 - Data generation: 2-4 hours
 - Training: 8-12 hours
 - **Total: 12-16 hours**
@@ -213,6 +222,7 @@ cd c:\tesseract
 ```
 
 **Success Criteria:**
+
 - ✅ Minimum: mgk.tif **74%+** (2.3% improvement)
 - 🎯 Target: mgk.tif **76%+** (4.3% improvement)
 - 🚀 Stretch: mgk.tif **78%+** (6.3% improvement)
@@ -231,6 +241,7 @@ Get-Content work\real_gt\eval\*_results.txt
 ```
 
 Compare:
+
 - **Phase 6 baseline:** 71.69% (mgk.tif), 76.9% (news)
 - **Phase 7 result:** Should be 76%+ (mgk.tif), ≥76% (news)
 
@@ -239,12 +250,14 @@ Compare:
 ## 🤔 Which Option Should You Choose?
 
 ### Choose OPTION A if:
+
 - ✅ You want quick results (12-16 hours)
 - ✅ You want to test the pipeline first
 - ✅ Current 71.69% is acceptable for v1.0
 - ✅ You'll do Phase 7 later (v2.0)
 
 ### Choose OPTION B if:
+
 - ✅ You need 76%+ on biographical text NOW
 - ✅ You're willing to invest 2-4 weeks
 - ✅ You can find/scrape biographical sources
@@ -257,11 +270,13 @@ Compare:
 **Best strategy:**
 
 1. **Execute Option A first** (12-16 hours)
+
    - Establishes baseline
    - Tests pipeline
    - May be good enough!
 
 2. **Evaluate Option A results**
+
    - If ≥74% on mgk.tif → ✅ Good enough for v1.0
    - If <74% on mgk.tif → Proceed to Option B
 
@@ -322,6 +337,7 @@ cd c:\tesseract
 ### Training fails or crashes
 
 **Check:**
+
 ```powershell
 # View logs
 Get-Content work\logs\training_*.log -Tail 100
@@ -336,12 +352,14 @@ Test-Path work\corpus\ckb.training_text
 ### Low accuracy after training
 
 **Possible causes:**
+
 1. Corpus ZWNJ density wrong (<6% or >10%)
 2. Not enough training data
 3. Character encoding issues
 4. Corpus quality low (mixed languages, noise)
 
 **Solutions:**
+
 1. Validate corpus with `validate_source_quality.py`
 2. Check corpus size (should be 500+ sentences)
 3. Review `kurdish_character_fixer.py` logs
@@ -367,6 +385,7 @@ Get-ChildItem work\training_output\ckb\*
 ### Training Output Files
 
 During training, you'll see:
+
 - `ckb_checkpoint` - Training checkpoints
 - `ckb.lstm` - Model file
 - `*.traineddata` - Final trained model
@@ -376,6 +395,7 @@ During training, you'll see:
 ## ✅ Success Checklist
 
 ### Before Training
+
 - [ ] Corpus exists: `work/corpus/*.training_text`
 - [ ] Corpus validated (6-10% ZWNJ if Phase 7)
 - [ ] Sufficient disk space (20+ GB free)
@@ -383,12 +403,14 @@ During training, you'll see:
 - [ ] All tools available
 
 ### During Training
+
 - [ ] Logs updating (`work/logs/training_*.log`)
 - [ ] No error messages
 - [ ] Training output files created
 - [ ] Iteration count increasing
 
 ### After Training
+
 - [ ] Model file exists: `work/training_output/ckb.traineddata`
 - [ ] Smoke test passes
 - [ ] Evaluation complete
@@ -406,6 +428,7 @@ cd c:\tesseract
 ```
 
 **Why:**
+
 1. Your existing corpus (9.33% ZWNJ) is excellent quality
 2. Establishes baseline in 12-16 hours
 3. Tests entire pipeline
@@ -419,6 +442,7 @@ cd c:\tesseract
 ```
 
 **Decision point:**
+
 - If ≥74% on mgk.tif → ✅ Deploy as v1.0
 - If <74% on mgk.tif → Proceed with Option B (scrape biographical content)
 
