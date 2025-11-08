@@ -18,24 +18,28 @@
 ## 🎯 Improvements Implemented
 
 ### 1. **Multi-Scale Font Sizes**
+
 - **Old:** Fixed 18pt
 - **New:** 16pt, 18pt, 20pt, 22pt
 - **Why:** Real documents vary in font size; training on multiple scales improves robustness
 
 ### 2. **Multi-Resolution DPI**
+
 - **Old:** Fixed 300 DPI
 - **New:** 200, 300, 400 DPI
-- **Why:** 
+- **Why:**
   - 200 DPI: Old scans, low-quality sources
   - 300 DPI: Standard documents
   - 400 DPI: High-quality modern scans
 
 ### 3. **Multiple Exposures**
+
 - **Old:** -1, 0, 1 (3 exposures)
 - **New:** -2, -1, 0, 1, 2 (5 exposures)
 - **Why:** Better handling of lighting variations in real documents
 
 ### 4. **Enhanced Augmentation (8 Variants)**
+
 - **Old:** 2 basic variants (Gaussian noise + JPEG)
 - **New:** 8 realistic variants:
   1. **Light blur + noise** - Common scan artifacts
@@ -49,13 +53,16 @@
 - **Why:** These are real-world conditions the model will encounter
 
 ### 5. **Parameter Variations**
+
 - **Margins:** 10px, 15px, 20px
 - **Leading (line spacing):** 18px, 22px, 26px
 - **Character spacing:** 0.5, 1.0, 1.5
 - **Why:** Documents vary in layout; training on variations improves layout robustness
 
 ### 6. **Additional Fonts (15+ total)**
+
 Downloaded from Google Fonts:
+
 - **Noto Fonts** (comprehensive coverage): Naskh, Kufi, Sans variants
 - **Traditional fonts** (common in Kurdish documents): Amiri, Scheherazade, Lateef
 - **Modern fonts** (contemporary texts): Cairo, Tajawal
@@ -66,10 +73,12 @@ Downloaded from Google Fonts:
 ## 📈 Expected Training Output
 
 ### Before (Old Generation):
+
 - 9 fonts × 3 exposures = **27 base images**
 - With augmentation (2 variants): **~54 total images**
 
 ### After (Improved Generation):
+
 - 9 fonts × 5 exposures × 4 font sizes × 3 DPIs × 3 margins × 3 leadings × 3 char spacings
 - = 9 × 5 × 4 × 3 × 3 × 3 × 3 = **14,580 combinations**
 - With augmentation (8 variants): **~116,640 total images** (if all combinations generated)
@@ -77,6 +86,7 @@ Downloaded from Google Fonts:
 **Note:** Script is optimized to generate practical subset to avoid disk space issues
 
 ### With 15+ Fonts (After Font Download):
+
 - 15+ fonts × varied parameters = **~194,400+ training images**
 
 ---
@@ -84,6 +94,7 @@ Downloaded from Google Fonts:
 ## 🚀 How to Use
 
 ### Quick Start (All-in-One):
+
 ```powershell
 cd c:\tesseract
 .\improve_training_generation.ps1 -All
@@ -92,29 +103,36 @@ cd c:\tesseract
 ### Step-by-Step:
 
 #### Step 1: Download Additional Fonts (Optional but Recommended)
+
 ```powershell
 cd c:\tesseract
 .\improve_training_generation.ps1 -DownloadFonts
 ```
+
 This downloads 15+ high-quality Kurdish/Arabic fonts from Google Fonts.
 
 #### Step 2: Generate Improved Training Data
+
 ```powershell
 cd c:\tesseract
 .\improve_training_generation.ps1 -Generate
 ```
+
 This generates multi-scale training images with augmentation.
 
 **Expected Time:** 30-45 minutes for 9 fonts, 60-90 minutes for 15+ fonts
 
 #### Step 3: Train Model with New Data
+
 ```powershell
 cd c:\tesseract
 .\run_training.ps1 -Mode GenerateTrain -LatinDigits
 ```
+
 **Expected Time:** ~2 hours (fast fine-tuning)
 
 #### Step 4: Evaluate Improvement
+
 ```powershell
 cd c:\tesseract
 .\run_training.ps1 -Mode Eval -EvalPSMs "6,11,7,13"
@@ -125,14 +143,17 @@ cd c:\tesseract
 ## 📊 Expected Results
 
 ### Baseline (Phase 7):
+
 - **mgk.tif (biographical):** 71.69% accuracy
 - **News images:** 76.9% accuracy
 
 ### With Improved Generation:
+
 - **mgk.tif (biographical):** **72.5% - 74.5%** accuracy (+1% to +3%)
 - **News images:** **77.5% - 78.5%** accuracy (+0.5% to +1.5%)
 
 ### Why This Helps:
+
 1. **Multi-scale training** improves recognition across different font sizes (mgk.tif has varied sizes)
 2. **Augmentation** makes model robust to real-world scan/photo variations
 3. **More fonts** improve generalization to unseen typefaces
@@ -143,12 +164,14 @@ cd c:\tesseract
 ## 🎯 When to Use This Approach
 
 ### ✅ Use This If:
+
 - You want quick accuracy gains (1-3%) without finding new corpus sources
 - Your current accuracy is 70-75% (room for data-driven improvement)
 - You have limited time (2-3 hours total)
 - You want to improve robustness to various scan qualities
 
 ### ❌ Don't Use This If:
+
 - You need 5-10% accuracy gains (need better corpus - see PHASE7_COMPLETE.md)
 - Your accuracy is already 85%+ (model near theoretical maximum)
 - You lack disk space (improved generation uses ~2-4 GB)
@@ -158,11 +181,13 @@ cd c:\tesseract
 ## 🔍 Technical Details
 
 ### Files Created:
+
 1. **generate_ckb_training_data_improved.sh** - Enhanced generation script with multi-scale
 2. **download_kurdish_fonts.sh** - Font downloader from Google Fonts
 3. **improve_training_generation.ps1** - PowerShell wrapper for easy execution
 
 ### Key Parameters (in improved script):
+
 ```bash
 FONT_SIZE_LIST="16,18,20,22"       # 4 sizes
 DPI_LIST="200,300,400"              # 3 resolutions
@@ -175,6 +200,7 @@ AUG_VARIANTS=8                      # 8 augmentation types
 ```
 
 ### Augmentation Details (ImageMagick):
+
 ```bash
 1. Gaussian blur + noise: -attenuate 0.015 +noise Gaussian -blur 0x0.4
 2. JPEG artifacts: -quality 75 (compress then decompress)
@@ -191,9 +217,11 @@ AUG_VARIANTS=8                      # 8 augmentation types
 ## 💾 Disk Space Requirements
 
 ### Before (Old Generation):
+
 - ~54 images × ~200 KB/image = **~11 MB**
 
 ### After (Improved Generation):
+
 - 9 fonts: **~500 MB to 1 GB**
 - 15 fonts: **~800 MB to 2 GB**
 - Full combinations (all parameters): **~4-6 GB**
@@ -204,12 +232,13 @@ AUG_VARIANTS=8                      # 8 augmentation types
 
 ## 🔄 Comparison with Option 2 (Find Better Corpus)
 
-| Approach | Time Required | Expected Gain | Difficulty | Disk Space |
-|----------|---------------|---------------|------------|------------|
-| **Improved Generation** (This) | 2-3 hours | +1% to +3% | Easy | 2-4 GB |
-| **Option 2: Better Corpus** | 2-4 weeks | +4% to +8% | Hard | ~100 MB |
+| Approach                       | Time Required | Expected Gain | Difficulty | Disk Space |
+| ------------------------------ | ------------- | ------------- | ---------- | ---------- |
+| **Improved Generation** (This) | 2-3 hours     | +1% to +3%    | Easy       | 2-4 GB     |
+| **Option 2: Better Corpus**    | 2-4 weeks     | +4% to +8%    | Hard       | ~100 MB    |
 
 ### Recommendation:
+
 1. **Do This First:** Get quick 1-3% improvement today
 2. **Then Option 2:** If you need 76%+ accuracy, pursue better biographical corpus (see PHASE7_COMPLETE.md)
 
@@ -218,10 +247,13 @@ AUG_VARIANTS=8                      # 8 augmentation types
 ## 📝 Troubleshooting
 
 ### Issue: Font download fails
+
 **Solution:** Manually download fonts from https://fonts.google.com/?category=Arabic
 
 ### Issue: Generation too slow (>2 hours)
+
 **Solution:** Reduce parameter combinations:
+
 ```bash
 # Edit generate_ckb_training_data_improved.sh
 FONT_SIZE_LIST="18,20"              # Reduce to 2 sizes
@@ -230,13 +262,17 @@ AUG_VARIANTS=4                       # Fewer augmentations
 ```
 
 ### Issue: Disk space full
+
 **Solution:** Clean old training data first:
+
 ```powershell
 Remove-Item "c:\tesseract\work\training_output\ground_truth\*" -Force
 ```
 
 ### Issue: ImageMagick not installed (augmentation fails)
+
 **Solution:** Install in WSL:
+
 ```bash
 wsl -d Ubuntu -- bash -c "sudo apt-get update && sudo apt-get install -y imagemagick"
 ```
@@ -255,6 +291,7 @@ wsl -d Ubuntu -- bash -c "sudo apt-get update && sudo apt-get install -y imagema
 ## ✅ Success Criteria
 
 After implementing improved generation and retraining:
+
 - mgk.tif accuracy improves by at least 1%
 - News accuracy improves by at least 0.5%
 - Model handles various scan qualities better
