@@ -5,6 +5,7 @@
 # - Generates multiple exposures per font
 # - Supports env overrides for corpus/fonts/output and font params
 # - Sets fontconfig to prefer local fonts
+# - Supports parallel processing with PARALLEL_JOBS env variable
 
 set -uo pipefail
 shopt -s nullglob
@@ -12,8 +13,22 @@ shopt -s nullglob
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 
+# Parallel processing support (set PARALLEL_JOBS=0 to disable, or number of jobs)
+PARALLEL_JOBS="${PARALLEL_JOBS:-0}"
+if [ "$PARALLEL_JOBS" -gt 0 ] && ! command -v parallel >/dev/null 2>&1; then
+    echo "⚠️  GNU Parallel not found. Install with: sudo apt-get install parallel"
+    echo "Falling back to sequential processing..."
+    PARALLEL_JOBS=0
+fi
+
 echo "Kurdish Training Data Generation - Comprehensive"
 echo "=============================================="
+if [ "$PARALLEL_JOBS" -gt 0 ]; then
+    echo "🚀 PARALLEL MODE: Using $PARALLEL_JOBS worker jobs"
+else
+    echo "🐌 Sequential processing (set PARALLEL_JOBS=<num> for parallel)"
+fi
+echo ""
 
 # Configuration (allow overrides from environment)
 LANG_CODE="ckb"
@@ -31,7 +46,8 @@ OUTPUT_DIR="${OUTPUT_DIR_OVERRIDE:-$OUTPUT_DIR_DEFAULT}"
 LATIN_CORPUS_FILE="$LATIN_CORPUS_DEFAULT"
 MIXED_CORPUS_FILE="$MIXED_CORPUS_DEFAULT"
 
-GROUND_TRUTH_DIR="$OUTPUT_DIR/ground_truth"
+# Allow custom ground-truth directory override (if not set, use OUTPUT_DIR/ground_truth)
+GROUND_TRUTH_DIR="${GROUND_TRUTH_DIR:-$OUTPUT_DIR/ground_truth}"
 TMP_DIR="$OUTPUT_DIR/tmp"
 
 # Prefer repo fontconfig (root) to ensure local fonts are used; fallback to work/fonts.conf if needed.
@@ -57,16 +73,24 @@ echo "Output: $OUTPUT_DIR"
 echo "Ground Truth: $GROUND_TRUTH_DIR"
 
 # Font settings for optimal Kurdish recognition (base values; env-overridable)
-FONT_SIZE="${FONT_SIZE:-18}"
-DPI="${DPI:-300}"
+FONT_SIZE="${FONT_SIZE:-16}"
+# Default DPI lowered for faster generation; DPI_LIST provides diversity when set
+DPI="${DPI:-200}"
 MARGIN="${MARGIN:-15}"
 LEADING="${LEADING:-22}"
-CHAR_SPACING="${CHAR_SPACING:-1}"
-ENABLE_AUG="${ENABLE_AUG:-0}"
-FONT_SIZE_LIST="${FONT_SIZE_LIST:-}"
-DPI_LIST="${DPI_LIST:-}"
-LEADING_LIST="${LEADING_LIST:-}"
-CHAR_SPACING_LIST="${CHAR_SPACING_LIST:-}"
+# Default char spacing (used if CHAR_SPACING_LIST not set)
+CHAR_SPACING="${CHAR_SPACING:-0.8}"
+# Enable augmentation by default for robustness, but allow override via ENABLE_AUG=0
+ENABLE_AUG="${ENABLE_AUG:-1}"
+# Optimized parameter lists (keep compact but diverse)
+# - FONT_SIZE_LIST: two values (small, medium-large)
+# - DPI_LIST: two values (low, high)
+# - CHAR_SPACING_LIST: tighter and looser spacing
+FONT_SIZE_LIST="${FONT_SIZE_LIST:-16,20}"
+DPI_LIST="${DPI_LIST:-200,400}"
+LEADING_LIST="${LEADING_LIST:-22,26}"
+CHAR_SPACING_LIST="${CHAR_SPACING_LIST:-0.8,1.2}"
+# Keep augmentation variants small to reduce runtime but keep utility
 AUG_VARIANTS="${AUG_VARIANTS:-2}"
 
 # Exposures to render for variety; filenames will use exp0/1/2 (allow EXPOSURES env as comma list)
@@ -237,6 +261,142 @@ iter_or_single() {
     if [ -n "$list" ]; then echo "$list" | tr ',' ' '; else echo "$single"; fi
 }
 
+# Function to generate a single training image (used in parallel mode)
+generate_single_image() {
+    local font_file="$1"
+    local used_font="$2"
+    local exp_idx="$3"
+    local THIS_DPI="$4"
+    local THIS_PTSIZE="$5"
+    local THIS_LEADING="$6"
+    local THIS_CHSP="$7"
+    local EXP="$8"
+    local page_file="${9:-}"
+    local page_i="${10:-0}"
+    
+    local font_name=$(basename "$font_file" .ttf)
+    local log_file="${OUTPUT_DIR}/logs/${font_name}.log"
+    
+    # Build output base name
+    if [ -n "$page_file" ]; then
+        output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp${exp_idx}.p${page_i}.d${THIS_DPI}.s${THIS_PTSIZE}.l${THIS_LEADING}.c${THIS_CHSP}"
+        text_src="$page_file"
+    else
+        output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp${exp_idx}.d${THIS_DPI}.s${THIS_PTSIZE}.l${THIS_LEADING}.c${THIS_CHSP}"
+        text_src="$CORPUS_SRC"
+    fi
+    
+    # Skip if already generated (resumability)
+    if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
+        return 0
+    fi
+    
+    # Generate base image
+    if text2image \
+        --text="$text_src" \
+        --outputbase="$output_base" \
+        --font="$used_font" \
+        --fonts_dir="$(pwd)/$FONTS_DIR" \
+        --ptsize=$THIS_PTSIZE \
+        --resolution=$THIS_DPI \
+        --margin=$MARGIN \
+        --leading=$THIS_LEADING \
+        --char_spacing=$THIS_CHSP \
+        --exposure="$EXP" \
+        >>"$log_file" 2>&1; then
+        
+        if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
+            cp "$text_src" "${output_base}.gt.txt" 2>/dev/null || true
+            
+            # Apply augmentation if enabled
+            if [ "$ENABLE_AUG" = "1" ] && command -v convert >/dev/null 2>&1; then
+                for k in $(seq 1 "$AUG_VARIANTS"); do
+                    aug_base="${output_base}.aug${k}"
+                    
+                    # Skip if augmented file exists
+                    [ -f "${aug_base}.tif" ] && continue
+                    
+                    case $k in
+                        1) convert "${output_base}.tif" -colorspace Gray \
+                            \( +clone -contrast-stretch 1%x1% -attenuate 0.02 +noise Gaussian -blur 0x0.4 \) \
+                            -compose over -composite "${aug_base}.tif" 2>>"$log_file" || true ;;
+                        2) convert "${output_base}.tif" -colorspace Gray -quality 85 "${aug_base}.jpg" 2>>"$log_file" || true
+                            if [ -f "${aug_base}.jpg" ]; then convert "${aug_base}.jpg" "${aug_base}.tif" 2>>"$log_file" || true; fi ;;
+                        3) convert "${output_base}.tif" -colorspace Gray -ordered-dither o8x8 -blur 0x0.3 "${aug_base}.tif" 2>>"$log_file" || true ;;
+                        4) convert "${output_base}.tif" -colorspace Gray \( -size 2000x2000 xc:white -attenuate 0.02 +noise Multiplicative -colorspace Gray -resize "@" \) \
+                            -compose multiply -composite -contrast-stretch 2%x2% "${aug_base}.tif" 2>>"$log_file" || true ;;
+                        5) convert "${output_base}.tif" -colorspace Gray \( +clone -radial-blur 0.2 \) -compose overlay -composite "${aug_base}.tif" 2>>"$log_file" || true ;;
+                        *) convert "${output_base}.tif" -colorspace Gray -attenuate 0.01 +noise Gaussian "${aug_base}.tif" 2>>"$log_file" || true ;;
+                    esac
+                    
+                    if [ -f "${aug_base}.tif" ]; then
+                        cp "${output_base}.box" "${aug_base}.box" 2>/dev/null || true
+                        cp "${output_base}.gt.txt" "${aug_base}.gt.txt" 2>/dev/null || true
+                    fi
+                done
+            fi
+            return 0
+        fi
+    fi
+    return 1
+}
+
+export -f generate_single_image
+
+# Helper to iterate a list env or fallback to single value (keep original for backward compat)
+iter_or_single_original() {
+    local list="$1"; local single="$2"
+    if [ -n "$list" ]; then echo "$list" | tr ',' ' '; else echo "$single"; fi
+}
+
+# ============================================
+# PARALLEL MODE: Process fonts in parallel
+# ============================================
+if [ "$PARALLEL_JOBS" -gt 0 ]; then
+    echo ""
+    echo "🚀 Starting parallel font processing with $PARALLEL_JOBS workers..."
+    echo "============================================"
+    
+    # Export all variables needed by parallel workers
+    export WORK_DIR OUTPUT_DIR GROUND_TRUTH_DIR FONTS_DIR CORPUS_SRC
+    export FONT_SIZE_LIST DPI_LIST LEADING_LIST CHAR_SPACING_LIST MARGIN
+    export EXPOSURES ENABLE_AUG AUG_VARIANTS
+    
+    # Build font list
+    FONT_LIST=()
+    while IFS= read -r -d '' font_file; do
+        [ -f "$font_file" ] && FONT_LIST+=("$font_file")
+    done < <(find "$FONTS_DIR" -maxdepth 1 -name '*.ttf' -print0 2>/dev/null || true)
+    
+    TOTAL_FONTS=${#FONT_LIST[@]}
+    echo "Processing $TOTAL_FONTS fonts with $PARALLEL_JOBS parallel workers..."
+    echo ""
+    
+    # Process fonts in parallel using GNU parallel
+    # --ungroup: show output immediately (live progress bars)
+    # -j: number of parallel jobs
+    font_idx=0
+    for font_file in "${FONT_LIST[@]}"; do
+        ((font_idx++))
+        printf "%s\t%d\t%d\n" "$font_file" "$font_idx" "$TOTAL_FONTS"
+    done | parallel -j "$PARALLEL_JOBS" --ungroup --colsep '\t' \
+        "bash $(pwd)/parallel_font_processor.sh {1} {2} {3}"
+    
+    echo ""
+    echo "✅ Parallel processing completed!"
+    echo ""
+    
+    # Count successful generations
+    SUCCESS_COUNT=$(find "$GROUND_TRUTH_DIR" -name "*.tif" -type f 2>/dev/null | wc -l)
+    ERROR_COUNT=$((TOTAL_FONTS - SUCCESS_COUNT / 1000))  # Rough estimate
+    
+    # Skip sequential processing
+    exit 0
+fi
+
+# ============================================
+# SEQUENTIAL MODE: Process fonts one by one
+# ============================================
 # Process each font
 while IFS= read -r -d '' font_file; do
     [ -f "$font_file" ] || continue
@@ -316,6 +476,13 @@ while IFS= read -r -d '' font_file; do
             page_i=0
             for page_file in "${PAGE_LIST[@]}"; do
                 output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp${exp_idx}.p${page_i}.d${THIS_DPI}.s${THIS_PTSIZE}.l${THIS_LEADING}.c${THIS_CHSP}"
+                
+                # Skip if already generated (resumability)
+                if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
+                    page_i=$((page_i+1))
+                    continue
+                fi
+                
                 if text2image \
             --text="$page_file" \
             --outputbase="$output_base" \
@@ -444,6 +611,14 @@ while IFS= read -r -d '' font_file; do
             done
         else
             output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp${exp_idx}.d${THIS_DPI}.s${THIS_PTSIZE}.l${THIS_LEADING}.c${THIS_CHSP}"
+            
+            # Skip if already generated (resumability)
+            if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
+                ok_this_font=1
+                exp_idx=$((exp_idx+1))
+                continue
+            fi
+            
             if text2image \
             --text="$CORPUS_SRC" \
             --outputbase="$output_base" \

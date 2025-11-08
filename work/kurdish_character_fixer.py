@@ -182,10 +182,12 @@ class KurdishCharacterFixer:
         # Normalize punctuation
         for src, dst in self.punc_map.items():
             text = text.replace(src, dst)
-        # Collapse multiple spaces/newlines gently
+        # Collapse multiple spaces/newlines gently (PRESERVE newlines!)
         text = re.sub(r'[\t\x0b\x0c\r]', ' ', text)
-        text = re.sub(r'\s+', ' ', text)
-        text = re.sub(r'\s*\n\s*', '\n', text)
+        # Clean up spaces on each line but preserve line breaks
+        text = re.sub(r'[ \t]+', ' ', text)          # collapse spaces/tabs only
+        text = re.sub(r' *\n *', '\n', text)         # trim spaces around newlines
+        text = re.sub(r'\n\n+', '\n', text)          # collapse multiple newlines to single
         return text.strip()
 
     def _apply_general_fixes(self, text):
@@ -199,9 +201,10 @@ class KurdishCharacterFixer:
         }
         for old, new in basic_fixes.items():
             text = text.replace(old, new)
-        # Final whitespace tidy
-        text = re.sub(r'\s+', ' ', text).strip()
-        return text
+        # Final whitespace tidy (preserve newlines!)
+        text = re.sub(r'[ \t]+', ' ', text)          # collapse spaces/tabs only
+        text = re.sub(r' *\n *', '\n', text)         # trim spaces around newlines  
+        return text.strip()
 
 def main():
     fixer = KurdishCharacterFixer()
