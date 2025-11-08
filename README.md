@@ -1,8 +1,8 @@
 # Tesseract OCR Training - Central Kurdish (ckb)
 
 **Status:** Production Ready ✅  
-**Version:** 5.0.0  
-**Last Updated:** October 26, 2025
+**Version:** 6.0.0  
+**Last Updated:** November 8, 2025
 
 ---
 
@@ -12,12 +12,15 @@ This project trains a custom Tesseract OCR model for **Central Kurdish (Sorani)*
 
 ### Key Features
 
+- ✅ **Parallel Training Generation** - 3 workers process fonts simultaneously
+- ✅ **Fully Resumable** - Stop and restart without losing progress
+- ✅ **Auto-mount NAS Storage** - Automatic Z: drive configuration
+- ✅ **Live Progress Bars** - Real-time worker status display
+- ✅ **Dual Training Profiles** - Best (2-3 days) and Fast (2-3 hours)
 - ✅ **14 Kurdish news websites** successfully scraped (1,052 sentences per test run)
 - ✅ **Generic Scraper V5.0** - unified configuration-driven architecture
 - ✅ **FlareSolverr integration** for Cloudflare-protected sites
-- ✅ **Auto-resume test suite** with state management
 - ✅ **Advanced features**: deduplication, language detection, rate limiting
-- ✅ **Network features**: HTTP caching, automatic retry, proxy rotation, URL filtering ✨NEW
 - ✅ **100% configuration-based** - no code changes needed for new sites
 
 ---
@@ -27,23 +30,25 @@ This project trains a custom Tesseract OCR model for **Central Kurdish (Sorani)*
 ```
 tesseract/
 ├── README.md                      # This file
-├── run_training.ps1               # Training automation (PowerShell)
+├── run_training.ps1               # Main training driver (PowerShell)
+├── setup_z_mount.sh               # NAS Z: drive auto-mount script
 ├── docs/                          # Documentation
 │   ├── SCRAPER_QUICK_START.md    # Quick start guide
-│   ├── ADVANCED_FEATURES.md       # Advanced configuration
 │   ├── PRODUCTION_READINESS.md    # Production deployment
 │   └── kurdish_characters.md      # Kurdish script reference
 ├── work/                          # Training workspace
+│   ├── generate_ckb_training_data.sh      # Main generation script
+│   ├── parallel_font_processor.sh         # Parallel worker script
+│   ├── kurdish_character_fixer.py         # Corpus normalizer
 │   ├── corpus/                    # Training text data
-│   ├── fonts/                     # Kurdish fonts
-│   ├── training_output/           # Generated training data
+│   ├── fonts/                     # Kurdish fonts (9 fonts)
+│   ├── training_output_best/      # Best profile output
+│   ├── training_output_fast/      # Fast profile output
 │   └── tools/                     # Scraping & utilities
 │       ├── test_suite.py         # Production test suite
-│       ├── test_debug.py         # Debugging tool
 │       └── scrapers/             # Generic scraper framework
 │           ├── generic_scraper.py        # V5.0 unified scraper
-│           ├── configs/                  # 17 website configs
-│           └── docs/                     # Scraper documentation
+│           └── configs/                  # 17 website configs
 └── tessdata/                      # Trained models
     ├── best/                      # Best quality models
     └── fast/                      # Fast models
@@ -53,7 +58,25 @@ tesseract/
 
 ## 🚀 Quick Start
 
-### 1. Test Web Scrapers
+### 1. Generate Training Data (Parallel Mode)
+
+```powershell
+# Fast profile (2-3 hours, ~2,592 images)
+.\run_training.ps1 -Mode ImprovedGenerate -TrainingProfile Fast
+
+# Best profile (2-3 days, ~87,480 images) with 3 parallel workers
+.\run_training.ps1 -Mode ImprovedGenerate -TrainingProfile Best -ParallelJobs 3
+
+# Best profile on NAS storage (auto-mounts Z: drive)
+.\run_training.ps1 -Mode ImprovedGenerate -TrainingProfile Best -ParallelJobs 3 -OutputDirOverride "Z:\training_output_best" -NoClear
+
+# Resume interrupted generation (automatically skips existing files)
+.\run_training.ps1 -Mode ImprovedGenerate -TrainingProfile Best -ParallelJobs 3 -NoClear
+```
+
+**Resumability**: You can safely press `Ctrl+C` to stop generation and restart anytime. The system automatically skips already-generated files.
+
+### 2. Test Web Scrapers
 
 ```bash
 # Test all 14 websites (3 articles each) - from work/tools directory
@@ -62,50 +85,210 @@ wsl -d Ubuntu -- bash -lc "cd '/mnt/c/tesseract/work/tools' && python3 test_suit
 
 # Test specific website
 python3 test_suite.py yariga --max-articles 10
-
-# Debug website selectors
-python3 test_debug.py kurdistan24 --category politics --test-selectors
-```
-
-### 2. Generate Training Data
-
-```powershell
-# Windows (PowerShell)
-.\run_training.ps1 -Mode BuildCorpus
-
-# WSL/Linux
-cd work
-bash execute_ckb_training.sh
 ```
 
 ### 3. Train Model
 
 ```powershell
-# Full training pipeline
+# Full training pipeline (generation + training)
 .\run_training.ps1 -Mode GenerateTrain
 
 # Smoke test trained model
 .\run_training.ps1 -Mode SmokeTest
 ```
 
-### 4. Verify Kurdish Character Coverage
+---
+
+## � Parallel Training Generation
+
+### Overview
+
+The training data generation system supports parallel processing with **3 simultaneous workers** (configurable), dramatically reducing generation time from weeks to hours:
+
+- **Best Profile**: ~87,480 images in ~29 hours with 3 workers (vs. ~262 hours sequential)
+- **Fast Profile**: ~2,592 images in ~0.8 hours with 3 workers (vs. ~2.5 hours sequential)
+
+Each worker processes a complete font (all parameter combinations) while displaying live progress on its own line.
+
+### Architecture
+
+```
+run_training.ps1 (PowerShell)
+    ↓
+setup_z_mount.sh (Auto-mount NAS if Z: path detected)
+    ↓
+generate_ckb_training_data.sh (Main Bash Script)
+    ↓
+GNU Parallel (Spawns 3 workers)
+    ↓
+parallel_font_processor.sh × 3 (Each processes 1 font)
+    ↓
+Ground truth files (.tif + .box)
+```
+
+### Live Progress Display
+
+Each worker shows real-time progress on its own line:
+
+```
+[Worker 1/9] Arial-Unicode-MS [=====>-------] 42% (1234/2934) - New: 1150, Skipped: 84
+[Worker 2/9] DejaVu-Sans [===>---------] 28% (822/2934) - New: 822, Skipped: 0
+[Worker 3/9] NRT-Reg [=======>-----] 58% (1702/2934) - New: 1500, Skipped: 202
+```
+
+When complete:
+
+```
+[Worker 1/9] Arial-Unicode-MS ✅ Success (New: 2850, Skipped: 84, Total: 2934)
+```
+
+### Resumability
+
+**Automatic Skip Detection**: The system checks for existing `.tif` and `.box` files before generating each image. If both exist, the file is skipped (counted in "Skipped").
+
+**Resume After Interruption**:
 
 ```powershell
-# Verify traineddata includes all Kurdish characters
-.\run_training.ps1 -Mode Verify
+# Start generation
+.\run_training.ps1 -Mode GenerateTrain -TrainingProfile Best -ParallelJobs 3
 
-# Or directly in WSL
-cd work
-python3 verify_ckb_traineddata.py --traineddata /mnt/c/tesseract/tessdata/best/ckb.traineddata
+# Press Ctrl+C to interrupt
+# Re-run the same command - it will skip all existing files and continue
+.\run_training.ps1 -Mode GenerateTrain -TrainingProfile Best -ParallelJobs 3
 ```
+
+**Progress Tracking**:
+
+- Shows percentage complete based on (New + Skipped) / Total
+- Displays file counts: newly created vs. skipped
+- Updates every 5 images to balance visibility and output volume
+
+### NAS Storage Integration
+
+**Automatic Z: Drive Mounting**:
+
+- When `OutputDirOverride` contains a Z: path, the script automatically mounts it in WSL
+- Runs `setup_z_mount.sh` to configure passwordless sudo and mount `/mnt/z`
+- Creates all required directories with proper permissions
+
+**Example**:
+
+```powershell
+# Automatically mounts Z: as /mnt/z in WSL
+.\run_training.ps1 -Mode GenerateTrain -TrainingProfile Best -OutputDirOverride "Z:\training_output_best" -ParallelJobs 3
+```
+
+**Manual Setup** (one-time):
+
+```bash
+# In WSL, configure passwordless mounting
+wsl -d Ubuntu -- bash /mnt/c/tesseract/setup_z_mount.sh
+```
+
+### Training Profiles
+
+| Parameter             | Best Profile                                   | Fast Profile           |
+| --------------------- | ---------------------------------------------- | ---------------------- |
+| Font Sizes            | 4 (24,32,40,48)                                | 2 (32,40)              |
+| DPIs                  | 3 (200,250,300)                                | 2 (200,300)            |
+| Leading               | 3 (24,32,40)                                   | 2 (28,36)              |
+| Character Spacing     | 3 (0.0,0.05,0.1)                               | 2 (0.0,0.05)           |
+| Exposures             | 5 (-2,-1,0,+1,+2)                              | 3 (-1,0,+1)            |
+| Variants              | 6 (normal,bold,italic,underline,shadow,random) | 3 (normal,bold,random) |
+| **Total Images**      | ~87,480 images                                 | ~2,592 images          |
+| **Time (3 workers)**  | ~29 hours                                      | ~0.8 hours             |
+| **Time (Sequential)** | ~262 hours (11 days)                           | ~2.5 hours             |
+
+### Performance Tuning
+
+**Adjust Worker Count**:
+
+```powershell
+# More workers = faster (up to CPU core count)
+.\run_training.ps1 -Mode GenerateTrain -TrainingProfile Best -ParallelJobs 8
+
+# Sequential (no parallelism)
+.\run_training.ps1 -Mode GenerateTrain -TrainingProfile Best -ParallelJobs 0
+```
+
+**Recommended Worker Counts**:
+
+- **3 workers**: Default, balanced for most systems
+- **8-16 workers**: High-end workstations with 16+ CPU cores
+- **0 workers**: Sequential mode for debugging or limited resources
+
+**Estimated Times** (Best Profile with 9 fonts):
+
+- 1 worker (sequential): ~262 hours (11 days)
+- 3 workers: ~29 hours
+- 8 workers: ~11 hours
+- 16 workers: ~6 hours
+
+### Monitoring Progress
+
+**Check Current Status**:
+
+```powershell
+# Count generated files
+(Get-ChildItem "Z:\training_output_best\ground_truth\*.tif").Count
+
+# Calculate percentage (Best profile)
+$files = (Get-ChildItem "Z:\training_output_best\ground_truth\*.tif").Count
+$total = 87480
+$percent = [math]::Round(($files / $total) * 100, 2)
+Write-Host "$percent% complete ($files / $total files)"
+```
+
+**Live Output**: Watch the console for real-time progress from each worker.
 
 ---
 
-## 📊 Current Status
+## Current Status
 
-### Phase 6: Complete ✅ | Phase 7: Planning 🚀
+### Training Generation v6.0.0 ✅
 
-**Phase 6 Achievement:**
+**Latest Improvements:**
+
+- ✅ **Parallel Processing**: 3 simultaneous workers (3× faster than sequential)
+- ✅ **Resumability**: Automatic skip of existing files, interrupt/resume anytime
+- ✅ **NAS Storage**: Auto-mount Z: drive for large-scale storage
+- ✅ **Live Progress**: Each worker displays real-time progress on its own line
+- ✅ **Dual Profiles**: Best (87k images, ~29h) and Fast (2.6k images, ~0.8h)
+
+**Generation Statistics** (Current Run):
+
+- **Profile**: Best (87,480 total images with 9 fonts)
+- **Progress**: ~1,530 files generated (~1.75% complete)
+- **Workers**: 3 parallel workers
+- **Output**: Z:\training_output_best\ground_truth\
+- **Estimated Remaining**: ~19 hours (with 3 workers)
+
+### Phase 6-7: OCR Accuracy ✅
+
+**Baseline Achievement:**
+
+- ✅ **76.9% accuracy** on modern Kurdish news text
+- ⚠️ **71.69% accuracy** on biographical text
+- ✅ **ZWNJ density:** 9.331% in training corpus (excellent quality)
+- ✅ **Model ready for production deployment**
+
+**Current Goal:**
+
+- 🎯 Improve biographical accuracy from 71.69% → **76%+** with Best profile
+- 🎯 Leverage 60× larger training dataset (87k vs 1.4k images)
+- 🎯 Target: High-quality corpus with 6-10% ZWNJ density
+
+**Quality Indicators:**
+
+- **ZWNJ (U+200C):** 9-11% density indicates proper Kurdish formatting
+- **News corpus:** High-quality source with proper ZWNJ usage
+
+**See:**
+
+- [UNICODE_CHARACTER_ANALYSIS.md](UNICODE_CHARACTER_ANALYSIS.md) - Detailed quality analysis
+- [ZWNJ_TATWEEL_SUMMARY.md](ZWNJ_TATWEEL_SUMMARY.md) - Character usage patterns
+
+### Working Websites (13/14)
 
 - ✅ **76.9% accuracy** on modern Kurdish news text
 - ⚠️ **71.69% accuracy** on biographical text
@@ -198,11 +381,26 @@ See [docs/SCRAPER_QUICK_START.md](docs/SCRAPER_QUICK_START.md) for detailed conf
 
 ## 📚 Documentation
 
-### User Guides
+### Training & Generation
+
+- **[Parallel Training Guide](#-parallel-training-generation)** - 3-worker parallel processing with live progress
+- **[Training Profiles](#training-profiles)** - Best vs Fast profile comparison
+- **[NAS Storage Setup](#nas-storage-integration)** - Auto-mount Z: drive configuration
+- **[Resumability](#resumability)** - Interrupt and resume generation anytime
+
+### Corpus & Quality Tools
+
+- **Source Validator** - `python work/tools/validate_source_quality.py sample.txt`
+- **Corpus Blender** - `python work/tools/blend_corpus.py --sources file1.txt file2.txt`
+- **Unicode Analyzer** - `python work/analyze_unicode_chars.py corpus.txt`
+- **[Unicode Analysis](UNICODE_CHARACTER_ANALYSIS.md)** - ZWNJ/Tatweel quality metrics
+- **[Character Summary](ZWNJ_TATWEEL_SUMMARY.md)** - Character usage patterns
+
+### Scraper Guides
 
 - **[Quick Start](docs/SCRAPER_QUICK_START.md)** - Get started in 5 minutes
 - **[Advanced Features](docs/ADVANCED_FEATURES.md)** - FlareSolverr, deduplication, rate limiting
-- **[Network Features](docs/NETWORK_FEATURES.md)** - HTTP caching, retry, proxy support ✨NEW
+- **[Network Features](docs/NETWORK_FEATURES.md)** - HTTP caching, retry, proxy support
 - **[Production Guide](docs/PRODUCTION_READINESS.md)** - Deployment best practices
 
 ### Technical Docs
@@ -210,14 +408,6 @@ See [docs/SCRAPER_QUICK_START.md](docs/SCRAPER_QUICK_START.md) for detailed conf
 - **[Generic Scraper](work/tools/scrapers/README.md)** - Framework documentation
 - **[Debug Tool](work/tools/scrapers/docs/DEBUG_TOOL_GUIDE.md)** - Debugging guide
 - **[Test Suite](work/tools/TEST_SUITE_RESUME.md)** - Test suite features
-
-### Phase 7 Tools (Accuracy Improvement) 🚀
-
-- **[Phase 7 Plan](PHASE7_IMPROVEMENT_PLAN.md)** - Complete improvement strategy
-- **[Phase 7 Quick Start](PHASE7_QUICKSTART.md)** - Start improving accuracy now!
-- **Source Validator** - `python work/tools/validate_source_quality.py sample.txt`
-- **Corpus Blender** - `python work/tools/blend_corpus.py --sources file1.txt file2.txt`
-- **Unicode Analyzer** - `python work/analyze_unicode_chars.py corpus.txt`
 
 ### Reference
 
