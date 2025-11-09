@@ -2,9 +2,20 @@
 # Parallel font processor - processes one font with all its variations
 # Usage: parallel_font_processor.sh <font_file> <font_index> <total_fonts>
 
+# Unbuffer stderr for immediate output and disable buffering
+exec 2>&1
+set -o pipefail
+export PYTHONUNBUFFERED=1
+
 FONT_FILE="$1"
 FONT_IDX="$2"
 TOTAL_FONTS="$3"
+WORKER_SLOT="${SLOT:-1}"  # Job slot from GNU Parallel {%}
+
+# Display configuration (matches Python scraper approach)
+HEADER_LINES=4
+FOOTER_LINES=4
+# Logs scroll in middle section (lines 5 to terminal_height - 4)
 
 # Source environment from parent if available
 WORK_DIR="${WORK_DIR:-$(pwd)}"
@@ -52,28 +63,96 @@ total_images=$((font_size_count * dpi_count * leading_count * charsp_count * exp
 processed=0
 success_count=0
 skipped_count=0
+corrupted_count=0
+update_count=0
+last_update_time=0
 
-# Print initial worker line (worker gets its own line)
-printf "[Worker %d/%d] %s - Initializing...\n" "$FONT_IDX" "$TOTAL_FONTS" "$font_name" >&2
+# Check if this font is already completely processed (early exit optimization)
+existing_count=$(find "$GROUND_TRUTH_DIR" -name "ckb.${font_name}.*.tif" 2>/dev/null | wc -l)
+if [ "$existing_count" -ge "$total_images" ]; then
+    printf "[Slot%d W%d/%d] %-20s => Already Complete (%d files)\n" \
+        "$WORKER_SLOT" "$FONT_IDX" "$TOTAL_FONTS" "$font_name" "$total_images"
+    exit 0
+fi
 
-# Progress bar function
+if [ "$existing_count" -gt 0 ]; then
+    printf "[Slot%d W%d/%d] %-20s => Resume (has %d, need %d)\n" \
+        "$WORKER_SLOT" "$FONT_IDX" "$TOTAL_FONTS" "$font_name" "$existing_count" "$((total_images - existing_count))"
+else
+    printf "[Slot%d W%d/%d] %-20s => Start (generating %d files)\n" \
+        "$WORKER_SLOT" "$FONT_IDX" "$TOTAL_FONTS" "$font_name" "$total_images"
+fi
+
+# Progress bar function with 2-second heartbeat
+# Writes to scrolling middle section (like Python scraper logs)
 show_progress() {
-    local current=$1
-    local total=$2
-    local width=30
-    local percent=$((current * 100 / total))
-    local filled=$((width * current / total))
-    local empty=$((width - filled))
+    local current="$1"
+    local total="$2"
+    local percent=$(( current * 100 / total ))
+    local filled=$(( percent / 5 ))
+    local empty=$(( 20 - filled ))
+    local current_time
+    current_time=$(date +%s)
     
-    # Update every 5 images or at key points (start, end)
-    if [ $((current % 5)) -eq 0 ] || [ "$current" -eq 1 ] || [ "$current" -eq "$total" ]; then
-        # Move up one line, clear it, then print progress
-        # This keeps each worker on its own line
-        printf "\033[1A\033[K[Worker %d/%d] %s [" "$FONT_IDX" "$TOTAL_FONTS" "$font_name" >&2
-        printf "%${filled}s" | tr ' ' '=' >&2
-        printf "%${empty}s" | tr ' ' '-' >&2
-        printf "] %d%% (%d/%d)\n" "$percent" "$current" "$total" >&2
+    local bar="$(printf "%${filled}s" | tr ' ' '#')$(printf "%${empty}s" | tr ' ' '-')"
+    
+    # Update every 2 seconds or when complete
+    # Logs scroll naturally in the middle section (no fixed positioning)
+    if [ $((current_time - last_update_time)) -ge 2 ] || [ "$current" -eq "$total" ]; then
+        
+        if [ "$corrupted_count" -gt 0 ]; then
+            printf "[Slot%d W%d/%d] %-20s [%s] %3d%% (%d/%d) New:%d Skip:%d Bad:%d\n" \
+                "$WORKER_SLOT" "$FONT_IDX" "$TOTAL_FONTS" "$font_name" "$bar" \
+                "$percent" "$current" "$total" "$success_count" "$skipped_count" "$corrupted_count"
+        else
+            printf "[Slot%d W%d/%d] %-20s [%s] %3d%% (%d/%d) New:%d Skip:%d\n" \
+                "$WORKER_SLOT" "$FONT_IDX" "$TOTAL_FONTS" "$font_name" "$bar" \
+                "$percent" "$current" "$total" "$success_count" "$skipped_count"
+        fi
+        
+        last_update_time="$current_time"
     fi
+    
+    # Mark complete
+    if [ "$current" -eq "$total" ]; then
+        printf "[Slot%d W%d/%d] %-20s COMPLETE\n" \
+            "$WORKER_SLOT" "$FONT_IDX" "$TOTAL_FONTS" "$font_name"
+    fi
+}
+
+# File validation function - checks if files exist and are not corrupted
+validate_files() {
+    local base="$1"
+    local tif_file="${base}.tif"
+    local box_file="${base}.box"
+    
+    # Check if both files exist
+    if [ ! -f "$tif_file" ] || [ ! -f "$box_file" ]; then
+        return 1
+    fi
+    
+    # Check if files are not empty (corrupted files are often 0 bytes)
+    local tif_size=$(stat -f%z "$tif_file" 2>/dev/null || stat -c%s "$tif_file" 2>/dev/null || echo "0")
+    local box_size=$(stat -f%z "$box_file" 2>/dev/null || stat -c%s "$box_file" 2>/dev/null || echo "0")
+    
+    if [ "$tif_size" -lt 100 ] || [ "$box_size" -lt 10 ]; then
+        # Files are too small, likely corrupted - delete them
+        rm -f "$tif_file" "$box_file" 2>/dev/null
+        ((corrupted_count++))
+        return 1
+    fi
+    
+    # Validate TIFF header (should start with "II*" or "MM*")
+    local tif_header=$(head -c 4 "$tif_file" 2>/dev/null | od -An -tx1 | tr -d ' \n')
+    if [[ ! "$tif_header" =~ ^(49492a00|4d4d002a) ]]; then
+        # Invalid TIFF header - delete corrupted files
+        rm -f "$tif_file" "$box_file" 2>/dev/null
+        ((corrupted_count++))
+        return 1
+    fi
+    
+    # Files are valid
+    return 0
 }
 
 # Resolve font name
@@ -106,7 +185,8 @@ for cand in "$internal_name" "$font_name" "Noto Naskh Arabic"; do
 done
 
 if [ -z "$used_font" ]; then
-    printf "\033[1A\033[K[Worker %d/%d] %s ❌ Failed (font validation)\n" "$FONT_IDX" "$TOTAL_FONTS" "$font_name" >&2
+    printf "[Slot%d W%d/%d] %-20s => FAILED (font validation)\n" \
+        "$WORKER_SLOT" "$FONT_IDX" "$TOTAL_FONTS" "$font_name"
     exit 1
 fi
 
@@ -120,8 +200,8 @@ for EXP in $EXPOSURES; do
                     
                     output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp${exp_idx}.d${THIS_DPI}.s${THIS_PTSIZE}.l${THIS_LEADING}.c${THIS_CHSP}"
                     
-                    # Skip if exists (resumability)
-                    if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
+                    # Skip if exists and valid (resumability with corruption check)
+                    if validate_files "$output_base"; then
                         ((processed++))
                         ((skipped_count++))
                         show_progress "$processed" "$total_images"
@@ -141,7 +221,11 @@ for EXP in $EXPOSURES; do
                         --char_spacing=$THIS_CHSP \
                         --exposure="$EXP" \
                         >>"$log_file" 2>&1; then
-                        ((success_count++))
+                        
+                        # Verify the generated files are valid
+                        if validate_files "$output_base"; then
+                            ((success_count++))
+                        fi
                     fi
                     
                     ((processed++))
@@ -152,7 +236,8 @@ for EXP in $EXPOSURES; do
                         for variant in $(seq 1 $AUG_VARIANTS); do
                             aug_base="${output_base}_aug${variant}"
                             
-                            if [ -f "${aug_base}.tif" ] && [ -f "${aug_base}.box" ]; then
+                            # Skip if exists and valid (resumability with corruption check)
+                            if validate_files "$aug_base"; then
                                 ((processed++))
                                 ((skipped_count++))
                                 show_progress "$processed" "$total_images"
@@ -163,7 +248,8 @@ for EXP in $EXPOSURES; do
                             cp "${output_base}.tif" "${aug_base}.tif" 2>/dev/null
                             cp "${output_base}.box" "${aug_base}.box" 2>/dev/null
                             
-                            if [ -f "${aug_base}.tif" ]; then
+                            # Verify the copied files are valid
+                            if validate_files "$aug_base"; then
                                 ((success_count++))
                             fi
                             
@@ -179,8 +265,13 @@ for EXP in $EXPOSURES; do
     ((exp_idx++))
 done
 
-# Final status - replace the progress line
+# Final status
 new_count=$((success_count))
-printf "\033[1A\033[K[Worker %d/%d] %s ✅ Success (New: %d, Skipped: %d, Total: %d/%d)\n" \
-    "$FONT_IDX" "$TOTAL_FONTS" "$font_name" "$new_count" "$skipped_count" "$processed" "$total_images" >&2
+if [ "$corrupted_count" -gt 0 ]; then
+    printf "[Slot%d W%d/%d] %-20s => DONE: New:%d Skip:%d Fixed:%d Total:%d\n" \
+        "$WORKER_SLOT" "$FONT_IDX" "$TOTAL_FONTS" "$font_name" "$new_count" "$skipped_count" "$corrupted_count" "$total_images"
+else
+    printf "[Slot%d W%d/%d] %-20s => DONE: New:%d Skip:%d Total:%d\n" \
+        "$WORKER_SLOT" "$FONT_IDX" "$TOTAL_FONTS" "$font_name" "$new_count" "$skipped_count" "$total_images"
+fi
 exit 0

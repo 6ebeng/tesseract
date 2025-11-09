@@ -128,19 +128,29 @@ Ground truth files (.tif + .box)
 
 ### Live Progress Display
 
-Each worker shows real-time progress on its own line:
+Each worker displays periodic progress updates as they process fonts. Progress updates are shown every 50 images or at 10% milestones to keep output readable:
 
 ```
-[Worker 1/9] Arial-Unicode-MS [=====>-------] 42% (1234/2934) - New: 1150, Skipped: 84
-[Worker 2/9] DejaVu-Sans [===>---------] 28% (822/2934) - New: 822, Skipped: 0
-[Worker 3/9] NRT-Reg [=======>-----] 58% (1702/2934) - New: 1500, Skipped: 202
+[Worker 1/9] Arial-Unicode-MS - Starting...
+[Worker 2/9] DejaVu-Sans - Starting...
+[Worker 3/9] NRT-Reg - Starting...
+[Worker 1/9] Arial-Unicode-MS [===>---------] 10% (293/2934) - New: 293, Skipped: 0
+[Worker 2/9] DejaVu-Sans [===>---------] 10% (293/2934) - New: 293, Skipped: 0
+[Worker 3/9] NRT-Reg [===>---------] 10% (293/2934) - New: 150, Skipped: 143
+[Worker 1/9] Arial-Unicode-MS [======>------] 20% (587/2934) - New: 587, Skipped: 0
+[Worker 2/9] DejaVu-Sans [======>------] 20% (587/2934) - New: 587, Skipped: 0
+...
 ```
 
 When complete:
 
 ```
-[Worker 1/9] Arial-Unicode-MS ✅ Success (New: 2850, Skipped: 84, Total: 2934)
+[Worker 1/9] Arial-Unicode-MS ✅ Success (New: 2850, Skipped: 84, Total: 2934/2934)
+[Worker 2/9] DejaVu-Sans ✅ Success (New: 2934, Skipped: 0, Total: 2934/2934)
+[Worker 3/9] NRT-Reg ✅ Success (New: 2500, Skipped: 434, Total: 2934/2934)
 ```
+
+**Note**: Updates are interleaved from all workers, creating a live stream of progress from all 3 parallel processes.
 
 ### Resumability
 

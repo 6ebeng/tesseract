@@ -373,14 +373,15 @@ if [ "$PARALLEL_JOBS" -gt 0 ]; then
     echo ""
     
     # Process fonts in parallel using GNU parallel
-    # --ungroup: show output immediately (live progress bars)
+    # --line-buffer: buffer output by line
     # -j: number of parallel jobs
+    # {%}: job slot number (1, 2, 3, etc.)
     font_idx=0
     for font_file in "${FONT_LIST[@]}"; do
         ((font_idx++))
         printf "%s\t%d\t%d\n" "$font_file" "$font_idx" "$TOTAL_FONTS"
-    done | parallel -j "$PARALLEL_JOBS" --ungroup --colsep '\t' \
-        "bash $(pwd)/parallel_font_processor.sh {1} {2} {3}"
+    done | parallel -j "$PARALLEL_JOBS" --line-buffer --colsep '\t' \
+        "SLOT={%} bash $(pwd)/parallel_font_processor.sh {1} {2} {3}"
     
     echo ""
     echo "✅ Parallel processing completed!"
