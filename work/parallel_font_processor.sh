@@ -120,7 +120,8 @@ show_progress() {
     fi
 }
 
-# File validation function - checks if files exist and are not corrupted
+# File validation function - checks if files exist and are valid
+# Returns 0 if valid, 1 if missing, 2 if corrupted (needs regeneration)
 validate_files() {
     local base="$1"
     local tif_file="${base}.tif"
@@ -128,7 +129,7 @@ validate_files() {
     
     # Check if both files exist
     if [ ! -f "$tif_file" ] || [ ! -f "$box_file" ]; then
-        return 1
+        return 1  # Missing - need to generate
     fi
     
     # Check if files are not empty (corrupted files are often 0 bytes)
@@ -136,23 +137,21 @@ validate_files() {
     local box_size=$(stat -f%z "$box_file" 2>/dev/null || stat -c%s "$box_file" 2>/dev/null || echo "0")
     
     if [ "$tif_size" -lt 100 ] || [ "$box_size" -lt 10 ]; then
-        # Files are too small, likely corrupted - delete them
+        # Files are too small, likely corrupted - delete and regenerate
         rm -f "$tif_file" "$box_file" 2>/dev/null
-        ((corrupted_count++))
-        return 1
+        return 2  # Corrupted - regenerate with same index
     fi
     
     # Validate TIFF header (should start with "II*" or "MM*")
     local tif_header=$(head -c 4 "$tif_file" 2>/dev/null | od -An -tx1 | tr -d ' \n')
     if [[ ! "$tif_header" =~ ^(49492a00|4d4d002a) ]]; then
-        # Invalid TIFF header - delete corrupted files
+        # Invalid TIFF header - delete and regenerate
         rm -f "$tif_file" "$box_file" 2>/dev/null
-        ((corrupted_count++))
-        return 1
+        return 2  # Corrupted - regenerate with same index
     fi
     
     # Files are valid
-    return 0
+    return 0  # Valid - skip
 }
 
 # Resolve font name
@@ -200,15 +199,22 @@ for EXP in $EXPOSURES; do
                     
                     output_base="$GROUND_TRUTH_DIR/ckb.${font_name}.exp${exp_idx}.d${THIS_DPI}.s${THIS_PTSIZE}.l${THIS_LEADING}.c${THIS_CHSP}"
                     
-                    # Skip if exists and valid (resumability with corruption check)
-                    if validate_files "$output_base"; then
+                    # Check if files exist and are valid
+                    validate_files "$output_base"
+                    local validation_result=$?
+                    
+                    if [ "$validation_result" -eq 0 ]; then
+                        # Files exist and are valid - skip
                         ((processed++))
                         ((skipped_count++))
                         show_progress "$processed" "$total_images"
                         continue
+                    elif [ "$validation_result" -eq 2 ]; then
+                        # Files exist but are corrupted - mark for regeneration
+                        ((corrupted_count++))
                     fi
                     
-                    # Generate base image
+                    # Files missing (validation_result == 1) or corrupted (validation_result == 2) - generate them
                     if text2image \
                         --text="$CORPUS_SRC" \
                         --outputbase="$output_base" \
@@ -223,7 +229,8 @@ for EXP in $EXPOSURES; do
                         >>"$log_file" 2>&1; then
                         
                         # Verify the generated files are valid
-                        if validate_files "$output_base"; then
+                        validate_files "$output_base"
+                        if [ $? -eq 0 ]; then
                             ((success_count++))
                         fi
                     fi
@@ -236,20 +243,28 @@ for EXP in $EXPOSURES; do
                         for variant in $(seq 1 $AUG_VARIANTS); do
                             aug_base="${output_base}_aug${variant}"
                             
-                            # Skip if exists and valid (resumability with corruption check)
-                            if validate_files "$aug_base"; then
+                            # Check if files exist and are valid
+                            validate_files "$aug_base"
+                            local aug_validation=$?
+                            
+                            if [ "$aug_validation" -eq 0 ]; then
+                                # Files exist and are valid - skip
                                 ((processed++))
                                 ((skipped_count++))
                                 show_progress "$processed" "$total_images"
                                 continue
+                            elif [ "$aug_validation" -eq 2 ]; then
+                                # Files exist but are corrupted - mark for regeneration
+                                ((corrupted_count++))
                             fi
                             
-                            # Apply augmentation (simplified - just copy for now)
+                            # Files missing or corrupted - generate them
                             cp "${output_base}.tif" "${aug_base}.tif" 2>/dev/null
                             cp "${output_base}.box" "${aug_base}.box" 2>/dev/null
                             
                             # Verify the copied files are valid
-                            if validate_files "$aug_base"; then
+                            validate_files "$aug_base"
+                            if [ $? -eq 0 ]; then
                                 ((success_count++))
                             fi
                             
