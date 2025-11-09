@@ -201,7 +201,7 @@ for EXP in $EXPOSURES; do
                     
                     # Check if files exist and are valid
                     validate_files "$output_base"
-                    local validation_result=$?
+                    validation_result=$?
                     
                     if [ "$validation_result" -eq 0 ]; then
                         # Files exist and are valid - skip
@@ -245,7 +245,7 @@ for EXP in $EXPOSURES; do
                             
                             # Check if files exist and are valid
                             validate_files "$aug_base"
-                            local aug_validation=$?
+                            aug_validation=$?
                             
                             if [ "$aug_validation" -eq 0 ]; then
                                 # Files exist and are valid - skip
