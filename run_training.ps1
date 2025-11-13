@@ -39,6 +39,10 @@ param(
     [int]$CharsPerPage,
     # Parallel processing
     [int]$ParallelJobs = 0,
+    # Batch processing (for network drives)
+    [switch]$UseBatchProcessing,
+    [int]$BatchSize = 5000,
+    [int]$BatchWorkers = 22,
     # Corpus builder options
     [switch]$UseFixer,
     [int]$CorpusMinCount,
@@ -97,6 +101,23 @@ function Get-TrainEnvPrefix() {
     if ($LatinDigits) { $parts += "LATIN_DIGITS='1'" }
     if ($PuncsExtra) { $parts += "PUNCS_EXTRA='$(Escape-ShellSingleQuotes $PuncsExtra)'" }
     if ($TrainUseRealEval) { $parts += "IMPORT_REAL_EVAL='1'" }
+    
+    # Pass OutputDirOverride to training script
+    if ($OutputDirOverride) {
+        $parts += "OUTPUT_DIR='$(Escape-ShellSingleQuotes (Convert-ToWslPath $OutputDirOverride))'"
+    }
+    
+    # Batch processing mode for network drives
+    if ($UseBatchProcessing) {
+        $parts += "USE_BATCH_PROCESSING='1'"
+        if ($BatchSize) {
+            $parts += "BATCH_SIZE='${BatchSize}'"
+        }
+        if ($BatchWorkers) {
+            $parts += "WORKERS='${BatchWorkers}'"
+        }
+    }
+    
     # Ensure lstm.train is discoverable in WSL. Allow Windows env override, else default to repo's tessdata/configs.
     try {
         if ($env:LSTM_TRAIN_CONFIG) {
@@ -535,7 +556,42 @@ function Invoke-Train {
     $trainScriptWin = Join-Path $workDirWin 'execute_ckb_training.sh'
     $trainScriptWsl = Convert-ToWslPath $trainScriptWin
     if (-not (Test-Path $trainScriptWin)) { throw "Training script not found at $trainScriptWin" }
+    
+    # Mount Z: drive if using OutputDirOverride on network drive
+    if ($OutputDirOverride -and $OutputDirOverride -like 'Z:*') {
+        Write-Host "🔧 Mounting Z: drive in WSL..." -ForegroundColor Cyan
+        wsl -d Ubuntu -- bash -c "sudo umount /mnt/z 2>/dev/null; sudo mount -t drvfs 'Z:' /mnt/z -o metadata,uid=1000,gid=1000" | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Z: drive mounted successfully" -ForegroundColor Green
+        }
+    }
+    
     Write-Host "`nStarting training to build ckb.traineddata..." -ForegroundColor Yellow
+    
+    # If batch processing is enabled, run the batch processor first for LSTMF generation
+    if ($UseBatchProcessing) {
+        $totalFiles = $BatchSize * 3
+        Write-Host "📦 BATCH MODE ENABLED - Processing in batches of $BatchSize file sets ($totalFiles files total) with $BatchWorkers workers" -ForegroundColor Cyan
+        $batchScript = Join-Path $workDirWin 'batch_lstmf_processor.sh'
+        $batchScriptWsl = Convert-ToWslPath $batchScript
+        
+        if (Test-Path $batchScript) {
+            Write-Host "Running batch LSTMF processor..." -ForegroundColor Yellow
+            # Pass environment variables to batch processor
+            $trainEnv = Get-TrainEnvPrefix
+            wsl -d Ubuntu -- bash -c "chmod +x '$batchScriptWsl'; $($trainEnv)'$batchScriptWsl'"
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "⚠️  Batch processor failed, falling back to standard processing" -ForegroundColor Yellow
+            } else {
+                Write-Host "✓ Batch LSTMF generation complete!" -ForegroundColor Green
+                Write-Host "Now running remaining training steps..." -ForegroundColor Yellow
+            }
+        } else {
+            Write-Host "⚠️  Batch processor script not found at $batchScript" -ForegroundColor Yellow
+            Write-Host "Falling back to standard processing..." -ForegroundColor Yellow
+        }
+    }
+    
     # Normalize line endings and run training script with env
     $trainEnv = Get-TrainEnvPrefix
     wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; sed -i 's/\r$//' '$trainScriptWsl' 2>/dev/null || true; chmod +x '$trainScriptWsl'; $($trainEnv)bash '$trainScriptWsl'"; $trainCode = $LASTEXITCODE
@@ -717,10 +773,22 @@ function Invoke-ImprovedGenerate {
         Write-Host "   Continuing with available fonts..." -ForegroundColor Gray
     }
     
-    # Determine profile-specific ground-truth directory
+    # Determine profile-specific output directory (but don't override $gtDirWin if already set)
     $profileSuffix = if ($TrainingProfile -eq 'Best') { '_best' } else { '_fast' }
-    $profileOutputWin = Join-Path $workDirWin "training_output$profileSuffix"
-    $gtDirWin = Join-Path $profileOutputWin 'ground_truth'
+    
+    if ($OutputDirOverride) {
+        # Use the override directory
+        $profileOutputWin = $OutputDirOverride
+        if (-not $gtDirWin) {
+            $gtDirWin = Join-Path $profileOutputWin 'ground_truth'
+        }
+    } else {
+        # Use default profile-specific directory
+        $profileOutputWin = Join-Path $workDirWin "training_output$profileSuffix"
+        if (-not $gtDirWin) {
+            $gtDirWin = Join-Path $profileOutputWin 'ground_truth'
+        }
+    }
     
     # Create directories if they don't exist (for resumability)
     if (-not (Test-Path $profileOutputWin)) {

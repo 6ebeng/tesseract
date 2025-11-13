@@ -6,10 +6,23 @@
 set -euo pipefail
 
 WORK_DIR="/mnt/c/tesseract/work"
-GT_DIR="$WORK_DIR/training_output/ground_truth"
-TMP_DIR="$WORK_DIR/training_output/tmp"
-OUT_DIR="$WORK_DIR/training_output/model"
+
+# Allow OUTPUT_DIR override (e.g., for Z: drive or custom locations)
+if [ -n "${OUTPUT_DIR:-}" ]; then
+    BASE_OUTPUT_DIR="$OUTPUT_DIR"
+else
+    BASE_OUTPUT_DIR="$WORK_DIR/training_output"
+fi
+
+GT_DIR="$BASE_OUTPUT_DIR/ground_truth"
+TMP_DIR="$BASE_OUTPUT_DIR/tmp"
+OUT_DIR="$BASE_OUTPUT_DIR/model"
 LANG="ckb"
+
+# Batch processing parameters (NEW)
+USE_BATCH_PROCESSING="${USE_BATCH_PROCESSING:-0}"  # Set to 1 to enable batch mode
+BATCH_SIZE="${BATCH_SIZE:-5000}"                    # Files per batch
+LOCAL_BATCH_DIR="${LOCAL_BATCH_DIR:-$WORK_DIR/batch_processing}"
 
 # Training tunables (can be overridden via environment)
 MAX_ITERS="${MAX_ITERS:-1500}"
@@ -20,10 +33,20 @@ PUNCS_EXTRA="${PUNCS_EXTRA:-}"   # extra punctuation to append to defaults
 OEM="${OEM:-1}"
 PSM="${PSM:-6}"
 
-mkdir -p "$TMP_DIR" "$OUT_DIR"
+# Performance optimization: Use all CPU cores for parallel processing
+# Your i9-12900KF has 16 cores (8P+8E) = 24 threads
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-24}"
+export OMP_THREAD_LIMIT="${OMP_THREAD_LIMIT:-24}"
+
+# Enable SIMD optimizations if available
+export DOTPRODUCT=avx2
+
+mkdir -p "$TMP_DIR" "$OUT_DIR" 2>/dev/null || true
 # Resolve ground truth directory with fallbacks if default is missing
 if [ ! -d "$GT_DIR" ]; then
+  # Try alternate ground truth locations
   for cand in \
+    "$BASE_OUTPUT_DIR/ground-truth" \
     "$WORK_DIR/ground-truth" \
     "$WORK_DIR/ground-truth-robust" \
     "$WORK_DIR/ground-truth-system" \
@@ -33,15 +56,42 @@ if [ ! -d "$GT_DIR" ]; then
     if [ -d "$cand" ]; then GT_DIR="$cand"; break; fi
   done
 fi
-if [ ! -d "$GT_DIR" ]; then
-  echo "⚠️  Ground truth not found. Attempting to generate using generate_ckb_training_data.sh..."
+
+# Check if ground truth directory exists and has TIF files
+if [ -d "$GT_DIR" ]; then
+  TIF_COUNT=$(find "$GT_DIR" -maxdepth 1 -name '*.tif' -type f 2>/dev/null | wc -l)
+  if [ "$TIF_COUNT" -gt 0 ]; then
+    echo "✓ Found ground truth directory with $TIF_COUNT TIF files: $GT_DIR"
+  else
+    echo "⚠️  Ground truth directory exists but has no TIF files: $GT_DIR"
+    GT_DIR=""  # Force regeneration
+  fi
+fi
+
+if [ -z "$GT_DIR" ] || [ ! -d "$GT_DIR" ]; then
+  echo "⚠️  Ground truth not found at $BASE_OUTPUT_DIR/ground_truth"
+  echo "    Checked: $BASE_OUTPUT_DIR/ground_truth and fallback locations"
+  echo "    Attempting to generate using generate_ckb_training_data.sh..."
   if [ -f "$WORK_DIR/generate_ckb_training_data.sh" ]; then
     chmod +x "$WORK_DIR/generate_ckb_training_data.sh" || true
     ( cd "$WORK_DIR" && "$WORK_DIR/generate_ckb_training_data.sh" ) || true
-    GT_DIR="$WORK_DIR/training_output/ground_truth"
+    GT_DIR="$BASE_OUTPUT_DIR/ground_truth"
   fi
 fi
-if [ ! -d "$GT_DIR" ]; then echo "❌ Ground truth not found. Expected at $WORK_DIR/training_output/ground_truth or a ground-truth* folder."; exit 1; fi
+
+if [ ! -d "$GT_DIR" ]; then 
+  echo "❌ Ground truth directory not found. Expected at $BASE_OUTPUT_DIR/ground_truth or a ground-truth* folder."
+  exit 1
+fi
+
+# Final verification - check for TIF files
+TIF_COUNT=$(find "$GT_DIR" -maxdepth 1 -name '*.tif' -type f 2>/dev/null | wc -l)
+if [ "$TIF_COUNT" -eq 0 ]; then
+  echo "❌ No .tif files found in $GT_DIR"
+  exit 1
+fi
+
+echo "✅ Using ground truth directory: $GT_DIR ($TIF_COUNT TIF files)"
 
 # Tesseract data dirs
 TESSDATA_DIR="/usr/share/tesseract-ocr/5/tessdata"
@@ -363,6 +413,11 @@ LSTMF_LOG="$OUT_DIR/lstmf_build.log"; : > "$LSTMF_LOG"
 # Allow OEM/PSM overrides via env (defaults align with earlier behavior)
 OEM="${OEM:-1}"
 PSM="${PSM:-6}"
+
+# Detect number of CPU cores for parallel processing
+NUM_CORES=$(nproc 2>/dev/null || echo 8)
+PARALLEL_JOBS=$((NUM_CORES > 4 ? NUM_CORES - 2 : NUM_CORES))  # Use NUM_CORES-2 for system responsiveness
+
 cd "$GT_DIR"
 # Normalize ground-truth text filenames: prefer .gt.txt; if only .txt exists, create .gt.txt copies
 while IFS= read -r -d '' tif_norm; do
@@ -371,36 +426,184 @@ while IFS= read -r -d '' tif_norm; do
     cp -f "$GT_DIR/$b.txt" "$GT_DIR/$b.gt.txt"
   fi
 done < <(find "$GT_DIR" -maxdepth 1 -type f -name '*.tif' -print0)
-LSTMF_COUNT=0
-SEG_LANGS=("${BASE_LANGS[@]}")
-# If we have a target ckb traineddata, also try a ckb segmenter which has the exact recoder we need
-if [ -f "$TARGET_TRAINEDDATA" ]; then SEG_LANGS+=(ckb); fi
-CKB_MODEL_DIR=$(dirname "$TARGET_TRAINEDDATA")
-while IFS= read -r -d '' tif; do
-  base=$(basename "$tif" .tif)
-  gt_txt="$GT_DIR/$base.gt.txt"
-  [ -f "$gt_txt" ] || { echo "⚠️  Missing $base.gt.txt"; continue; }
-  for B in "${SEG_LANGS[@]}"; do
-    MODEL_PATH=""; MODEL_DIR=""
-    case "$B" in
-      fas) MODEL_PATH="$fas_path"; MODEL_DIR=$(dirname "$MODEL_PATH");;
-      ara) MODEL_PATH="$ara_path"; MODEL_DIR=$(dirname "$MODEL_PATH");;
-      eng) MODEL_PATH="$eng_path"; MODEL_DIR=$(dirname "$MODEL_PATH");;
-      ckb) MODEL_PATH="$TARGET_TRAINEDDATA"; MODEL_DIR="$CKB_MODEL_DIR";;
-    esac
-    [ -n "$MODEL_DIR" ] || continue
-    # Ensure matching GT for suffixed output base
-    cp -f "$gt_txt" "$GT_DIR/$base-$B.gt.txt"
-    echo "Creating LSTMF: $base (seg=$B)"
-    {
-      echo "---- $(date -Iseconds) : $base (seg=$B) ----"
-      echo "CMD: tesseract --tessdata-dir '$MODEL_DIR' '$tif' '$base-$B' -l '$B' --oem $OEM --psm $PSM '$CONFIG_LSTM'"
-      tesseract --tessdata-dir "$MODEL_DIR" "$tif" "$base-$B" -l "$B" --oem "$OEM" --psm "$PSM" "$CONFIG_LSTM" 2>&1 || true
-    } >> "$LSTMF_LOG"
-    if [ -f "$GT_DIR/$base-$B.lstmf" ]; then mv -f "$GT_DIR/$base-$B.lstmf" "$TMP_DIR/"; LSTMF_COUNT=$((LSTMF_COUNT+1)); break; else echo "⚠️  Missing $base-$B.lstmf"; fi
-    rm -f "$GT_DIR/$base-$B.gt.txt" 2>/dev/null || true
-  done
-done < <(find "$GT_DIR" -maxdepth 1 -type f -name '*.tif' -print0)
+
+# Function to process a single TIF file - OPTIMIZED
+process_lstmf() {
+    local tif="$1"
+    local slot="${2:-?}"  # Worker slot number from parallel
+    local base=$(basename "$tif" .tif)
+    local work_dir=$(dirname "$tif")  # Auto-detect working directory
+    
+    # PERFORMANCE BOOST 1: Early exit with single file check (no ls glob)
+    # Check only the most likely file (fas) first for speed
+    [ -f "$TMP_DIR/$base-fas.lstmf" ] && { echo "C"; return 0; }
+    [ -f "$TMP_DIR/$base-ara.lstmf" ] && { echo "C"; return 0; }
+    [ -f "$TMP_DIR/$base-eng.lstmf" ] && { echo "C"; return 0; }
+    
+    local gt_txt="$work_dir/$base.gt.txt"
+    [ -f "$gt_txt" ] || return 1
+    
+    # PERFORMANCE BOOST 2: Direct file check instead of case statement
+    # Try fas first (best accuracy, most likely to succeed)
+    if [ -f "$fas_path" ]; then
+        cp -f "$gt_txt" "$work_dir/$base-fas.gt.txt" 2>/dev/null && \
+        OMP_THREAD_LIMIT=1 tesseract --tessdata-dir "$(dirname "$fas_path")" "$tif" "$work_dir/$base-fas" \
+            -l fas --oem "$OEM" --psm "$PSM" "$CONFIG_LSTM" 2>/dev/null && \
+        [ -f "$work_dir/$base-fas.lstmf" ] && {
+            mv -f "$work_dir/$base-fas.lstmf" "$TMP_DIR/" 2>/dev/null
+            rm -f "$work_dir/$base-fas.gt.txt" 2>/dev/null
+            echo "S"
+            return 0
+        }
+        rm -f "$work_dir/$base-fas.gt.txt" 2>/dev/null
+    fi
+    
+    # Try ara as fallback
+    if [ -f "$ara_path" ]; then
+        cp -f "$gt_txt" "$work_dir/$base-ara.gt.txt" 2>/dev/null && \
+        OMP_THREAD_LIMIT=1 tesseract --tessdata-dir "$(dirname "$ara_path")" "$tif" "$work_dir/$base-ara" \
+            -l ara --oem "$OEM" --psm "$PSM" "$CONFIG_LSTM" 2>/dev/null && \
+        [ -f "$work_dir/$base-ara.lstmf" ] && {
+            mv -f "$work_dir/$base-ara.lstmf" "$TMP_DIR/" 2>/dev/null
+            rm -f "$work_dir/$base-ara.gt.txt" 2>/dev/null
+            echo "S"
+            return 0
+        }
+        rm -f "$work_dir/$base-ara.gt.txt" 2>/dev/null
+    fi
+    
+    # Try eng as last resort
+    if [ -f "$eng_path" ]; then
+        cp -f "$gt_txt" "$work_dir/$base-eng.gt.txt" 2>/dev/null && \
+        OMP_THREAD_LIMIT=1 tesseract --tessdata-dir "$(dirname "$eng_path")" "$tif" "$work_dir/$base-eng" \
+            -l eng --oem "$OEM" --psm "$PSM" "$CONFIG_LSTM" 2>/dev/null && \
+        [ -f "$work_dir/$base-eng.lstmf" ] && {
+            mv -f "$work_dir/$base-eng.lstmf" "$TMP_DIR/" 2>/dev/null
+            rm -f "$work_dir/$base-eng.gt.txt" 2>/dev/null
+            echo "S"
+            return 0
+        }
+        rm -f "$work_dir/$base-eng.gt.txt" 2>/dev/null
+    fi
+    
+    return 1
+}
+
+export -f process_lstmf
+export GT_DIR TMP_DIR CONFIG_LSTM OEM PSM
+export fas_path ara_path eng_path TARGET_TRAINEDDATA CKB_MODEL_DIR
+
+# PERFORMANCE BOOST 3: Disable tesseract debug output globally
+export TESSERACT_STDOUT_QUIET=1
+export TESSERACT_STDERR_QUIET=1
+export SEG_LANGS="${BASE_LANGS[*]}"  # Export as space-separated string
+
+# Check if GNU Parallel is available
+if command -v parallel >/dev/null 2>&1; then
+    echo "🚀 Using parallel processing with $PARALLEL_JOBS workers..."
+    
+    # Verify ground truth directory is accessible
+    if [ ! -d "$GT_DIR" ]; then
+        echo "❌ Ground truth directory not accessible: $GT_DIR"
+        exit 1
+    fi
+    
+    cd "$GT_DIR" || { echo "❌ Cannot cd to $GT_DIR"; exit 1; }
+    
+    # Set locale to avoid perl warnings
+    export LC_ALL=C
+    export LANGUAGE=en_US.UTF-8
+    
+    # Check for already-processed files (resume capability)
+    EXISTING_LSTMF=$(find "$TMP_DIR" -name '*.lstmf' -type f 2>/dev/null | wc -l)
+    if [ "$EXISTING_LSTMF" -gt 0 ]; then
+        echo "� Found $EXISTING_LSTMF existing LSTMF files - will skip regenerating"
+    fi
+    
+    echo "📊 Processing TIF files..."
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    START_TIME=$(date +%s)
+    
+    # Background progress monitor
+    (
+        sleep 10
+        while sleep 5; do
+            CURRENT=$(find "$TMP_DIR" -name '*.lstmf' -type f 2>/dev/null | wc -l)
+            [ "$CURRENT" -eq 0 ] && continue
+            
+            ELAPSED=$(($(date +%s) - START_TIME))
+            RATE=$((ELAPSED > 10 ? CURRENT * 60 / ELAPSED : 0))
+            
+            printf "\r⏳ Generated: %d LSTMF files | Speed: %d/min | Time: %dm%ds        " \
+                "$CURRENT" "$RATE" "$((ELAPSED/60))" "$((ELAPSED%60))"
+        done
+    ) &
+    PROGRESS_PID=$!
+    
+    # Simple parallel processing - tried and tested approach
+    find "$GT_DIR" -maxdepth 1 -name '*.tif' -type f -print 2>/dev/null | \
+        parallel -j "$PARALLEL_JOBS" --will-cite --line-buffer \
+            "process_lstmf {} {%}" 2>/dev/null | grep -c "^S" || true
+    
+    # Stop progress monitor
+    kill $PROGRESS_PID 2>/dev/null
+    wait $PROGRESS_PID 2>/dev/null
+    
+    # Final count
+    FINAL_COUNT=$(find "$TMP_DIR" -name '*.lstmf' -type f 2>/dev/null | wc -l)
+    
+    END_TIME=$(date +%s)
+    ELAPSED=$((END_TIME - START_TIME))
+    MINUTES=$((ELAPSED / 60))
+    SECONDS=$((ELAPSED % 60))
+    
+    echo ""
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "✅ LSTMF Generation Complete!"
+    echo "   Files processed: $FINAL_COUNT"
+    echo "   Time elapsed: ${MINUTES}m ${SECONDS}s"
+    if [ "$ELAPSED" -gt 0 ]; then
+        echo "   Average speed: $((FINAL_COUNT * 60 / ELAPSED)) files/min"
+    fi
+    
+    LSTMF_COUNT=$FINAL_COUNT
+else
+    echo "⚠️  GNU Parallel not found, using sequential processing..."
+    LSTMF_COUNT=0
+    SEG_LANGS=("${BASE_LANGS[@]}")
+    # If we have a target ckb traineddata, also try a ckb segmenter which has the exact recoder we need
+    if [ -f "$TARGET_TRAINEDDATA" ]; then SEG_LANGS+=(ckb); fi
+    CKB_MODEL_DIR=$(dirname "$TARGET_TRAINEDDATA")
+    while IFS= read -r -d '' tif; do
+      base=$(basename "$tif" .tif)
+      gt_txt="$GT_DIR/$base.gt.txt"
+      [ -f "$gt_txt" ] || { echo "⚠️  Missing $base.gt.txt"; continue; }
+      for B in "${SEG_LANGS[@]}"; do
+        MODEL_PATH=""; MODEL_DIR=""
+        case "$B" in
+          fas) MODEL_PATH="$fas_path"; MODEL_DIR=$(dirname "$MODEL_PATH");;
+          ara) MODEL_PATH="$ara_path"; MODEL_DIR=$(dirname "$MODEL_PATH");;
+          eng) MODEL_PATH="$eng_path"; MODEL_DIR=$(dirname "$MODEL_PATH");;
+          ckb) MODEL_PATH="$TARGET_TRAINEDDATA"; MODEL_DIR="$CKB_MODEL_DIR";;
+        esac
+        [ -n "$MODEL_DIR" ] || continue
+        # Ensure matching GT for suffixed output base
+        cp -f "$gt_txt" "$GT_DIR/$base-$B.gt.txt"
+        echo "Creating LSTMF: $base (seg=$B)"
+        {
+          echo "---- $(date -Iseconds) : $base (seg=$B) ----"
+          echo "CMD: tesseract --tessdata-dir '$MODEL_DIR' '$tif' '$base-$B' -l '$B' --oem $OEM --psm $PSM '$CONFIG_LSTM'"
+          tesseract --tessdata-dir "$MODEL_DIR" "$tif" "$base-$B" -l "$B" --oem "$OEM" --psm "$PSM" "$CONFIG_LSTM" 2>&1 || true
+        } >> "$LSTMF_LOG"
+        if [ -f "$GT_DIR/$base-$B.lstmf" ]; then mv -f "$GT_DIR/$base-$B.lstmf" "$TMP_DIR/"; LSTMF_COUNT=$((LSTMF_COUNT+1)); break; else echo "⚠️  Missing $base-$B.lstmf"; fi
+        rm -f "$GT_DIR/$base-$B.gt.txt" 2>/dev/null || true
+      done
+    done < <(find "$GT_DIR" -maxdepth 1 -type f -name '*.tif' -print0)
+fi
+
 [ "$LSTMF_COUNT" -gt 0 ] || { echo "❌ No .lstmf generated. See log: $LSTMF_LOG"; exit 1; }
 echo "✅ Generated $LSTMF_COUNT .lstmf files"
 
