@@ -137,14 +137,40 @@ while true; do
     fi
     mkdir -p "$LOCAL_BATCH" 2>/dev/null || true
     
-    # Filter out complete sets that already exist in batch_tmp
+    # Filter out complete sets that already exist in batch_tmp OR already have LSTMF files
     SETS_TO_COPY=""
+    BATCH_SETS_SKIPPED=0  # Track skipped sets for this batch
     for base in $BATCH_BASENAMES; do
-        # Check if ALL three files exist locally, otherwise need to copy
+        # First check if LSTMF already exists (checkpoint/resume logic)
+        if [ -f "$NETWORK_TMP/$base-fas.lstmf" ] || [ -f "$NETWORK_TMP/$base-ara.lstmf" ] || [ -f "$NETWORK_TMP/$base-eng.lstmf" ]; then
+            # LSTMF exists on network - skip entirely
+            BATCH_SETS_SKIPPED=$((BATCH_SETS_SKIPPED + 1))
+            continue
+        fi
+        if [ -f "$LOCAL_TMP/$base-fas.lstmf" ] || [ -f "$LOCAL_TMP/$base-ara.lstmf" ] || [ -f "$LOCAL_TMP/$base-eng.lstmf" ]; then
+            # LSTMF exists in local tmp - skip entirely
+            BATCH_SETS_SKIPPED=$((BATCH_SETS_SKIPPED + 1))
+            continue
+        fi
+        
+        # LSTMF doesn't exist - check if source files need to be copied to batch_tmp
         if [ ! -f "$LOCAL_BATCH/$base.tif" ] || [ ! -f "$LOCAL_BATCH/$base.gt.txt" ] || [ ! -f "$LOCAL_BATCH/$base.box" ]; then
             SETS_TO_COPY="$SETS_TO_COPY$base"$'\n'
         fi
     done
+    
+    # Report skipped sets
+    if [ "$BATCH_SETS_SKIPPED" -gt 0 ]; then
+        echo "   ⏭️  Skipping $BATCH_SETS_SKIPPED file sets (LSTMF already exists - resuming from checkpoint)"
+    fi
+    
+    # If ALL sets in batch were skipped, skip this batch entirely
+    if [ "$BATCH_SETS_SKIPPED" -eq "$BATCH_COUNT" ]; then
+        echo "   ✅ All $BATCH_COUNT file sets already processed - skipping batch entirely"
+        TOTAL_PROCESSED=$((TOTAL_PROCESSED + BATCH_COUNT))
+        echo ""
+        continue
+    fi
     
     # Only copy if there are sets to copy
     if [ -n "$SETS_TO_COPY" ] && [ "$(echo "$SETS_TO_COPY" | grep -c .)" -gt 0 ]; then
@@ -224,6 +250,7 @@ while true; do
     echo "   ⚡ Processing with $WORKERS workers..."
     START_TIME=$(date +%s)
     echo "   Started at: $(date '+%H:%M:%S')"
+    echo "   💡 Note: Files already processed (LSTMF exists) will be skipped and shown as ⏭ SKIP"
     
     # Simple loop with background jobs - inline processing (no function export needed)
     WORKER_ID=0
@@ -239,13 +266,15 @@ while true; do
         base=$(basename {} .tif)
         worker_id={%}
         
-        # Skip if already processed
-        [ -f "'"$LOCAL_TMP"'/$base-fas.lstmf" ] && exit 0
-        [ -f "'"$LOCAL_TMP"'/$base-ara.lstmf" ] && exit 0
-        [ -f "'"$LOCAL_TMP"'/$base-eng.lstmf" ] && exit 0
-        [ -f "'"$NETWORK_TMP"'/$base-fas.lstmf" ] && exit 0
-        [ -f "'"$NETWORK_TMP"'/$base-ara.lstmf" ] && exit 0
-        [ -f "'"$NETWORK_TMP"'/$base-eng.lstmf" ] && exit 0
+        # Skip if already processed (with visibility)
+        if [ -f "'"$LOCAL_TMP"'/$base-fas.lstmf" ] || [ -f "'"$LOCAL_TMP"'/$base-ara.lstmf" ] || [ -f "'"$LOCAL_TMP"'/$base-eng.lstmf" ]; then
+            echo "   [W$worker_id $(date +%H:%M:%S)] ⏭ SKIP: $base (already in local tmp)"
+            exit 0
+        fi
+        if [ -f "'"$NETWORK_TMP"'/$base-fas.lstmf" ] || [ -f "'"$NETWORK_TMP"'/$base-ara.lstmf" ] || [ -f "'"$NETWORK_TMP"'/$base-eng.lstmf" ]; then
+            echo "   [W$worker_id $(date +%H:%M:%S)] ⏭ SKIP: $base (already on network)"
+            exit 0
+        fi
         
         gt="'"$LOCAL_BATCH"'/$base.gt.txt"
         if [ ! -f "$gt" ]; then
@@ -353,7 +382,17 @@ while true; do
     ARA_COUNT=$(find "$NETWORK_TMP" -name '*-ara.lstmf' -type f 2>/dev/null | wc -l)
     ENG_COUNT=$(find "$NETWORK_TMP" -name '*-eng.lstmf' -type f 2>/dev/null | wc -l)
     
-    echo "   ✓ Batch completed in ${BATCH_TIME}s (processed: $BATCH_COUNT file sets, generated: $BATCH_GENERATED LSTMF)"
+    # Calculate total skipped (pre-skipped + skipped during processing)
+    PROCESSING_SKIPPED=$((BATCH_COUNT - BATCH_SETS_SKIPPED - BATCH_GENERATED))
+    TOTAL_SKIPPED=$((BATCH_SETS_SKIPPED + PROCESSING_SKIPPED))
+    
+    echo "   ✓ Batch completed in ${BATCH_TIME}s"
+    echo "      - Total in batch: $BATCH_COUNT file sets"
+    echo "      - Generated: $BATCH_GENERATED new LSTMF files"
+    echo "      - Skipped (checkpoint): $BATCH_SETS_SKIPPED (LSTMF already existed)"
+    if [ "$PROCESSING_SKIPPED" -gt 0 ]; then
+        echo "      - Skipped (during processing): $PROCESSING_SKIPPED"
+    fi
     echo "   📊 Models: FAS=$FAS_COUNT | ARA=$ARA_COUNT | ENG=$ENG_COUNT | Total=$MOVED_COUNT"
     echo "   📊 Progress: $TOTAL_PROCESSED / $TOTAL_SETS ($PERCENT%) | Speed: $OVERALL_RATE files/min | ETA: ${ETA_MIN} min"
     echo ""
