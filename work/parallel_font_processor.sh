@@ -126,29 +126,33 @@ validate_files() {
     local base="$1"
     local tif_file="${base}.tif"
     local box_file="${base}.box"
+    local gt_file="${base}.gt.txt"
     
-    # Check if both files exist
-    if [ ! -f "$tif_file" ] || [ ! -f "$box_file" ]; then
+    # Check if ALL THREE files exist (TIF + BOX + GT)
+    if [ ! -f "$tif_file" ] || [ ! -f "$box_file" ] || [ ! -f "$gt_file" ]; then
         return 1  # Missing - need to generate
     fi
     
     # Check if files are not empty (corrupted files are often 0 bytes)
     local tif_size=$(stat -f%z "$tif_file" 2>/dev/null || stat -c%s "$tif_file" 2>/dev/null || echo "0")
     local box_size=$(stat -f%z "$box_file" 2>/dev/null || stat -c%s "$box_file" 2>/dev/null || echo "0")
+    local gt_size=$(stat -f%z "$gt_file" 2>/dev/null || stat -c%s "$gt_file" 2>/dev/null || echo "0")
     
-    if [ "$tif_size" -lt 100 ] || [ "$box_size" -lt 10 ]; then
-        # Files are too small, likely corrupted - delete and regenerate
-        rm -f "$tif_file" "$box_file" 2>/dev/null
+    if [ "$tif_size" -lt 100 ] || [ "$box_size" -lt 10 ] || [ "$gt_size" -lt 10 ]; then
+        # Files are too small, likely corrupted - delete ALL THREE and regenerate
+        rm -f "$tif_file" "$box_file" "$gt_file" 2>/dev/null
         return 2  # Corrupted - regenerate with same index
     fi
     
     # Validate TIFF header (should start with "II*" or "MM*")
     local tif_header=$(head -c 4 "$tif_file" 2>/dev/null | od -An -tx1 | tr -d ' \n')
     if [[ ! "$tif_header" =~ ^(49492a00|4d4d002a) ]]; then
-        # Invalid TIFF header - delete and regenerate
-        rm -f "$tif_file" "$box_file" 2>/dev/null
+        # Invalid TIFF header - delete ALL THREE and regenerate
+        rm -f "$tif_file" "$box_file" "$gt_file" 2>/dev/null
         return 2  # Corrupted - regenerate with same index
     fi
+    
+    return 0  # All three files exist and are valid
     
     # Files are valid
     return 0  # Valid - skip
@@ -228,10 +232,23 @@ for EXP in $EXPOSURES; do
                         --exposure="$EXP" \
                         >>"$log_file" 2>&1; then
                         
-                        # Verify the generated files are valid
-                        validate_files "$output_base"
-                        if [ $? -eq 0 ]; then
-                            ((success_count++))
+                        # CRITICAL: Copy GT file from source corpus
+                        # This ensures we have complete file sets (TIF + BOX + GT)
+                        if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
+                            if cp "$CORPUS_SRC" "${output_base}.gt.txt" 2>>"$log_file"; then
+                                # Verify the generated files are valid (all 3 files)
+                                validate_files "$output_base"
+                                if [ $? -eq 0 ]; then
+                                    ((success_count++))
+                                else
+                                    # GT file copy failed or validation failed - clean up
+                                    rm -f "${output_base}.tif" "${output_base}.box" "${output_base}.gt.txt" 2>/dev/null
+                                fi
+                            else
+                                # GT file copy failed - remove incomplete set
+                                rm -f "${output_base}.tif" "${output_base}.box" 2>/dev/null
+                                echo "WARNING: Failed to copy GT file for $output_base" >> "$log_file"
+                            fi
                         fi
                     fi
                     
@@ -259,13 +276,22 @@ for EXP in $EXPOSURES; do
                             fi
                             
                             # Files missing or corrupted - generate them
-                            cp "${output_base}.tif" "${aug_base}.tif" 2>/dev/null
-                            cp "${output_base}.box" "${aug_base}.box" 2>/dev/null
-                            
-                            # Verify the copied files are valid
-                            validate_files "$aug_base"
-                            if [ $? -eq 0 ]; then
-                                ((success_count++))
+                            # Copy ALL THREE files (TIF + BOX + GT)
+                            if cp "${output_base}.tif" "${aug_base}.tif" 2>/dev/null && \
+                               cp "${output_base}.box" "${aug_base}.box" 2>/dev/null && \
+                               cp "${output_base}.gt.txt" "${aug_base}.gt.txt" 2>/dev/null; then
+                                
+                                # Verify the copied files are valid (all 3)
+                                validate_files "$aug_base"
+                                if [ $? -eq 0 ]; then
+                                    ((success_count++))
+                                else
+                                    # Validation failed - clean up incomplete set
+                                    rm -f "${aug_base}.tif" "${aug_base}.box" "${aug_base}.gt.txt" 2>/dev/null
+                                fi
+                            else
+                                # Copy failed - clean up partial files
+                                rm -f "${aug_base}.tif" "${aug_base}.box" "${aug_base}.gt.txt" 2>/dev/null
                             fi
                             
                             ((processed++))

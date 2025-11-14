@@ -306,7 +306,13 @@ generate_single_image() {
         >>"$log_file" 2>&1; then
         
         if [ -f "${output_base}.tif" ] && [ -f "${output_base}.box" ]; then
-            cp "$text_src" "${output_base}.gt.txt" 2>/dev/null || true
+            # CRITICAL: Copy GT file - fail if this doesn't work
+            if ! cp "$text_src" "${output_base}.gt.txt" 2>>"$log_file"; then
+                # GT file copy failed - remove incomplete set and fail
+                rm -f "${output_base}.tif" "${output_base}.box" 2>/dev/null
+                echo "ERROR: Failed to copy GT file for ${output_base}" >> "$log_file"
+                return 1
+            fi
             
             # Apply augmentation if enabled
             if [ "$ENABLE_AUG" = "1" ] && command -v convert >/dev/null 2>&1; then
@@ -330,8 +336,15 @@ generate_single_image() {
                     esac
                     
                     if [ -f "${aug_base}.tif" ]; then
-                        cp "${output_base}.box" "${aug_base}.box" 2>/dev/null || true
-                        cp "${output_base}.gt.txt" "${aug_base}.gt.txt" 2>/dev/null || true
+                        # Copy BOX and GT files - both must succeed
+                        if cp "${output_base}.box" "${aug_base}.box" 2>>"$log_file" && \
+                           cp "${output_base}.gt.txt" "${aug_base}.gt.txt" 2>>"$log_file"; then
+                            : # Success - all 3 files copied
+                        else
+                            # Copy failed - remove incomplete augmented set
+                            rm -f "${aug_base}.tif" "${aug_base}.box" "${aug_base}.gt.txt" 2>/dev/null
+                            echo "WARNING: Failed to copy GT/BOX for ${aug_base}" >> "$log_file"
+                        fi
                     fi
                 done
             fi
