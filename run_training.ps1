@@ -45,7 +45,15 @@ param(
     [int]$BatchWorkers = 22,
     # Corpus builder options
     [switch]$UseFixer,
+    [switch]$NoPreserveArabic,
+    [switch]$PreserveLatinDigits,
     [int]$CorpusMinCount,
+    [double]$MinZWNJ = 0.0,
+    [double]$TargetZWNJ = 0.0,
+    [int]$MinLength = 10,
+    [int]$MaxLength = 500,
+    [double]$MaxNonKurdish = 30.0,
+    [switch]$ValidateZWNJPatterns,
     # Scraper options
     [switch]$ScraperAll,
     [string]$ScraperWebsites,
@@ -322,13 +330,28 @@ function Invoke-BuildCorpus {
     Write-Host "`nBuilding balanced corpus..." -ForegroundColor Yellow
     $argsList = @('python3', 'tools/corpus_build.py')
     if ($UseFixer) { $argsList += '--fixer' }
+    if ($NoPreserveArabic) { $argsList += '--no-preserve-arabic' }
+    if ($PreserveLatinDigits) { $argsList += '--preserve-latin-digits' }
     if ($CorpusMinCount -gt 0) { $argsList += @('--min-count', "$CorpusMinCount") }
+    if ($MinZWNJ -gt 0) { $argsList += @('--min-zwnj', "$MinZWNJ") }
+    if ($TargetZWNJ -gt 0) { $argsList += @('--target-zwnj', "$TargetZWNJ") }
+    if ($MinLength -and $MinLength -ne 10) { $argsList += @('--min-length', "$MinLength") }
+    if ($MaxLength -and $MaxLength -ne 500) { $argsList += @('--max-length', "$MaxLength") }
+    if ($MaxNonKurdish -and $MaxNonKurdish -ne 30.0) { $argsList += @('--max-non-kurdish', "$MaxNonKurdish") }
+    if ($ValidateZWNJPatterns) { $argsList += '--validate-zwnj-patterns' }
     # Join arguments directly; no extra quoting needed for simple tokens
     $cmd = ($argsList -join ' ')
     wsl -d Ubuntu -- bash -lc "cd '$workDirWsl'; $cmd"; $code = $LASTEXITCODE
     if ($code -eq 2) { Write-Host "No corpus sources found; skipping corpus build." -ForegroundColor DarkYellow; return }
     if ($code -ne 0) { throw "Corpus build failed (exit $code)." }
-    Write-Host "Corpus build complete (corpus/ckb.training_text.final)." -ForegroundColor Green
+    
+    # Display stats
+    $statsFile = Join-Path $workDirWin "output\corpus_stats.txt"
+    if (Test-Path $statsFile) {
+        Write-Host "`n--- Corpus Build Stats ---" -ForegroundColor Cyan
+        Get-Content $statsFile | Write-Host
+    }
+    Write-Host "`nCorpus build complete (corpus/ckb.training_text.final)." -ForegroundColor Green
 
     # Run corpus audit (non-fatal but reported)
     Write-Host "Running corpus audit..." -ForegroundColor Yellow

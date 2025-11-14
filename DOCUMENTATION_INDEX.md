@@ -8,18 +8,31 @@
 
 ### Core Documentation
 
-| File                                                     | Purpose                            | When to Read                  |
-| -------------------------------------------------------- | ---------------------------------- | ----------------------------- |
-| **[README.md](README.md)**                               | Project overview and setup         | First time setup              |
-| **[PHASE6_COMPLETE.md](PHASE6_COMPLETE.md)**             | Phase 6 final results and analysis | Understanding current state   |
-| **[PHASE7_COMPLETE_GUIDE.md](PHASE7_COMPLETE_GUIDE.md)** | Complete Phase 7 workflow          | **START HERE for Phase 7** ⭐ |
+| File                                                                             | Purpose                            | When to Read                  |
+| -------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------- |
+| **[README.md](README.md)**                                                       | Project overview and setup         | First time setup              |
+| **[docs/phases/PHASE6_COMPLETE.md](docs/phases/PHASE6_COMPLETE.md)**             | Phase 6 final results and analysis | Understanding current state   |
+| **[docs/phases/PHASE7_COMPLETE_GUIDE.md](docs/phases/PHASE7_COMPLETE_GUIDE.md)** | Complete Phase 7 workflow          | **START HERE for Phase 7** ⭐ |
 
 ### Technical Analysis
 
-| File                                                               | Purpose                    | When to Read                        |
-| ------------------------------------------------------------------ | -------------------------- | ----------------------------------- |
-| **[UNICODE_CHARACTER_ANALYSIS.md](UNICODE_CHARACTER_ANALYSIS.md)** | Unicode character insights | Understanding ZWNJ/character issues |
-| **[ZWNJ_TATWEEL_SUMMARY.md](ZWNJ_TATWEEL_SUMMARY.md)**             | ZWNJ analysis summary      | Understanding quality metrics       |
+| File                                                                                                               | Purpose                            | When to Read                              |
+| ------------------------------------------------------------------------------------------------------------------ | ---------------------------------- | ----------------------------------------- |
+| **[docs/normalization/CORPUS_NORMALIZATION.md](docs/normalization/CORPUS_NORMALIZATION.md)**                       | Corpus normalization guide         | Processing and cleaning corpus text       |
+| **[docs/normalization/NORMALIZATION_COMPLETE_SUMMARY.md](docs/normalization/NORMALIZATION_COMPLETE_SUMMARY.md)**   | Complete normalization overview ⭐ | Understanding entire normalization system |
+| **[docs/normalization/NORMALIZATION_IMPROVEMENTS_v2.2.md](docs/normalization/NORMALIZATION_IMPROVEMENTS_v2.2.md)** | Latest normalization features      | Understanding v2.2 improvements           |
+| **[docs/normalization/NORMALIZATION_IMPROVEMENTS_v2.1.md](docs/normalization/NORMALIZATION_IMPROVEMENTS_v2.1.md)** | Version 2.1 normalization features | Understanding v2.1 improvements           |
+| **[docs/normalization/NORMALIZATION_IMPROVEMENTS_v2.md](docs/normalization/NORMALIZATION_IMPROVEMENTS_v2.md)**     | Version 2.0 normalization features | Understanding v2.0 improvements           |
+| **[docs/normalization/MIXED_KURDISH_ARABIC_HANDLING.md](docs/normalization/MIXED_KURDISH_ARABIC_HANDLING.md)**     | Mixed language text handling       | When corpus contains Arabic/Latin words   |
+| **[docs/analysis/UNICODE_CHARACTER_ANALYSIS.md](docs/analysis/UNICODE_CHARACTER_ANALYSIS.md)**                     | Unicode character insights         | Understanding ZWNJ/character issues       |
+| **[docs/analysis/ZWNJ_TATWEEL_SUMMARY.md](docs/analysis/ZWNJ_TATWEEL_SUMMARY.md)**                                 | ZWNJ analysis summary              | Understanding quality metrics             |
+
+### User Guides
+
+| File                                                                                         | Purpose                             | When to Read                       |
+| -------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------- |
+| **[docs/guides/CORPUS_BUILDER_ENHANCEMENTS.md](docs/guides/CORPUS_BUILDER_ENHANCEMENTS.md)** | Corpus builder v3.0 features ⭐ NEW | Building high-quality corpus       |
+| **[RUN_TRAINING_OPTIONS.md](RUN_TRAINING_OPTIONS.md)**                                       | Complete run_training.ps1 reference | Understanding all training options |
 
 ### Scraper System
 
@@ -132,14 +145,14 @@ c:\tesseract\
 
 ### For Phase 7 (Improving Accuracy)
 
-**Read:** [PHASE7_COMPLETE_GUIDE.md](PHASE7_COMPLETE_GUIDE.md) ⭐
+**Read:** [docs/phases/PHASE7_COMPLETE_GUIDE.md](docs/phases/PHASE7_COMPLETE_GUIDE.md) ⭐
 
 **Quick Steps:**
 
 1. Use scraper to get biographical content: `cd work/tools/scrapers && ./scrape.sh`
 2. Validate ZWNJ density: `python work/tools/validate_source_quality.py sample.txt`
 3. If ACCEPT (6-10% ZWNJ), proceed to training
-4. Build corpus: `.\run_training.ps1 -Mode BuildCorpus ...`
+4. Build corpus: `.\run_training.ps1 -Mode BuildCorpus -UseFixer -MinZWNJ 3.0 -TargetZWNJ 6.0`
 5. Train: `.\run_training.ps1 -Mode GenerateTrain -LatinDigits`
 6. Evaluate: `.\run_training.ps1 -Mode Eval -EvalPSMs "6,11,7,13"`
 
@@ -164,9 +177,11 @@ python3 run_production_display.py --config configs/websites --all --parallel --w
 **Quick Commands:**
 
 ```powershell
-# Build corpus
-.\run_training.ps1 -Mode BuildCorpus -UseFixer -KeepRTLControls `
-    -BalanceDigits -BalanceLatinDigits -BalancePuncs -CorpusMinCount 1
+# Build corpus with advanced quality filters (v3.0 NEW!)
+.\run_training.ps1 -Mode BuildCorpus -UseFixer `
+    -MinZWNJ 3.0 -TargetZWNJ 8.0 `
+    -MinLength 30 -MaxLength 200 `
+    -MaxNonKurdish 20.0
 
 # Generate training data and train
 .\run_training.ps1 -Mode GenerateTrain -LatinDigits
@@ -177,6 +192,8 @@ python3 run_production_display.py --config configs/websites --all --parallel --w
 # Full evaluation
 .\run_training.ps1 -Mode Eval -EvalPSMs "6,11,7,13"
 ```
+
+**See:** [docs/guides/CORPUS_BUILDER_ENHANCEMENTS.md](docs/guides/CORPUS_BUILDER_ENHANCEMENTS.md) for complete corpus builder guide ⭐
 
 ---
 

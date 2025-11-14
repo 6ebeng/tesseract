@@ -11,14 +11,42 @@ import re
 import unicodedata
 
 class KurdishCharacterFixer:
-    def __init__(self):
+    def __init__(self, preserve_arabic_words=True, preserve_latin_digits=False, verbose=False):
+        """
+        Initialize Kurdish character fixer.
+        
+        Args:
+            preserve_arabic_words: If True, preserves Arabic-only characters (ص، ض، ط، ظ، ذ)
+                                   in words that appear to be Arabic loanwords/proper nouns.
+                                   If False, always converts to Kurdish phonetic equivalents.
+                                   Default: True (recommended for mixed Kurdish-Arabic text)
+            preserve_latin_digits: If True, keeps Latin digits (0-9) unchanged.
+                                   If False, converts to Arabic-Indic (default Sorani style).
+                                   Default: False (convert to Arabic-Indic)
+            verbose: If True, tracks and reports normalization statistics.
+                     Default: False
+        """
+        self.preserve_arabic_words = preserve_arabic_words
+        self.preserve_latin_digits = preserve_latin_digits
+        self.verbose = verbose
+        self.stats = {'changes': 0, 'arabic_preserved': 0, 'digits_converted': 0} if verbose else None
+        
         # Basic normalization mappings (codepoint-level) for Sorani
         self.letter_map = {
             # Arabic to Kurdish codepoint unification
             '\u0643': '\u06A9',  # ك -> ک (KEHEH)
             '\u064A': '\u06CC',  # ي -> ی (FARSI YEH)
-            '\u0649': '\u06D5',  # ى -> ە (AE) when misused
-            '\u0629': '\u06D5',  # ة -> ە (AE)
+            '\u0649': '\u06D5',  # ى -> ە (AE) when misused as alef maksura
+            '\u0629': '\u06D5',  # ة -> ە (AE) teh marbuta
+            # Additional Arabic characters with hamza variants
+            '\u0622': '\u0626\u0627',  # آ (ALEF WITH MADDA ABOVE) -> ئا
+            '\u0623': '\u0626\u0627',  # أ (ALEF WITH HAMZA ABOVE) -> ئا
+            '\u0625': '\u0626\u06CC', # إ (ALEF WITH HAMZA BELOW) -> ئی
+            '\u0624': '\u0626\u0648',  # ؤ (WAW WITH HAMZA ABOVE) -> ئو
+            '\u06c0': '\u0647\u06d5',  # ۀ (HEH WITH YEH ABOVE) -> هە
+            # Special: ه + ZWNJ -> ە (Kurdish-specific normalization)
+            # In Kurdish, "ه" + ZWNJ is often used instead of "ە" (AE)
+            '\u0647\u200c': '\u06d5',  # ه‌ -> ە
             # NOTE: Removed ه‌ -> ه mapping - ZWNJ is essential!
         }
         # Persian digits -> Arabic-Indic digits (Sorani default)
@@ -27,21 +55,78 @@ class KurdishCharacterFixer:
             '\u06F4': '\u0664', '\u06F5': '\u0665', '\u06F6': '\u0666', '\u06F7': '\u0667',
             '\u06F8': '\u0668', '\u06F9': '\u0669',
         }
+        # Latin digits -> Arabic-Indic (optional, based on preserve_latin_digits)
+        self.latin_digit_map = {
+            '0': '٠', '1': '١', '2': '٢', '3': '٣', '4': '٤',
+            '5': '٥', '6': '٦', '7': '٧', '8': '٨', '9': '٩',
+        }
         # Punctuation normalization
         self.punc_map = {
-            ',': '،',
-            '?': '؟',
-            '%': '٪',
+            ',': '،',   # ARABIC COMMA
+            '?': '؟',   # ARABIC QUESTION MARK
+            '%': '٪',   # ARABIC PERCENT SIGN
+            ';': '؛',   # ARABIC SEMICOLON
+        }
+        # Quotation mark normalization (optional - may vary by preference)
+        self.quote_map = {
+            '"': '"',   # Straight quote -> Arabic quote (or use „ for Kurdish)
+            "'": "'",   # Straight apostrophe -> right single quote
+            '`': "'",   # Backtick -> apostrophe
+            '``': '"',  # Double backtick -> opening quote
+            "''": '"',  # Double apostrophe -> closing quote
         }
         # Characters to drop entirely
         # NOTE: ZWNJ (U+200C) is ESSENTIAL for Kurdish - DO NOT drop it!
         # It controls character joining and word boundaries in Arabic script.
         self.drop_chars = set([
-            '\u0640',             # tatweel
+            '\u0640',             # tatweel (Arabic kashida)
             '\u200D',            # ZWJ (keep ZWNJ, remove ZWJ)
-            '\u200E', '\u200F',  # LRM, RLM
+            '\u200E', '\u200F',  # LRM, RLM (left-to-right/right-to-left marks)
             '\u202A', '\u202B', '\u202C', '\u202D', '\u202E', # bidi embeddings/override/PDF
+            '\u00AD',            # soft hyphen
+            '\u200B',            # zero-width space (distinct from ZWNJ!)
+            '\u2009',            # thin space
+            '\uFEFF',            # zero-width no-break space (BOM when not at start)
         ])
+        # Extra Arabic/Persian characters not used in Kurdish Sorani
+        # These appear in Arabic loanwords/proper nouns
+        # Only apply if preserve_arabic_words=False, otherwise keep these in Arabic words
+        self.extra_arabic_chars = set([
+            '\u0635',  # ص (SAD)
+            '\u0636',  # ض (DAD)
+            '\u0637',  # ط (TAH)
+            '\u0638',  # ظ (ZAH)
+            '\u0630',  # ذ (THAL)
+        ])
+        
+        # Phonetic mappings for extra Arabic chars (only if not preserving Arabic words)
+        self.extra_arabic_map = {
+            '\u0635': '\u0633',  # ص (SAD) -> س (SEEN)
+            '\u0636': '\u062F',  # ض (DAD) -> د (DAL)
+            '\u0637': '\u062A',  # ط (TAH) -> ت (TEH)
+            '\u0638': '\u0632',  # ظ (ZAH) -> ز (ZAIN)
+            '\u0630': '\u062F',  # ذ (THAL) -> د (DAL)
+        }
+        
+        # Common Arabic words/patterns to always preserve (religious, formal terms)
+        # These are kept as-is even if preserve_arabic_words=False
+        self.arabic_word_patterns = [
+            r'\bالله\b',           # Allah
+            r'\bمحمد\b',          # Muhammad
+            r'\bالقرآن\b',        # Quran
+            r'\bالصلاة\b',        # Prayer
+            r'\bالصوم\b',         # Fasting
+            r'\bالحج\b',          # Hajj
+            r'\bالزكاة\b',        # Zakat
+            r'\bصلى الله عليه وسلم\b',  # PBUH
+            r'\bرضي الله عنه\b',  # May Allah be pleased with him
+            r'\bرحمة الله\b',     # Allah's mercy
+            r'\bإن شاء الله\b',   # Inshallah
+            r'\bمشاء الله\b',     # Mashallah
+            r'\bبسم الله\b',      # Bismillah
+            r'\bالحمد لله\b',     # Alhamdulillah
+            r'\bسبحان الله\b',    # Subhanallah
+        ]
         # Mapping of commonly misrecognized patterns to Kurdish characters
         self.character_patterns = {
             # گ (gaf) recognition patterns
@@ -135,8 +220,19 @@ class KurdishCharacterFixer:
             'ڵام': ['لام', 'ڵام'],
         }
 
+    def get_stats(self):
+        """Return normalization statistics (only if verbose=True)"""
+        return self.stats.copy() if self.stats else None
+    
+    def reset_stats(self):
+        """Reset statistics counter (only if verbose=True)"""
+        if self.stats:
+            self.stats = {'changes': 0, 'arabic_preserved': 0, 'digits_converted': 0}
+    
     def fix_kurdish_text(self, text):
         """Apply comprehensive Kurdish character fixes"""
+        if self.verbose:
+            self.stats['changes'] += 1
         fixed_text = self._normalize_text(text)
         
         # Apply character-specific pattern fixes
@@ -153,6 +249,58 @@ class KurdishCharacterFixer:
         fixed_text = self._apply_general_fixes(fixed_text)
         
         return fixed_text.strip()
+    
+    def _is_latin_word(self, word):
+        """
+        Check if a word is Latin/English (common in Kurdish text).
+        
+        Examples: "COVID-19", "iPhone", "Internet", "Windows"
+        """
+        # Remove punctuation for checking
+        word_clean = re.sub(r'[^\w]', '', word)
+        if not word_clean:
+            return False
+        
+        # If predominantly Latin characters, it's a Latin word
+        latin_chars = sum(1 for c in word_clean if ord(c) < 128)  # ASCII range
+        total_chars = len(word_clean)
+        
+        # If >50% Latin characters, consider it a Latin word
+        return latin_chars > total_chars * 0.5
+    
+    def _is_arabic_word(self, word):
+        """
+        Check if a word appears to be an Arabic loanword/proper noun.
+        
+        Heuristics:
+        1. Contains Arabic-only characters (ص، ض، ط، ظ، ذ)
+        2. Matches known Arabic word patterns
+        3. Has Arabic morphological markers
+        """
+        # Check for Arabic-only characters
+        has_arabic_chars = any(c in word for c in self.extra_arabic_chars)
+        if not has_arabic_chars:
+            return False
+        
+        # Check known Arabic patterns
+        for pattern in self.arabic_word_patterns:
+            if re.search(pattern, word):
+                return True
+        
+        # Check for common Arabic prefixes/suffixes
+        arabic_markers = [
+            r'^ال',      # Definite article "al-"
+            r'ة$',       # Teh marbuta ending (feminine)
+            r'^مُ',      # Prefix "mu-"
+            r'ون$',      # Plural ending "-oon"
+            r'ين$',      # Plural ending "-een"
+        ]
+        
+        for marker in arabic_markers:
+            if re.search(marker, word):
+                return True
+        
+        return False
     
     def _normalize_text(self, text: str) -> str:
         """Systematic normalization for Sorani Kurdish corpus.
@@ -176,11 +324,62 @@ class KurdishCharacterFixer:
         # Map letters (simple pass)
         for src, dst in self.letter_map.items():
             text = text.replace(src, dst)
+        
+        # Map extra Arabic/Persian chars (smart mode)
+        if self.preserve_arabic_words:
+            # Word-by-word processing to preserve Arabic AND Latin/English words
+            words = re.split(r'(\s+)', text)  # Split but keep delimiters
+            processed_words = []
+            
+            for word in words:
+                if word.strip():  # Non-whitespace word
+                    # Check if it's a Latin/English word (preserve as-is)
+                    if self._is_latin_word(word):
+                        processed_words.append(word)
+                    # Check if it's an Arabic word (preserve as-is)
+                    elif self._is_arabic_word(word):
+                        # Keep Arabic word as-is
+                        processed_words.append(word)
+                        if self.verbose:
+                            self.stats['arabic_preserved'] += 1
+                    else:
+                        # Apply Kurdish phonetic normalization
+                        normalized_word = word
+                        for src, dst in self.extra_arabic_map.items():
+                            normalized_word = normalized_word.replace(src, dst)
+                        processed_words.append(normalized_word)
+                else:
+                    # Preserve whitespace
+                    processed_words.append(word)
+            
+            text = ''.join(processed_words)
+        else:
+            # Aggressive mode: always convert to Kurdish phonetics
+            for src, dst in self.extra_arabic_map.items():
+                text = text.replace(src, dst)
+        
         # Map Persian digits to Arabic-Indic
         for src, dst in self.persian_digit_map.items():
-            text = text.replace(src, dst)
+            if src in text:
+                text = text.replace(src, dst)
+                if self.verbose:
+                    self.stats['digits_converted'] += text.count(dst)
+        
+        # Map Latin digits to Arabic-Indic (unless preserving)
+        if not self.preserve_latin_digits:
+            for src, dst in self.latin_digit_map.items():
+                if src in text:
+                    count = text.count(src)
+                    text = text.replace(src, dst)
+                    if self.verbose and count > 0:
+                        self.stats['digits_converted'] += count
+        
         # Normalize punctuation
         for src, dst in self.punc_map.items():
+            text = text.replace(src, dst)
+        
+        # Normalize quotation marks
+        for src, dst in self.quote_map.items():
             text = text.replace(src, dst)
         # Collapse multiple spaces/newlines gently (PRESERVE newlines!)
         text = re.sub(r'[\t\x0b\x0c\r]', ' ', text)
@@ -193,11 +392,12 @@ class KurdishCharacterFixer:
     def _apply_general_fixes(self, text):
         """Apply general Kurdish text fixes"""
         # Additional conservative substitutions after normalization
+        # Note: Most of these are now in letter_map, but kept here as backup
         basic_fixes = {
             'ث': 'ت',   # Arabic THEH rarely appears; map to TEH if present
-            'ؤ': 'ۆ',   # WAW with hamza -> Kurdish "o"
-            'أ': 'ئا',  # Alif with hamza above -> hamza + alif
-            'إ': 'ئی',  # Alif with hamza below -> hamza + yeh
+            # Removed 'ؤ': 'ۆ' - now correctly mapped to 'ئو' in letter_map
+            # Removed 'أ': 'ئا' - now in letter_map
+            # Removed 'إ': 'ئی' - now in letter_map
         }
         for old, new in basic_fixes.items():
             text = text.replace(old, new)
