@@ -45,6 +45,7 @@ param(
     [int]$BatchWorkers = 22,
     # Corpus builder options
     [switch]$UseFixer,
+    [switch]$StripZWNJ,
     [switch]$NoPreserveArabic,
     [switch]$PreserveLatinDigits,
     [int]$CorpusMinCount,
@@ -330,6 +331,7 @@ function Invoke-BuildCorpus {
     Write-Host "`nBuilding balanced corpus..." -ForegroundColor Yellow
     $argsList = @('python3', 'tools/corpus_build.py')
     if ($UseFixer) { $argsList += '--fixer' }
+    if ($StripZWNJ) { $argsList += '--strip-zwnj' }
     if ($NoPreserveArabic) { $argsList += '--no-preserve-arabic' }
     if ($PreserveLatinDigits) { $argsList += '--preserve-latin-digits' }
     if ($CorpusMinCount -gt 0) { $argsList += @('--min-count', "$CorpusMinCount") }
@@ -540,6 +542,18 @@ function Invoke-GenerateTrain {
 # Generate only (no training)
 function Invoke-GenerateOnly {
     Write-Host "`nGenerating training data (only)..." -ForegroundColor Yellow
+    
+    # Mount Z: drive if using OutputDirOverride on network drive
+    if ($OutputDirOverride -and $OutputDirOverride -like 'Z:*') {
+        Write-Host "🔧 Mounting Z: drive in WSL..." -ForegroundColor Cyan
+        wsl -d Ubuntu -- bash -c "sudo umount /mnt/z 2>/dev/null; sudo mkdir -p /mnt/z; sudo mount -t drvfs 'Z:' /mnt/z -o metadata,uid=1000,gid=1000" 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Z: drive mounted successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠️  Z: drive mount may have failed - check WSL sudo access" -ForegroundColor Yellow
+        }
+    }
+    
     $genEnv = Get-GenEnvPrefix
     # Preflight (Windows side)
     $genScriptWin = Join-Path $workDirWin 'generate_ckb_training_data.sh'
@@ -583,9 +597,11 @@ function Invoke-Train {
     # Mount Z: drive if using OutputDirOverride on network drive
     if ($OutputDirOverride -and $OutputDirOverride -like 'Z:*') {
         Write-Host "🔧 Mounting Z: drive in WSL..." -ForegroundColor Cyan
-        wsl -d Ubuntu -- bash -c "sudo umount /mnt/z 2>/dev/null; sudo mount -t drvfs 'Z:' /mnt/z -o metadata,uid=1000,gid=1000" | Out-Null
+        wsl -d Ubuntu -- bash -c "sudo umount /mnt/z 2>/dev/null; sudo mkdir -p /mnt/z; sudo mount -t drvfs 'Z:' /mnt/z -o metadata,uid=1000,gid=1000"
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "✓ Z: drive mounted successfully" -ForegroundColor Green
+            Write-Host "✅ Z: drive mounted successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠️  Z: drive mount failed" -ForegroundColor Yellow
         }
     }
     
@@ -868,18 +884,14 @@ function Invoke-ImprovedGenerate {
     
     # Auto-mount Z: drive if using custom output path on NAS
     if ($OutputDirOverride -and $OutputDirOverride.StartsWith("Z:\")) {
-        Write-Host "🔧 Setting up Z: drive mount for NAS storage..." -ForegroundColor Cyan
-        $mountScript = Join-Path $projectRootWin 'setup_z_mount.sh'
-        if (Test-Path $mountScript) {
-            $mountCmd = "echo tishko | sudo -S bash /mnt/c/tesseract/setup_z_mount.sh"
-            $null = wsl -d Ubuntu -- bash -c $mountCmd 2>&1
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "✅ Z: drive mounted successfully" -ForegroundColor Green
-            } else {
-                Write-Host "⚠️  Z: drive mount may have failed - continuing anyway..." -ForegroundColor Yellow
-            }
+        Write-Host "🔧 Mounting Z: drive in WSL..." -ForegroundColor Cyan
+        
+        # Mount Z: drive with proper permissions (passwordless sudo already configured)
+        wsl -d Ubuntu -- bash -c "sudo umount /mnt/z 2>/dev/null; sudo mkdir -p /mnt/z; sudo mount -t drvfs 'Z:' /mnt/z -o metadata,uid=1000,gid=1000" 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ Z: drive mounted successfully" -ForegroundColor Green
         } else {
-            Write-Host "⚠️  Z: drive mount script not found - continuing anyway..." -ForegroundColor Yellow
+            Write-Host "⚠️  Z: drive mount failed" -ForegroundColor Yellow
         }
         Write-Host ""
     }

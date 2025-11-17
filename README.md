@@ -58,6 +58,24 @@ tesseract/
 
 ## 🚀 Quick Start
 
+### 0. Build High-Quality Corpus (Recommended First Step)
+
+```powershell
+# Build optimized corpus with normalization and quality filters
+.\run_training.ps1 -Mode BuildCorpus -UseFixer -StripZWNJ -MinLength 20 -MaxLength 300 -MaxNonKurdish 10.0 -CorpusMinCount 1
+
+# Check quality
+wsl -d Ubuntu -- bash -lc "cd '/mnt/c/tesseract/work' && cat output/corpus_stats.txt"
+```
+
+**What it does:**
+
+- Normalizes Kurdish characters (ه‌ → ە, ھ → ه)
+- Removes ZWNJ control characters (clean text)
+- Filters sentences by length (20-300 chars)
+- Ensures high Kurdish purity (max 10% non-Kurdish chars)
+- Produces ~20,830 high-quality sentences
+
 ### 1. Generate Training Data (Parallel Mode)
 
 ```powershell
@@ -273,30 +291,55 @@ Write-Host "$percent% complete ($files / $total files)"
 - **Output**: Z:\training_output_best\ground_truth\
 - **Estimated Remaining**: ~19 hours (with 3 workers)
 
-### Phase 6-7: OCR Accuracy ✅
+### Phase 6-7: OCR Accuracy & Corpus Quality ✅
+
+**Corpus Quality Achievement:**
+
+- ✅ **20,830 high-quality sentences** (from 100,318 raw)
+- ✅ **0% ZWNJ density** - perfect normalization (ه‌ → ە conversion)
+- ✅ **99.998% character purity** (only 44 out-of-set chars in 2.98M)
+- ✅ **Advanced normalization**: ھ→ه, quote normalization, punctuation handling
+- ✅ **Quality score**: 9.51/10.0 (excellent)
+- ✅ **Character coverage**: All Kurdish letters, digits, punctuation
+
+**Normalization Improvements:**
+
+- ✅ Converted all "ه + ZWNJ" to Kurdish "ە" (45,000+ instances)
+- ✅ Normalized Arabic HEH DOACHASHMEE (ھ) to Kurdish HEH (ه)
+- ✅ Standardized quotation marks to Arabic quotes (« »)
+- ✅ Normalized dashes, ellipsis, and special characters
+- ✅ Removed all unnecessary ZWNJ control characters
 
 **Baseline Achievement:**
 
 - ✅ **76.9% accuracy** on modern Kurdish news text
 - ⚠️ **71.69% accuracy** on biographical text
-- ✅ **ZWNJ density:** 9.331% in training corpus (excellent quality)
 - ✅ **Model ready for production deployment**
 
 **Current Goal:**
 
-- 🎯 Improve biographical accuracy from 71.69% → **76%+** with Best profile
+- 🎯 Train with improved high-quality corpus (99.998% purity)
 - 🎯 Leverage 60× larger training dataset (87k vs 1.4k images)
-- 🎯 Target: High-quality corpus with 6-10% ZWNJ density
+- 🎯 Target: Improve biographical accuracy from 71.69% → **76%+**
 
-**Quality Indicators:**
+**Quality Metrics:**
 
-- **ZWNJ (U+200C):** 9-11% density indicates proper Kurdish formatting
-- **News corpus:** High-quality source with proper ZWNJ usage
+- **Character purity**: 99.998% (44 outliers in 2.98M characters)
+- **Quality score**: 9.51/10.0 (excellent)
+- **ZWNJ handling**: All ه‌ converted to proper ە letter (45,000+ instances)
+- **Average sentence length**: 142.3 chars (optimal for training)
+- **Corpus size**: 20,830 sentences, 2.98M characters
+
+**Why 0% ZWNJ is Good:**
+
+- Kurdish Sorani has a proper letter **ە (AE, U+06D5)** for the sound
+- Using "ه + ZWNJ" was a historical workaround that hurt Kurdish text quality
+- We now use the correct letter ە, making ZWNJ unnecessary
+- Clean normalized text trains better OCR models
 
 **See:**
 
-- [UNICODE_CHARACTER_ANALYSIS.md](UNICODE_CHARACTER_ANALYSIS.md) - Detailed quality analysis
-- [ZWNJ_TATWEEL_SUMMARY.md](ZWNJ_TATWEEL_SUMMARY.md) - Character usage patterns
+- [docs/kurdish_characters.md](docs/kurdish_characters.md) - Kurdish script reference
 
 ### Working Websites (13/14)
 

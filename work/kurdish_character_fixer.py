@@ -11,7 +11,7 @@ import re
 import unicodedata
 
 class KurdishCharacterFixer:
-    def __init__(self, preserve_arabic_words=True, preserve_latin_digits=False, verbose=False):
+    def __init__(self, preserve_arabic_words=True, preserve_latin_digits=False, verbose=False, strip_zwnj=False):
         """
         Initialize Kurdish character fixer.
         
@@ -25,10 +25,13 @@ class KurdishCharacterFixer:
                                    Default: False (convert to Arabic-Indic)
             verbose: If True, tracks and reports normalization statistics.
                      Default: False
+            strip_zwnj: If True, removes remaining ZWNJ after ه‌→ە conversion.
+                        Default: False (preserve ZWNJ for compound words)
         """
         self.preserve_arabic_words = preserve_arabic_words
         self.preserve_latin_digits = preserve_latin_digits
         self.verbose = verbose
+        self.strip_zwnj = strip_zwnj
         self.stats = {'changes': 0, 'arabic_preserved': 0, 'digits_converted': 0} if verbose else None
         
         # Basic normalization mappings (codepoint-level) for Sorani
@@ -38,6 +41,7 @@ class KurdishCharacterFixer:
             '\u064A': '\u06CC',  # ي -> ی (FARSI YEH)
             '\u0649': '\u06D5',  # ى -> ە (AE) when misused as alef maksura
             '\u0629': '\u06D5',  # ة -> ە (AE) teh marbuta
+            '\u06BE': '\u0647',  # ھ (HEH DOACHASHMEE) -> ه (HEH)
             # Additional Arabic characters with hamza variants
             '\u0622': '\u0626\u0627',  # آ (ALEF WITH MADDA ABOVE) -> ئا
             '\u0623': '\u0626\u0627',  # أ (ALEF WITH HAMZA ABOVE) -> ئا
@@ -67,20 +71,25 @@ class KurdishCharacterFixer:
             '%': '٪',   # ARABIC PERCENT SIGN
             ';': '؛',   # ARABIC SEMICOLON
         }
-        # Quotation mark normalization (optional - may vary by preference)
+        # Quotation mark and other symbol normalization
         self.quote_map = {
-            '"': '"',   # Straight quote -> Arabic quote (or use „ for Kurdish)
+            '"': '«',   # Straight quote -> Arabic left quote
             "'": "'",   # Straight apostrophe -> right single quote
             '`': "'",   # Backtick -> apostrophe
-            '``': '"',  # Double backtick -> opening quote
-            "''": '"',  # Double apostrophe -> closing quote
+            '\u201C': '«',  # Left double quotation mark -> Arabic left quote
+            '\u201D': '»',  # Right double quotation mark -> Arabic right quote
+            '\u2018': '‹',  # Left single quotation mark -> single left angle quote
+            '\u2019': '›',  # Right single quotation mark -> single right angle quote
+            '\u2013': '-',  # En dash -> hyphen
+            '\u2014': '-',  # Em dash -> hyphen
+            '\u2026': '...',  # Ellipsis -> three dots
         }
         # Characters to drop entirely
-        # NOTE: ZWNJ (U+200C) is ESSENTIAL for Kurdish - DO NOT drop it!
-        # It controls character joining and word boundaries in Arabic script.
+        # NOTE: ZWNJ (U+200C) handling depends on strip_zwnj parameter
+        # After ه‌ → ە conversion, remaining ZWNJs are often unnecessary
         self.drop_chars = set([
             '\u0640',             # tatweel (Arabic kashida)
-            '\u200D',            # ZWJ (keep ZWNJ, remove ZWJ)
+            '\u200D',            # ZWJ (keep ZWNJ unless strip_zwnj=True)
             '\u200E', '\u200F',  # LRM, RLM (left-to-right/right-to-left marks)
             '\u202A', '\u202B', '\u202C', '\u202D', '\u202E', # bidi embeddings/override/PDF
             '\u00AD',            # soft hyphen
@@ -88,6 +97,9 @@ class KurdishCharacterFixer:
             '\u2009',            # thin space
             '\uFEFF',            # zero-width no-break space (BOM when not at start)
         ])
+        # Add ZWNJ to drop list if strip_zwnj is enabled
+        if self.strip_zwnj:
+            self.drop_chars.add('\u200C')  # ZWNJ
         # Extra Arabic/Persian characters not used in Kurdish Sorani
         # These appear in Arabic loanwords/proper nouns
         # Only apply if preserve_arabic_words=False, otherwise keep these in Arabic words

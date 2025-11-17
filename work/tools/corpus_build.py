@@ -73,7 +73,7 @@ def nfc(s: str) -> str:
         return s
 
 
-def apply_fixer(text: str, preserve_arabic: bool = True, preserve_latin_digits: bool = False) -> str:
+def apply_fixer(text: str, preserve_arabic: bool = True, preserve_latin_digits: bool = False, strip_zwnj: bool = False) -> str:
     # Import fixer dynamically if present
     import importlib.util
     spec = importlib.util.spec_from_file_location('kfix', str(FIXER_PATH))
@@ -83,7 +83,8 @@ def apply_fixer(text: str, preserve_arabic: bool = True, preserve_latin_digits: 
         fixer = getattr(kfix, 'KurdishCharacterFixer', None)
         if fixer:
             return fixer(preserve_arabic_words=preserve_arabic, 
-                        preserve_latin_digits=preserve_latin_digits).fix_kurdish_text(text)
+                        preserve_latin_digits=preserve_latin_digits,
+                        strip_zwnj=strip_zwnj).fix_kurdish_text(text)
     return text
 
 
@@ -168,27 +169,21 @@ def calculate_overall_quality(text: str, target_zwnj: float = 8.0,
     """
     Calculate overall quality score combining multiple factors.
     Returns score 0-10 (higher is better).
+    
+    Note: ZWNJ scoring removed - we now use proper ە (AE) instead of ه+ZWNJ.
+    ZWNJ was a workaround that hurt Kurdish Sorani; now we have the proper letter.
     """
-    zwnj_density = calculate_zwnj_density(text)
     kurdish_purity = calculate_kurdish_purity(text)
     length = len(text)
     
-    # Component scores
-    zwnj_score = zwnj_quality_score(zwnj_density, target_zwnj)
+    # Component scores (ZWNJ removed from scoring)
     length_score = calculate_length_score(length)
     purity_score = (kurdish_purity / 100.0) * 10.0  # Convert to 0-10
     
-    # Pattern validation (if enabled)
-    pattern_score = 10.0
-    if validate_patterns and ZWNJ in text:
-        pattern_score = 10.0 if validate_zwnj_patterns(text) else 0.0
-    
-    # Weighted combination
+    # Weighted combination (redistributed weights without ZWNJ)
     overall = (
-        zwnj_score * 0.40 +      # ZWNJ density (most important for Kurdish OCR)
-        length_score * 0.25 +     # Sentence length
-        purity_score * 0.25 +     # Character set purity
-        pattern_score * 0.10      # ZWNJ pattern correctness
+        length_score * 0.50 +     # Sentence length (increased weight)
+        purity_score * 0.50       # Character set purity (increased weight)
     )
     
     return overall
@@ -199,6 +194,8 @@ def main() -> int:
     ap.add_argument('--min-count', type=int, default=2000,
                     help='Desired minimum total count for each target char (soft target)')
     ap.add_argument('--fixer', action='store_true', help='Apply kurdish_character_fixer.py if present')
+    ap.add_argument('--strip-zwnj', action='store_true',
+                    help='Remove all ZWNJ after ه‌→ە conversion (default: preserve ZWNJ)')
     ap.add_argument('--no-preserve-arabic', action='store_true', 
                     help='Convert all Arabic chars to Kurdish phonetics (default: preserve Arabic words)')
     ap.add_argument('--preserve-latin-digits', action='store_true',
@@ -239,7 +236,8 @@ def main() -> int:
         if args.fixer and FIXER_PATH.exists():
             txt = apply_fixer(txt, 
                             preserve_arabic=not args.no_preserve_arabic,
-                            preserve_latin_digits=args.preserve_latin_digits)
+                            preserve_latin_digits=args.preserve_latin_digits,
+                            strip_zwnj=args.strip_zwnj)
         txt = nfc(txt)
         # Normalize whitespace to single spaces and split into lines
         for L in txt.splitlines():

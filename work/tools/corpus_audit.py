@@ -31,13 +31,19 @@ def sorani_whitelist(include_ascii_digits=False, include_ascii_punc=False):
     ]
     # Digits (Arabic-Indic as default)
     digits = [chr(c) for c in range(0x0660, 0x066A)]
-    # Punctuation commonly used
-    puncs = list('،؛:؟«»-()٪')
-    wl = set(letters + digits + puncs + ['\n',' ','\t'])
+    # Punctuation commonly used (expanded to include period, exclamation, bullets, etc.)
+    puncs = list('،؛:؟«»‹›-()٪!.*/\'•')
+    # Technical symbols (for code, math, lists)
+    technical = list('|=[]{}+_&')
+    # Currency symbols
+    currency = ['$', '€', '£', '٫']  # Include Arabic decimal separator
+    wl = set(letters + digits + puncs + technical + currency + ['\n',' ','\t'])
     if include_ascii_digits:
         wl.update(list('0123456789'))
     if include_ascii_punc:
         wl.update(list(',?%'))
+    # Allow common Latin letters for English words/acronyms (COVID, Internet, etc.)
+    wl.update(list('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'))
     return wl
 
 
